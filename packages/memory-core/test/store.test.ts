@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { InMemoryStore } from '../src/in-memory-store';
 import { EpisodicRecord, SemanticRecord, IdentityRecord } from '../src/types';
 import { ImmutableError, ValidationError } from '../src/errors';
-import { computeHash } from '../src/hash';
+import { computeHash } from '@aperion/shared';
 
 describe('InMemoryStore', () => {
   let store: InMemoryStore;

@@ -4,3 +4,5 @@ export interface BaseRecord {
   id: UUID;
   createdAt: Date;
 }
+
+export * from './hash';

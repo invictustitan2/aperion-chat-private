@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canonicalize, computeHash, hashRunbookTask } from '../src/hash';
+import { canonicalize, computeHash, hashRunbookTask } from '@aperion/shared';
 
 describe('Hashing Utilities', () => {
   describe('canonicalize', () => {

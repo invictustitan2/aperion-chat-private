@@ -15,9 +15,6 @@ export function canonicalize(obj: unknown): string {
   const keys = Object.keys(obj as object).sort();
   const parts = keys.map((key) => {
     const val = (obj as Record<string, unknown>)[key];
-    // Skip undefined values to match JSON.stringify behavior usually, 
-    // but for strict hashing we might want to be explicit. 
-    // JSON.stringify omits undefined properties.
     if (val === undefined) return null;
     return JSON.stringify(key) + ':' + canonicalize(val);
   }).filter(part => part !== null);
@@ -35,10 +32,8 @@ export function computeHash(input: unknown): string {
 
 /**
  * Computes a stable ID for a runbook task based on its markdown content.
- * Normalizes whitespace to ensure stability.
  */
 export function hashRunbookTask(markdownText: string): string {
-  // Normalize whitespace: trim and replace multiple spaces/newlines with single space
   const normalized = markdownText.trim().replace(/\s+/g, ' ');
   return computeHash(normalized);
 }
