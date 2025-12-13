@@ -4,16 +4,21 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:api": "wrangler dev",
+    "db:migrate": "wrangler d1 migrations apply aperion-memory",
+    "db:migrate:local": "wrangler d1 migrations apply aperion-memory --local"
   },
   "dependencies": {
-    "@aperion/shared": "workspace:*",
     "@aperion/memory-core": "workspace:*",
-    "@aperion/policy": "workspace:*"
+    "@aperion/policy": "workspace:*",
+    "@aperion/shared": "workspace:*",
+    "itty-router": "^5.0.22"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240222.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
-    "@cloudflare/workers-types": "^4.20240222.0"
+    "wrangler": "^4.54.0"
   }
 }
