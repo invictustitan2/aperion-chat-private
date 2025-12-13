@@ -1,0 +1,19 @@
+{
+  "name": "@aperion/cli",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "aperion": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aperion/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@aperion/api-worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aperion/shared": "workspace:*",
+    "@aperion/memory-core": "workspace:*",
+    "@aperion/policy": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "@cloudflare/workers-types": "^4.20240222.0"
+  }
+}

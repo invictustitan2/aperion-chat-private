@@ -1,0 +1,18 @@
+{
+  "name": "@aperion/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'No unit tests for web yet'",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@aperion/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "playwright": "^1.42.0",
+    "@playwright/test": "^1.42.0"
+  }
+}
