@@ -45,12 +45,17 @@ fi
 echo ""
 echo "--- 2. Application Secrets ---"
 echo "We use a shared AUTH_TOKEN for service-to-service communication."
-read -s -p "Enter AUTH_TOKEN (leave blank to generate random): " auth_token
+read -s -p "Enter AUTH_TOKEN (leave blank to generate random or use existing): " auth_token
 echo ""
 
-if [ -z "$auth_token" ] && ! grep -q "^AUTH_TOKEN=" .env; then
-    auth_token=$(openssl rand -hex 32)
-    echo "�� Generated random AUTH_TOKEN"
+if [ -z "$auth_token" ]; then
+    if grep -q "^AUTH_TOKEN=" .env; then
+        auth_token=$(grep "^AUTH_TOKEN=" .env | cut -d '=' -f2)
+        echo "Using existing AUTH_TOKEN from .env"
+    else
+        auth_token=$(openssl rand -hex 32)
+        echo "🔑 Generated random AUTH_TOKEN"
+    fi
 fi
 
 if [ -n "$auth_token" ]; then
@@ -60,7 +65,20 @@ if [ -n "$auth_token" ]; then
     else
         echo "AUTH_TOKEN=$auth_token" >> .env
     fi
-    echo "✅ AUTH_TOKEN updated in .env"
+    
+    # Also set VITE_AUTH_TOKEN for web app and CLI
+    if grep -q "^VITE_AUTH_TOKEN=" .env; then
+        sed -i "s|^VITE_AUTH_TOKEN=.*|VITE_AUTH_TOKEN=$auth_token|" .env
+    else
+        echo "VITE_AUTH_TOKEN=$auth_token" >> .env
+    fi
+
+    # Set default VITE_API_BASE_URL if not present
+    if ! grep -q "^VITE_API_BASE_URL=" .env; then
+        echo "VITE_API_BASE_URL=http://127.0.0.1:8787" >> .env
+    fi
+
+    echo "✅ AUTH_TOKEN and VITE_AUTH_TOKEN updated in .env"
 
     # Offer to push to Cloudflare
     echo ""
