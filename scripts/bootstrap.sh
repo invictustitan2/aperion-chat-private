@@ -48,6 +48,19 @@ else
   echo "mise is already installed."
 fi
 
+# Install Playwright browsers (Chromium)
+echo "Installing Playwright browsers..."
+if [ -f "package.json" ]; then
+    # Ensure dependencies are installed first so npx works
+    if [ ! -d "node_modules" ]; then
+        echo "Installing project dependencies..."
+        pnpm install
+    fi
+    npx playwright install chromium
+else
+    echo "⚠️  package.json not found, skipping Playwright install."
+fi
+
 # Configure mise to install node, python, ripgrep if not already configured in .mise.toml or similar
 # We will set up a local config if it doesn't exist
 if [ ! -f .mise.toml ]; then
