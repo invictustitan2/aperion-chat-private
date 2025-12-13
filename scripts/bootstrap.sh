@@ -26,6 +26,17 @@ else
   echo "Basic dependencies found."
 fi
 
+# Install AWS CLI if not present
+if ! command_exists aws; then
+  echo "Installing AWS CLI..."
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  unzip -q awscliv2.zip
+  sudo ./aws/install || echo "Failed to install AWS CLI with sudo. Please install manually."
+  rm -rf aws awscliv2.zip
+else
+  echo "AWS CLI is already installed."
+fi
+
 # Install mise if not present
 if ! command_exists mise; then
   echo "Installing mise..."

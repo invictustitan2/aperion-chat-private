@@ -6,6 +6,7 @@
   "scripts": {
     "up": "pnpm install && pnpm build",
     "check": "./scripts/healthcheck.sh",
+    "verify": "./scripts/keys-check.sh",
     "dev": "./scripts/dev-shell.sh",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -24,7 +25,8 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.2.5",
     "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
+    "vitest": "^1.4.0",
+    "wrangler": "^4.54.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
