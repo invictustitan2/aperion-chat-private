@@ -1,24 +1,25 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { hashRunbook } from '../src/commands/hash-runbook.js';
-import { verify } from '../src/commands/verify.js';
-import fs from 'fs/promises';
-import chalk from 'chalk';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { hashRunbook } from "../src/commands/hash-runbook.js";
+import { verify } from "../src/commands/verify.js";
+import fs from "fs/promises";
 
 // Mock fs
-vi.mock('fs/promises');
+vi.mock("fs/promises");
 
 // Mock console
-const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-const processExitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => { throw new Error(`Process exit ${code}`); });
+vi.spyOn(console, "log").mockImplementation(() => {});
+vi.spyOn(console, "error").mockImplementation(() => {});
+vi.spyOn(process, "exit").mockImplementation((code) => {
+  throw new Error(`Process exit ${code}`);
+});
 
-describe('CLI Commands', () => {
+describe("CLI Commands", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('hashRunbook', () => {
-    it('should hash tasks correctly', async () => {
+  describe("hashRunbook", () => {
+    it("should hash tasks correctly", async () => {
       const mockContent = `
 # Runbook
 
@@ -30,33 +31,45 @@ Do something else.
 `;
       vi.mocked(fs.readFile).mockResolvedValue(mockContent);
 
-      await hashRunbook('runbook.md');
+      await hashRunbook("runbook.md");
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Found 2 tasks'));
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Task 1'));
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Task 2'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Found 2 tasks"),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Task 1"),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Task 2"),
+      );
     });
 
-    it('should handle single task file', async () => {
-        const mockContent = 'Just some content';
-        vi.mocked(fs.readFile).mockResolvedValue(mockContent);
-  
-        await hashRunbook('runbook.md');
-  
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('No tasks found'));
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('File Hash'));
-      });
+    it("should handle single task file", async () => {
+      const mockContent = "Just some content";
+      vi.mocked(fs.readFile).mockResolvedValue(mockContent);
+
+      await hashRunbook("runbook.md");
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("No tasks found"),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining("File Hash"),
+      );
+    });
   });
 
-  describe('verify', () => {
-    it('should fail if AUTH_TOKEN is missing', async () => {
-        const originalEnv = process.env;
-        process.env = { ...originalEnv, VITE_AUTH_TOKEN: '' };
+  describe("verify", () => {
+    it("should fail if AUTH_TOKEN is missing", async () => {
+      const originalEnv = process.env;
+      process.env = { ...originalEnv, VITE_AUTH_TOKEN: "" };
 
-        await expect(verify()).rejects.toThrow('Process exit 1');
-        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('VITE_AUTH_TOKEN is missing'));
+      await expect(verify()).rejects.toThrow("Process exit 1");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("VITE_AUTH_TOKEN is missing"),
+      );
 
-        process.env = originalEnv;
+      process.env = originalEnv;
     });
   });
 });

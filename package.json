@@ -4,21 +4,36 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
+    "up": "pnpm install && pnpm build",
+    "check": "./scripts/healthcheck.sh",
+    "dev": "./scripts/dev-shell.sh",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@playwright/test": "^1.42.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.2.5",
     "typescript": "^5.4.0",
-    "vitest": "^1.4.0",
-    "@playwright/test": "^1.42.0"
+    "vitest": "^1.4.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=20"

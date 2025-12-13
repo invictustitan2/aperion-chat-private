@@ -97,10 +97,43 @@ fi
 echo ""
 echo "--- 3. AWS Configuration (Optional) ---"
 echo "AWS keys should NOT be stored in .env."
-echo "If you need AWS (e.g. for Bedrock), please run:"
-echo "  $ aws configure"
-echo ""
-echo "This keeps your keys in ~/.aws/credentials where they belong."
+echo "We use ~/.aws/credentials for secure storage."
+
+if command -v aws >/dev/null 2>&1; then
+    echo "AWS CLI detected."
+    read -p "Do you want to run 'aws configure' now? (y/N) " run_aws_config
+    if [[ "$run_aws_config" =~ ^[Yy]$ ]]; then
+        aws configure
+    fi
+else
+    echo "⚠️  AWS CLI not found."
+    read -p "Do you want to manually configure AWS credentials now? (y/N) " manual_aws_config
+    if [[ "$manual_aws_config" =~ ^[Yy]$ ]]; then
+        mkdir -p ~/.aws
+        
+        read -p "AWS Access Key ID: " aws_key
+        read -s -p "AWS Secret Access Key: " aws_secret
+        echo ""
+        read -p "Default region name [us-east-1]: " aws_region
+        aws_region=${aws_region:-us-east-1}
+        
+        # Write credentials
+        cat > ~/.aws/credentials <<EOF
+[default]
+aws_access_key_id = $aws_key
+aws_secret_access_key = $aws_secret
+EOF
+        chmod 600 ~/.aws/credentials
+        
+        # Write config
+        cat > ~/.aws/config <<EOF
+[default]
+region = $aws_region
+output = json
+EOF
+        echo "✅ AWS credentials written to ~/.aws/credentials"
+    fi
+fi
 
 # 4. GitHub Configuration
 echo ""
