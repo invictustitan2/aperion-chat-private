@@ -242,6 +242,31 @@ router.post('/v1/runbooks/hash', withAuth, async (request) => {
   return json({ taskId });
 });
 
+// --- Receipts ---
+
+router.get('/v1/receipts', withAuth, async (request, env) => {
+  const { results } = await env.MEMORY_DB.prepare(
+    'SELECT * FROM receipts ORDER BY timestamp DESC LIMIT 50'
+  ).all();
+  
+  return json(results.map((r: any) => {
+    let reasons = [];
+    try {
+      reasons = JSON.parse(r.reason_codes);
+    } catch (e) {
+      reasons = [r.reason_codes];
+    }
+    
+    return {
+      id: r.id,
+      timestamp: r.timestamp,
+      action: 'memory_write',
+      allowed: r.decision === 'allow',
+      reason: Array.isArray(reasons) ? reasons.join(', ') : reasons,
+    };
+  }));
+});
+
 export default {
   fetch: router.fetch
 };
