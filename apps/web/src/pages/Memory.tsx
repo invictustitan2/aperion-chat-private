@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Save, AlertCircle } from 'lucide-react';
-import { api, IdentityRecord } from '../lib/api';
+import { Search, Save, AlertCircle, Clock } from 'lucide-react';
+import { api, IdentityRecord, EpisodicMemory } from '../lib/api';
 
 export function Memory() {
   const [identityKey, setIdentityKey] = useState('user');
@@ -12,6 +12,11 @@ export function Memory() {
     queryKey: ['identity', identityKey],
     queryFn: () => api.identity.get(identityKey),
     retry: false,
+  });
+
+  const { data: episodic, isLoading: isLoadingEpisodic } = useQuery({
+    queryKey: ['episodic'],
+    queryFn: api.episodic.list,
   });
 
   const updateIdentity = useMutation({
@@ -93,6 +98,55 @@ export function Memory() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <Clock className="text-blue-400" />
+          Recent Episodic Memory
+        </h2>
+        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          {isLoadingEpisodic ? (
+            <div className="p-6">Loading episodic memory...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-900 text-gray-400">
+                  <tr>
+                    <th className="p-4">Time</th>
+                    <th className="p-4">Role</th>
+                    <th className="p-4">Content</th>
+                    <th className="p-4">ID</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {(episodic || []).slice(0, 20).map((mem: EpisodicMemory) => (
+                    <tr key={mem.id} className="hover:bg-gray-750">
+                      <td className="p-4 whitespace-nowrap text-gray-400">
+                        {new Date(mem.timestamp).toLocaleString()}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          mem.role === 'user' ? 'bg-blue-900 text-blue-200' :
+                          mem.role === 'assistant' ? 'bg-green-900 text-green-200' :
+                          'bg-gray-700 text-gray-300'
+                        }`}>
+                          {mem.role}
+                        </span>
+                      </td>
+                      <td className="p-4 max-w-md truncate" title={mem.content}>
+                        {mem.content}
+                      </td>
+                      <td className="p-4 font-mono text-xs text-gray-500">
+                        {mem.id.slice(0, 8)}...
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
     </div>
