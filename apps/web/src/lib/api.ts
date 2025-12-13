@@ -1,82 +1,71 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || 'dev-token';
+import { EpisodicRecord, IdentityRecord } from '@aperion/memory-core';
 
-export interface EpisodicMemory {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: number;
-  metadata?: Record<string, unknown>;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8787';
+const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN;
+
+if (!AUTH_TOKEN) {
+  console.warn('VITE_AUTH_TOKEN is missing. API calls will likely fail.');
 }
 
-export interface SemanticMemory {
-  id: string;
-  content: string;
-  embedding?: number[];
-  metadata?: Record<string, unknown>;
-}
-
-export interface IdentityRecord {
-  key: string;
-  value: unknown;
-  timestamp: number;
-}
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${AUTH_TOKEN}`,
+};
 
 export interface Receipt {
   id: string;
   timestamp: number;
   action: string;
   allowed: boolean;
-  reason?: string;
-}
-
-async function fetchApi(path: string, options: RequestInit = {}) {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_TOKEN}`,
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`API Error ${response.status}: ${error}`);
-  }
-
-  return response.json();
+  reason: string;
 }
 
 export const api = {
   episodic: {
-    list: () => fetchApi('/v1/episodic'),
-    create: (data: Omit<EpisodicMemory, 'id' | 'timestamp'>) => 
-      fetchApi('/v1/episodic', {
+    list: async (limit = 50): Promise<EpisodicRecord[]> => {
+      const res = await fetch(`${API_BASE_URL}/v1/episodic?limit=${limit}`, { headers });
+      if (!res.ok) throw new Error(`Failed to fetch episodic memory: ${res.statusText}`);
+      return res.json();
+    },
+    create: async (content: string, provenance: any): Promise<any> => {
+      const res = await fetch(`${API_BASE_URL}/v1/episodic`, {
         method: 'POST',
-        body: JSON.stringify(data),
-      }),
+        headers,
+        body: JSON.stringify({ content, provenance }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || 'Failed to create episodic memory');
+      }
+      return res.json();
+    },
   },
   semantic: {
-    list: () => fetchApi('/v1/semantic'),
-    create: (data: Omit<SemanticMemory, 'id'>) => 
-      fetchApi('/v1/semantic', {
+    create: async (content: string, references: string[], provenance: any): Promise<any> => {
+      const res = await fetch(`${API_BASE_URL}/v1/semantic`, {
         method: 'POST',
-        body: JSON.stringify(data),
-      }),
+        headers,
+        body: JSON.stringify({ content, references, provenance }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || 'Failed to create semantic memory');
+      }
+      return res.json();
+    },
   },
   identity: {
-    get: (key: string) => fetchApi(`/v1/identity?key=${key}`),
-    set: (key: string, value: unknown) => 
-      fetchApi('/v1/identity', {
-        method: 'POST',
-        body: JSON.stringify({ key, value }),
-      }),
+    list: async (): Promise<IdentityRecord[]> => {
+      const res = await fetch(`${API_BASE_URL}/v1/identity`, { headers });
+      if (!res.ok) throw new Error(`Failed to fetch identity memory: ${res.statusText}`);
+      return res.json();
+    },
   },
   receipts: {
-    list: () => fetchApi('/v1/receipts'),
+    list: async (limit = 50): Promise<Receipt[]> => {
+      const res = await fetch(`${API_BASE_URL}/v1/receipts?limit=${limit}`, { headers });
+      if (!res.ok) throw new Error(`Failed to fetch receipts: ${res.statusText}`);
+      return res.json();
+    },
   },
 };
-

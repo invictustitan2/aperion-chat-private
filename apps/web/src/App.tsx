@@ -21,10 +21,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Chat />} />
+            <Route index element={<Navigate to="/chat" replace />} />
+            <Route path="chat" element={<Chat />} />
             <Route path="memory" element={<Memory />} />
             <Route path="receipts" element={<Receipts />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>

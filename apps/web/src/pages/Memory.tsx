@@ -1,154 +1,129 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Save, AlertCircle, Clock } from 'lucide-react';
-import { api, IdentityRecord, EpisodicMemory } from '../lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { Brain, User, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { api } from '../lib/api';
+import { clsx } from 'clsx';
 
 export function Memory() {
-  const [identityKey, setIdentityKey] = useState('user');
-  const [identityValue, setIdentityValue] = useState('');
-  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'identity' | 'episodic'>('identity');
 
-  const { data: identity, isLoading: isLoadingIdentity, error: identityError } = useQuery({
-    queryKey: ['identity', identityKey],
-    queryFn: () => api.identity.get(identityKey),
-    retry: false,
+  const identityQuery = useQuery({
+    queryKey: ['identity'],
+    queryFn: () => api.identity.list(),
   });
 
-  const { data: episodic, isLoading: isLoadingEpisodic } = useQuery({
+  const episodicQuery = useQuery({
     queryKey: ['episodic'],
-    queryFn: api.episodic.list,
-  });
-
-  const updateIdentity = useMutation({
-    mutationFn: async () => {
-      let parsedValue;
-      try {
-        parsedValue = JSON.parse(identityValue);
-      } catch (e) {
-        parsedValue = identityValue; // Treat as string if not JSON
-      }
-      await api.identity.set(identityKey, parsedValue);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['identity', identityKey] });
-      alert('Identity updated successfully');
-    },
+    queryFn: () => api.episodic.list(50),
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <section>
-        <h2 className="text-2xl font-bold mb-4">Identity Store</h2>
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Key</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={identityKey}
-                  onChange={(e) => setIdentityKey(e.target.value)}
-                  className="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2"
-                />
-                <button 
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['identity', identityKey] })}
-                  className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded"
-                >
-                  <Search size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="p-6 space-y-6">
+      <header>
+        <h1 className="text-2xl font-bold text-white">Memory Store</h1>
+        <p className="text-gray-400 text-sm">Raw access to long-term memory records</p>
+      </header>
 
-          {isLoadingIdentity ? (
-            <div>Loading identity...</div>
-          ) : identityError ? (
-            <div className="text-yellow-400 flex items-center gap-2 mb-4">
-              <AlertCircle size={18} />
-              <span>Identity not found or error: {identityError.message}</span>
-            </div>
-          ) : (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-400 mb-2">Current Value</h3>
-              <pre className="bg-gray-900 p-4 rounded overflow-auto max-h-60 text-sm">
-                {JSON.stringify(identity, null, 2)}
-              </pre>
-            </div>
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-gray-800">
+        <button
+          onClick={() => setActiveTab('identity')}
+          className={clsx(
+            "px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors",
+            activeTab === 'identity' 
+              ? "border-emerald-500 text-emerald-400" 
+              : "border-transparent text-gray-400 hover:text-gray-200"
           )}
+        >
+          <User className="w-4 h-4" />
+          Identity
+        </button>
+        <button
+          onClick={() => setActiveTab('episodic')}
+          className={clsx(
+            "px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors",
+            activeTab === 'episodic' 
+              ? "border-emerald-500 text-emerald-400" 
+              : "border-transparent text-gray-400 hover:text-gray-200"
+          )}
+        >
+          <Clock className="w-4 h-4" />
+          Episodic Log
+        </button>
+      </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Update Value (JSON or String)</label>
-            <textarea
-              value={identityValue}
-              onChange={(e) => setIdentityValue(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 h-32 font-mono text-sm mb-2"
-              placeholder='{"name": "User", "preferences": ...}'
-            />
-            <button
-              onClick={() => updateIdentity.mutate()}
-              disabled={updateIdentity.isPending}
-              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded flex items-center gap-2"
-            >
-              <Save size={18} />
-              Save Identity
-            </button>
-            {updateIdentity.error && (
-              <div className="text-red-400 mt-2 text-sm">
-                Error: {updateIdentity.error.message}
+      {/* Content */}
+      <div className="min-h-[400px]">
+        {activeTab === 'identity' && (
+          <div className="space-y-4">
+            {identityQuery.isLoading ? (
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            ) : identityQuery.error ? (
+              <div className="text-red-400 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Error: {identityQuery.error.message}
+              </div>
+            ) : identityQuery.data?.length === 0 ? (
+              <p className="text-gray-500 italic">No identity records found.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {identityQuery.data?.map((record) => (
+                  <div key={record.id} className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-mono text-emerald-400 text-sm">{record.key}</span>
+                      <span className="text-xs text-gray-500">
+                        {record.last_verified ? new Date(record.last_verified).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+                    <div className="text-gray-200 font-medium">{String(record.value)}</div>
+                    <div className="mt-3 pt-3 border-t border-gray-700/50 text-xs text-gray-500 font-mono">
+                      ID: {record.id}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </section>
+        )}
 
-      <section>
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <Clock className="text-blue-400" />
-          Recent Episodic Memory
-        </h2>
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          {isLoadingEpisodic ? (
-            <div className="p-6">Loading episodic memory...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-900 text-gray-400">
-                  <tr>
-                    <th className="p-4">Time</th>
-                    <th className="p-4">Role</th>
-                    <th className="p-4">Content</th>
-                    <th className="p-4">ID</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {(episodic || []).slice(0, 20).map((mem: EpisodicMemory) => (
-                    <tr key={mem.id} className="hover:bg-gray-750">
-                      <td className="p-4 whitespace-nowrap text-gray-400">
-                        {new Date(mem.timestamp).toLocaleString()}
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          mem.role === 'user' ? 'bg-blue-900 text-blue-200' :
-                          mem.role === 'assistant' ? 'bg-green-900 text-green-200' :
-                          'bg-gray-700 text-gray-300'
-                        }`}>
-                          {mem.role}
-                        </span>
-                      </td>
-                      <td className="p-4 max-w-md truncate" title={mem.content}>
-                        {mem.content}
-                      </td>
-                      <td className="p-4 font-mono text-xs text-gray-500">
-                        {mem.id.slice(0, 8)}...
-                      </td>
+        {activeTab === 'episodic' && (
+          <div className="space-y-2">
+            {episodicQuery.isLoading ? (
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            ) : episodicQuery.error ? (
+              <div className="text-red-400 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Error: {episodicQuery.error.message}
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-900/50 text-gray-400">
+                    <tr>
+                      <th className="p-3 font-medium">Time</th>
+                      <th className="p-3 font-medium">Content</th>
+                      <th className="p-3 font-medium">Source</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </section>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700/50">
+                    {episodicQuery.data?.map((record) => (
+                      <tr key={record.id} className="hover:bg-gray-700/20">
+                        <td className="p-3 text-gray-500 font-mono whitespace-nowrap">
+                          {new Date(record.createdAt).toLocaleString()}
+                        </td>
+                        <td className="p-3 text-gray-200">{record.content}</td>
+                        <td className="p-3 text-gray-400">
+                          {record.provenance.source_type}:{record.provenance.source_id}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

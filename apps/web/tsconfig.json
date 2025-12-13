@@ -2,11 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "references": [
-    { "path": "../../packages/shared" }
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/memory-core" }
   ]
 }
