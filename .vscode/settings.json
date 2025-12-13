@@ -1,0 +1,25 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "dist/": true,
+    ".turbo/": true,
+    ".wrangler/": true
+  },
+  "search.exclude": {
+    "dist/": true,
+    ".turbo/": true,
+    ".wrangler/": true
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
