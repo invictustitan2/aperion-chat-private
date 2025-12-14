@@ -41,8 +41,6 @@ jobs:
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
-        if: steps.changes.outputs.web == 'true' # Optimization: only if web changed, but for now run always or skip if no tests
 
       - name: E2E Tests
         run: pnpm test:e2e
-        continue-on-error: true # Allow failure if no e2e tests exist yet or env issues
