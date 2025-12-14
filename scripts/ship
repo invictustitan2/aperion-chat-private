@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -e
+
+# 1. Local Verification
+echo "🏥 Running local health checks..."
+./scripts/healthcheck.sh
+
+# 2. Git Operations
+if [[ -n $(git status --porcelain) ]]; then
+  echo "📦 Staging and committing changes..."
+  if [ -z "$1" ]; then
+    read -p "Enter commit message: " COMMIT_MSG
+  else
+    COMMIT_MSG="$1"
+  fi
+  
+  if [ -z "$COMMIT_MSG" ]; then
+    echo "❌ Commit message required."
+    exit 1
+  fi
+  
+  git add .
+  git commit -m "$COMMIT_MSG"
+fi
+
+echo "🚀 Pushing to remote..."
+git push
+
+# 3. GitHub CI Watch
+CURRENT_SHA=$(git rev-parse HEAD)
+echo "🔍 Looking for workflow run for commit ${CURRENT_SHA:0:7}..."
+
+# Wait for the run to appear
+MAX_RETRIES=20
+RUN_ID=""
+
+for i in $(seq 1 $MAX_RETRIES); do
+  # Try to find a run for this specific commit
+  RUN_ID=$(gh run list --commit "$CURRENT_SHA" --limit 1 --json databaseId --jq '.[0].databaseId')
+  
+  if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+    break
+  fi
+  
+  echo -n "."
+  sleep 2
+done
+echo ""
+
+if [ -z "$RUN_ID" ] || [ "$RUN_ID" == "null" ]; then
+  echo "⚠️  No workflow run found for this commit. (Maybe CI is skipped?)"
+  exit 0
+fi
+
+echo "👀 Watching workflow run $RUN_ID..."
+if gh run watch "$RUN_ID" --exit-status; then
+  echo "✅ CI Passed! 🚢"
+else
+  echo "❌ CI Failed."
+  echo "🔍 View logs: gh run view $RUN_ID --log-failed"
+  exit 1
+fi

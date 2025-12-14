@@ -49,8 +49,12 @@ fi
 
 echo "================================================================"
 echo "✅ Environment loaded. Strict mode enabled."
+echo "� Tip: Use 'ship' to commit, push, and watch CI."
 echo "🐚 Spawning shell..."
 echo ""
+
+# Add scripts to PATH so 'ship' works directly
+export PATH="$PWD/scripts:$PATH"
 
 # Spawn a new shell with the environment variables
 exec "${SHELL:-bash}"
