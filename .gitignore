@@ -12,3 +12,4 @@ coverage/
 *.log
 .dev.vars
 *.csv
+*.tsbuildinfo
