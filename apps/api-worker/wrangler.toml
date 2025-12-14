@@ -3,14 +3,18 @@ main = "src/index.ts"
 compatibility_date = "2024-03-20"
 compatibility_flags = ["nodejs_compat"]
 
+# routes = [
+# 	{ pattern = "api.aperion.cc", custom_domain = true }
+# ]
+
 [[d1_databases]]
 binding = "MEMORY_DB"
 database_name = "aperion-memory"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # Placeholder, user needs to set this
+database_id = "48f0940c-841b-452c-a54a-cb9f8c625df2"
 
 [[kv_namespaces]]
 binding = "CACHE_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Placeholder
+id = "212d43171f574b06b22f6fa4f24ca8a1"
 
 [vars]
 # API_TOKEN will be set via secrets
