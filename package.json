@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "up": "pnpm install && pnpm build",
+    "up": "pnpm install && pnpm -r build",
     "check": "./scripts/healthcheck.sh",
     "verify": "./scripts/keys-check.sh",
     "dev": "./scripts/dev-shell.sh",

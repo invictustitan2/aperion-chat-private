@@ -1,11 +1,12 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    globals: true,
     exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/apps/web/test/**', // Exclude Playwright tests
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/apps/web/test/**", // Exclude Playwright tests
     ],
   },
 });

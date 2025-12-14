@@ -1,13 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { unstable_dev } from "wrangler";
 import type { UnstableDevWorker } from "wrangler";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("API Worker", () => {
   let worker: UnstableDevWorker;
   const API_TOKEN = "test-token";
 
   beforeAll(async () => {
-    worker = await unstable_dev("src/index.ts", {
+    worker = await unstable_dev(path.resolve(__dirname, "../src/index.ts"), {
       experimental: { disableExperimentalWarning: true },
       vars: { API_TOKEN },
       d1Databases: ["MEMORY_DB"],

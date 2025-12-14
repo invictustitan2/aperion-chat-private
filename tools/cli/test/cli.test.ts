@@ -7,8 +7,8 @@ import fs from "fs/promises";
 vi.mock("fs/promises");
 
 // Mock console
-vi.spyOn(console, "log").mockImplementation(() => {});
-vi.spyOn(console, "error").mockImplementation(() => {});
+const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit ${code}`);
 });

@@ -1,9 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Load .env if present
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
 fi
 
 echo "🚀 Aperion Dev Shell"
@@ -47,4 +49,8 @@ fi
 
 echo "================================================================"
 echo "✅ Environment loaded. Strict mode enabled."
+echo "🐚 Spawning shell..."
 echo ""
+
+# Spawn a new shell with the environment variables
+exec "${SHELL:-bash}"
