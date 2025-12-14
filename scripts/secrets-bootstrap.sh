@@ -86,16 +86,16 @@ if [ -n "$auth_token" ]; then
     if [[ "$push_cf" =~ ^[Yy]$ ]]; then
         if [ -d "apps/api-worker" ]; then
             echo "🚀 Pushing secret to api-worker..."
-            echo "$auth_token" | npx wrangler secret put AUTH_TOKEN --cwd apps/api-worker
+            (cd apps/api-worker && echo "$auth_token" | npx wrangler secret put AUTH_TOKEN)
         else
             echo "⚠️  apps/api-worker directory not found, skipping upload."
         fi
     fi
 fi
 
-# 3. AWS Configuration (Optional Sidecar)
+# 3. AWS Configuration
 echo ""
-echo "--- 3. AWS Configuration (Optional) ---"
+echo "--- 3. AWS Configuration ---"
 echo "AWS keys should NOT be stored in .env."
 echo "We use ~/.aws/credentials for secure storage."
 
@@ -106,8 +106,10 @@ if command -v aws >/dev/null 2>&1; then
         aws configure
     fi
 else
-    echo "⚠️  AWS CLI not found."
-    read -p "Do you want to manually configure AWS credentials now? (y/N) " manual_aws_config
+    echo "⚠️  AWS CLI not found (using manual setup)."
+    # Default to yes for manual config since it's required
+    read -p "Configure AWS credentials now? [Y/n] " manual_aws_config
+    manual_aws_config=${manual_aws_config:-y}
     if [[ "$manual_aws_config" =~ ^[Yy]$ ]]; then
         mkdir -p ~/.aws
         
