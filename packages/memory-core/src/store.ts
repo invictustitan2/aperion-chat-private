@@ -1,4 +1,4 @@
-import { EpisodicRecord, IdentityRecord, SemanticRecord, UUID } from './types';
+import { EpisodicRecord, IdentityRecord, SemanticRecord, UUID } from "./types";
 
 export interface MemoryStore {
   /**
@@ -27,7 +27,10 @@ export interface MemoryStore {
    * Stores or updates an identity memory.
    * Requires explicit confirmation flag to be true.
    */
-  putIdentity(record: IdentityRecord, confirmIdentityWrite: boolean): Promise<void>;
+  putIdentity(
+    record: IdentityRecord,
+    confirmIdentityWrite: boolean,
+  ): Promise<void>;
 
   /**
    * Retrieves an identity memory by key.

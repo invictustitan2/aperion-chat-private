@@ -1,6 +1,6 @@
-import { MemoryStore } from './store';
-import { EpisodicRecord, IdentityRecord, SemanticRecord, UUID } from './types';
-import { ImmutableError, ValidationError } from './errors';
+import { MemoryStore } from "./store";
+import { EpisodicRecord, IdentityRecord, SemanticRecord, UUID } from "./types";
+import { ImmutableError, ValidationError } from "./errors";
 
 export class InMemoryStore implements MemoryStore {
   private episodic = new Map<UUID, EpisodicRecord>();
@@ -9,7 +9,9 @@ export class InMemoryStore implements MemoryStore {
 
   async putEpisodic(record: EpisodicRecord): Promise<void> {
     if (this.episodic.has(record.id)) {
-      throw new ImmutableError(`Episodic record with ID ${record.id} already exists.`);
+      throw new ImmutableError(
+        `Episodic record with ID ${record.id} already exists.`,
+      );
     }
     this.episodic.set(record.id, record);
   }
@@ -20,7 +22,9 @@ export class InMemoryStore implements MemoryStore {
 
   async putSemantic(record: SemanticRecord): Promise<void> {
     if (!record.references || record.references.length === 0) {
-      throw new ValidationError('Semantic records must reference at least one episodic record.');
+      throw new ValidationError(
+        "Semantic records must reference at least one episodic record.",
+      );
     }
     // In a real store, we might verify that the referenced records exist.
     // For now, we just check the array is present and non-empty.
@@ -31,9 +35,14 @@ export class InMemoryStore implements MemoryStore {
     return this.semantic.get(id) || null;
   }
 
-  async putIdentity(record: IdentityRecord, confirmIdentityWrite: boolean): Promise<void> {
+  async putIdentity(
+    record: IdentityRecord,
+    confirmIdentityWrite: boolean,
+  ): Promise<void> {
     if (confirmIdentityWrite !== true) {
-      throw new ValidationError('Identity writes require explicit confirmation flag.');
+      throw new ValidationError(
+        "Identity writes require explicit confirmation flag.",
+      );
     }
     this.identity.set(record.key, record);
   }

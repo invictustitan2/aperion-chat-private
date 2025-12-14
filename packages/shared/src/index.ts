@@ -5,4 +5,4 @@ export interface BaseRecord {
   createdAt: Date;
 }
 
-export * from './hash.js';
+export * from "./hash.js";

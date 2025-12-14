@@ -1,1 +1,1 @@
-console.log('Web App Initialized');
+console.log("Web App Initialized");

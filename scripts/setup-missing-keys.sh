@@ -12,13 +12,13 @@ if [ ! -f ~/.ssh/id_ed25519 ]; then
     echo "❌ Git SSH key (ed25519) not found."
     echo "We need to generate a new SSH key for git operations."
     read -p "Enter your email address for the SSH key: " email
-    
+
     if [ -n "$email" ]; then
         echo "Generating SSH key..."
         ssh-keygen -t ed25519 -C "$email" -f ~/.ssh/id_ed25519
         eval "$(ssh-agent -s)"
         ssh-add ~/.ssh/id_ed25519
-        
+
         echo "✅ SSH key generated and added to agent."
         echo ""
         echo "⚠️  ACTION REQUIRED: Copy the following public key to your GitHub/GitLab account:"
@@ -43,7 +43,7 @@ if [ -z "$AWS_ACCESS_KEY_ID" ] && [ ! -d ~/.aws ]; then
         read -p "Enter AWS Access Key ID: " aws_key
         read -s -p "Enter AWS Secret Access Key: " aws_secret
         echo ""
-        
+
         mkdir -p ~/.aws
         cat <<EOF > ~/.aws/credentials
 [default]

@@ -65,7 +65,7 @@ if [ -n "$auth_token" ]; then
     else
         echo "AUTH_TOKEN=$auth_token" >> .env
     fi
-    
+
     # Also set VITE_AUTH_TOKEN for web app and CLI
     if grep -q "^VITE_AUTH_TOKEN=" .env; then
         sed -i "s|^VITE_AUTH_TOKEN=.*|VITE_AUTH_TOKEN=$auth_token|" .env
@@ -112,13 +112,13 @@ else
     manual_aws_config=${manual_aws_config:-y}
     if [[ "$manual_aws_config" =~ ^[Yy]$ ]]; then
         mkdir -p ~/.aws
-        
+
         read -p "AWS Access Key ID: " aws_key
         read -s -p "AWS Secret Access Key: " aws_secret
         echo ""
         read -p "Default region name [us-east-1]: " aws_region
         aws_region=${aws_region:-us-east-1}
-        
+
         # Write credentials
         cat > ~/.aws/credentials <<EOF
 [default]
@@ -126,7 +126,7 @@ aws_access_key_id = $aws_key
 aws_secret_access_key = $aws_secret
 EOF
         chmod 600 ~/.aws/credentials
-        
+
         # Write config
         cat > ~/.aws/config <<EOF
 [default]

@@ -1,6 +1,6 @@
 export type UUID = string;
 
-export type MemorySourceType = 'user' | 'system' | 'model' | 'external';
+export type MemorySourceType = "user" | "system" | "model" | "external";
 
 export interface MemoryProvenance {
   source_type: MemorySourceType;
@@ -19,20 +19,20 @@ export interface BaseMemoryRecord {
 }
 
 export interface EpisodicRecord extends BaseMemoryRecord {
-  type: 'episodic';
+  type: "episodic";
   content: string; // Raw text or JSON string
   metadata?: Record<string, unknown>;
 }
 
 export interface SemanticRecord extends BaseMemoryRecord {
-  type: 'semantic';
+  type: "semantic";
   content: string; // Summarized or extracted knowledge
   embedding?: number[]; // Vector representation
   references: UUID[]; // Must reference at least one episodic record
 }
 
 export interface IdentityRecord extends BaseMemoryRecord {
-  type: 'identity';
+  type: "identity";
   key: string; // e.g., "user_name", "preference_dark_mode"
   value: unknown;
   last_verified?: number;

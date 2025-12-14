@@ -1,4 +1,6 @@
 import chalk from "chalk";
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
+import { defaultProvider } from "@aws-sdk/credential-provider-node";
 
 export async function verify() {
   console.log(chalk.blue("Verifying environment..."));
@@ -13,6 +15,24 @@ export async function verify() {
     process.exit(1);
   } else {
     console.log(chalk.green("✓ VITE_AUTH_TOKEN found"));
+  }
+
+  // AWS Check
+  console.log(chalk.blue("Checking AWS credentials..."));
+  try {
+    const client = new STSClient({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: defaultProvider(),
+    });
+    const command = new GetCallerIdentityCommand({});
+    const response = await client.send(command);
+    console.log(chalk.green(`✓ AWS Authenticated as ${response.Arn}`));
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(chalk.yellow(`⚠️  AWS Authentication failed: ${msg}`));
+    console.warn(
+      chalk.yellow(`   Run ./scripts/secrets-bootstrap.sh to configure AWS.`),
+    );
   }
 
   try {

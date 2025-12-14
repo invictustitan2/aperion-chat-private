@@ -7,3 +7,8 @@ dist/
 .DS_Store
 coverage/
 .mise.toml
+
+# Logs and Secrets
+*.log
+.dev.vars
+*.csv

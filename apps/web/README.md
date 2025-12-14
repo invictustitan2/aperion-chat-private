@@ -29,12 +29,14 @@ pnpm install
 ### Running Locally
 
 1. Ensure the API worker is running (usually on port 8787):
+
    ```bash
    cd ../api-worker
    pnpm dev
    ```
 
 2. Start the web development server:
+
    ```bash
    pnpm dev
    ```
@@ -44,6 +46,7 @@ pnpm install
 ### Testing
 
 - **Unit Tests**:
+
   ```bash
   pnpm test
   ```

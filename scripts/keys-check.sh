@@ -20,27 +20,34 @@ else
   echo "  Action: Run ./scripts/secrets-bootstrap.sh"
 fi
 
-# Check for AWS credentials (Optional)
-echo -n "Checking for AWS credentials (Optional)... "
+# Check for AWS credentials
+echo -n "Checking for AWS credentials... "
 if [ -d ~/.aws ] && [ -f ~/.aws/credentials ]; then
-  echo "✅ Found (~/.aws/credentials)."
+  if grep -q "aws_access_key_id" ~/.aws/credentials; then
+    echo "✅ Found (~/.aws/credentials)."
+  else
+    echo "❌ Found but invalid (~/.aws/credentials)."
+    echo "  Action: Run ./scripts/secrets-bootstrap.sh"
+  fi
 elif [ -n "$AWS_ACCESS_KEY_ID" ]; then
   echo "⚠️  Found in env vars (not recommended for long-term)."
 else
-  echo "⚪ Not found (OK if not using Bedrock)."
+  echo "❌ Not found."
+  echo "  Action: Run ./scripts/secrets-bootstrap.sh"
 fi
 
 # Check Wrangler login status
 echo -n "Checking Wrangler login status... "
-if command -v wrangler >/dev/null 2>&1; then
-  if wrangler whoami >/dev/null 2>&1; then
-    echo "✅ Logged in."
-  else
-    echo "❌ Not logged in."
-    echo "  Action: Run 'wrangler login' or set CLOUDFLARE_API_TOKEN."
-  fi
+WRANGLER_CMD="wrangler"
+if ! command -v wrangler >/dev/null 2>&1; then
+  WRANGLER_CMD="pnpm exec wrangler"
+fi
+
+if $WRANGLER_CMD whoami >/dev/null 2>&1; then
+  echo "✅ Logged in."
 else
-  echo "⚠️ Wrangler not installed."
+  echo "❌ Not logged in."
+  echo "  Action: Run '$WRANGLER_CMD login' or set CLOUDFLARE_API_TOKEN."
 fi
 
 # Check GitHub CLI status
@@ -55,5 +62,10 @@ if command -v gh >/dev/null 2>&1; then
 else
   echo "⚠️ GitHub CLI (gh) not installed."
 fi
+
+echo ""
+echo "Running deep verification with @aperion/cli..."
+pnpm --filter @aperion/cli build >/dev/null 2>&1
+node tools/cli/dist/index.js verify
 
 echo "Check complete."
