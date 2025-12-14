@@ -52,6 +52,9 @@ describe("API Worker", () => {
       }),
     });
 
+    if (resp.status !== 200) {
+      console.error("Store Episodic Error:", await resp.text());
+    }
     expect(resp.status).toBe(200);
     const data = (await resp.json()) as {
       success: boolean;
@@ -67,6 +70,9 @@ describe("API Worker", () => {
     const resp = await worker.fetch("/v1/episodic", {
       headers: { Authorization: `Bearer ${API_TOKEN}` },
     });
+    if (resp.status !== 200) {
+      console.error("Retrieve Episodic Error:", await resp.text());
+    }
     expect(resp.status).toBe(200);
     const data = (await resp.json()) as { content: string }[];
     expect(Array.isArray(data)).toBe(true);
@@ -94,6 +100,9 @@ describe("API Worker", () => {
       }),
     });
 
+    if (resp.status !== 403) {
+      console.error("Deny Identity Error:", await resp.text());
+    }
     expect(resp.status).toBe(403);
     const data = (await resp.json()) as { error: string };
     expect(data.error).toContain("Policy denied");
@@ -119,6 +128,9 @@ describe("API Worker", () => {
       }),
     });
 
+    if (resp.status !== 200) {
+      console.error("Allow Identity Error:", await resp.text());
+    }
     expect(resp.status).toBe(200);
   });
 

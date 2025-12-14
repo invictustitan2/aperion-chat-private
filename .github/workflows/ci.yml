@@ -33,6 +33,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Apply D1 Migrations (Local)
+        run: cd apps/api-worker && npx wrangler d1 migrations apply aperion-memory --local
+
       - name: Unit Tests
         run: pnpm test
 
