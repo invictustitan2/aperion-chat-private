@@ -9,12 +9,15 @@ import { computeHash, hashRunbookTask } from "@aperion/shared";
 import { AutoRouter, IRequest, error, json } from "itty-router";
 import { generateEmbedding } from "./lib/ai";
 import { bytesToBase64 } from "./lib/base64";
+import { MemoryQueueMessage } from "./lib/queue-processor";
 import { errorHandler } from "./middleware/errorHandler";
 
 export interface Env {
   MEMORY_DB: D1Database;
   MEMORY_VECTORS: VectorizeIndex;
   AI: Ai;
+  MEMORY_QUEUE: Queue<MemoryQueueMessage>;
+  MEDIA_BUCKET: R2Bucket;
   CACHE_KV: KVNamespace;
   API_TOKEN: string;
   GOOGLE_CLOUD_PROJECT_ID?: string;
@@ -54,6 +57,8 @@ router.post("/v1/episodic", withAuth, async (request, env) => {
   const receipt = MemoryWriteGate.shouldWriteEpisodic(body);
 
   // 3. Store Receipt
+  // Store receipt synchronously for audit trail? Or queue it too?
+  // For safety, let's keep receipt sync for now so client knows it was "Allowed"
   await env.MEMORY_DB.prepare(
     "INSERT INTO receipts (id, timestamp, decision, reason_codes, inputs_hash) VALUES (?, ?, ?, ?, ?)",
   )
@@ -83,24 +88,36 @@ router.post("/v1/episodic", withAuth, async (request, env) => {
   record.hash = computeHash(record);
 
   // 5. Store Record
-  try {
-    await env.MEMORY_DB.prepare(
-      "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
-    )
-      .bind(
-        record.id,
-        record.createdAt,
-        record.content,
-        JSON.stringify(record.provenance),
-        record.hash,
+  // Send to Queue
+  if (env.MEMORY_QUEUE) {
+    await env.MEMORY_QUEUE.send({
+      type: "episodic",
+      record: record,
+    });
+    return json(
+      { success: true, id: record.id, receipt, status: "queued" },
+      { status: 202 },
+    );
+  } else {
+    // Fallback sync write if queue not configured (dev/test)
+    try {
+      await env.MEMORY_DB.prepare(
+        "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
       )
-      .run();
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return error(500, `Database error: ${msg}`);
+        .bind(
+          record.id,
+          record.createdAt,
+          record.content,
+          JSON.stringify(record.provenance),
+          record.hash,
+        )
+        .run();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, `Database error: ${msg}`);
+    }
+    return json({ success: true, id: record.id, receipt, status: "written" });
   }
-
-  return json({ success: true, id: record.id, receipt });
 });
 
 router.get("/v1/episodic", withAuth, async (request, env) => {
@@ -126,13 +143,6 @@ router.get("/v1/episodic", withAuth, async (request, env) => {
 // --- Voice Chat ---
 
 async function handleVoiceChat(request: IRequest, env: Env) {
-  // ... (Keep existing implementation)
-  // Note: For brevity in this edit, I assume the tool will preserve lines not touched if I used proper ranges.
-  // But here I'm replacing a huge chunk. I will paste the Voice Chat block back in to be safe or minimal edit?
-  // The user asked for "Refactor POST /v1/semantic".
-  // I will skip replacing Voice Chat logic if I can target ranges, but the prompt implies replacing up to line 303 which covers semantic.
-  // I will re-include handleVoiceChat fully to avoid breaking it.
-
   // Note: request is already authenticated by `withAuth`.
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
@@ -201,17 +211,22 @@ async function handleVoiceChat(request: IRequest, env: Env) {
   };
   record.hash = computeHash(record);
 
-  await env.MEMORY_DB.prepare(
-    "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
-  )
-    .bind(
-      record.id,
-      record.createdAt,
-      record.content,
-      JSON.stringify(record.provenance),
-      record.hash,
+  // Queue Write
+  if (env.MEMORY_QUEUE) {
+    await env.MEMORY_QUEUE.send({ type: "episodic", record });
+  } else {
+    await env.MEMORY_DB.prepare(
+      "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
     )
-    .run();
+      .bind(
+        record.id,
+        record.createdAt,
+        record.content,
+        JSON.stringify(record.provenance),
+        record.hash,
+      )
+      .run();
+  }
 
   const assistantText =
     (await generateAssistantReply(userText, {
@@ -278,18 +293,7 @@ router.post("/v1/semantic", withAuth, async (request, env) => {
     );
   }
 
-  // Generate Embedding natively
-  let embedding = body.embedding;
-  if (!embedding && env.AI) {
-    try {
-      embedding = await generateEmbedding(env.AI, body.content);
-    } catch (e) {
-      console.error("Failed to generate embedding", e);
-      // Fail softly? or hard? Hard for now as semantic search depends on it.
-      // return error(500, "Failed to generate embedding");
-    }
-  }
-
+  // Generate ID now so we can return it
   const record: SemanticRecord = {
     id: crypto.randomUUID(),
     createdAt: Date.now(),
@@ -298,46 +302,63 @@ router.post("/v1/semantic", withAuth, async (request, env) => {
     references: body.references,
     provenance: body.provenance as MemoryProvenance,
     hash: "",
-    embedding: embedding,
+    embedding: body.embedding, // Pass through if allowed, otherwise computed in queue
   };
-  record.hash = computeHash(record);
+  // We compute hash in consumer if embedding is missing, or here if present.
+  // Actually, hash computation usually excludes dynamic fields or includes them?
+  // Let's defer hash to processor if embedding is generated there.
 
-  try {
-    // 1. Store Content in D1
-    await env.MEMORY_DB.prepare(
-      'INSERT INTO semantic (id, created_at, content, embedding, "references", provenance, hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    )
-      .bind(
-        record.id,
-        record.createdAt,
-        record.content,
-        JSON.stringify(record.embedding || []),
-        JSON.stringify(record.references),
-        JSON.stringify(record.provenance),
-        record.hash,
-      )
-      .run();
-
-    // 2. Store Vector in Vectorize
-    if (env.MEMORY_VECTORS && record.embedding) {
-      await env.MEMORY_VECTORS.insert([
-        {
-          id: record.id,
-          values: record.embedding,
-          metadata: {
-            // Store minimal metadata for filtering if needed
-            type: "semantic",
-            createdAt: record.createdAt,
-          },
-        },
-      ]);
+  if (env.MEMORY_QUEUE) {
+    await env.MEMORY_QUEUE.send({
+      type: "semantic",
+      record,
+    });
+    return json(
+      { success: true, id: record.id, receipt, status: "queued" },
+      { status: 202 },
+    );
+  } else {
+    // Fallback Sync
+    if (!record.embedding && env.AI) {
+      record.embedding = await generateEmbedding(env.AI, record.content);
     }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return error(500, `Database error: ${msg}`);
-  }
+    record.hash = computeHash(record);
+    try {
+      // 1. Store Content in D1
+      await env.MEMORY_DB.prepare(
+        'INSERT INTO semantic (id, created_at, content, embedding, "references", provenance, hash) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(
+          record.id,
+          record.createdAt,
+          record.content,
+          JSON.stringify(record.embedding || []),
+          JSON.stringify(record.references),
+          JSON.stringify(record.provenance),
+          record.hash,
+        )
+        .run();
 
-  return json({ success: true, id: record.id, receipt });
+      // 2. Store Vector in Vectorize
+      if (env.MEMORY_VECTORS && record.embedding) {
+        await env.MEMORY_VECTORS.insert([
+          {
+            id: record.id,
+            values: record.embedding,
+            metadata: {
+              // Store minimal metadata for filtering if needed
+              type: "semantic",
+              createdAt: record.createdAt,
+            },
+          },
+        ]);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, `Database error: ${msg}`);
+    }
+    return json({ success: true, id: record.id, receipt, status: "written" });
+  }
 });
 
 router.get("/v1/semantic/search", withAuth, async (request, env) => {
@@ -387,6 +408,31 @@ router.get("/v1/semantic/search", withAuth, async (request, env) => {
     .sort((a, b) => b.score - a.score);
 
   return json(hydrated);
+});
+
+// --- Media (R2) ---
+
+router.put("/v1/media/:key", withAuth, async (request, env) => {
+  if (!env.MEDIA_BUCKET) return error(503, "R2 not configured");
+  const key = request.params.key;
+
+  // Check allow-list or size limits if needed
+  const object = await env.MEDIA_BUCKET.put(key, request.body);
+  return json({ success: true, key: object?.key });
+});
+
+router.get("/v1/media/:key", withAuth, async (request, env) => {
+  if (!env.MEDIA_BUCKET) return error(503, "R2 not configured");
+  const key = request.params.key;
+
+  const object = await env.MEDIA_BUCKET.get(key);
+  if (!object) return error(404, "Not found");
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+
+  return new Response(object.body, { headers });
 });
 
 // --- Identity ---

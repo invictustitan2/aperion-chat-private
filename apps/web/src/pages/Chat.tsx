@@ -1,18 +1,51 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Send, AlertCircle, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
-import { api } from '../lib/api';
-import { clsx } from 'clsx';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clsx } from "clsx";
+import {
+  AlertCircle,
+  ImageIcon,
+  Loader2,
+  Send,
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { api } from "../lib/api";
 
 export function Chat() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isMemoryWriteEnabled, setIsMemoryWriteEnabled] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const { key } = await api.media.upload(file);
+      const url = api.media.getUrl(key);
+      const markdown = `![${file.name}](${url})`;
+
+      setInput((prev) => (prev ? `${prev}\n${markdown}` : markdown));
+    } catch (err) {
+      console.error("Upload failed", err);
+      // alert('Failed to upload image'); // Avoid alert in production?
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   // Fetch recent episodic memories as "chat history"
-  const { data: history, isLoading, error } = useQuery({
-    queryKey: ['episodic'],
+  const {
+    data: history,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["episodic"],
     queryFn: () => api.episodic.list(50),
     refetchInterval: 5000, // Poll for updates
   });
@@ -22,8 +55,8 @@ export function Chat() {
     mutationFn: async (text: string) => {
       // 1. Always write episodic
       const episodicRes = await api.episodic.create(text, {
-        source_type: 'user',
-        source_id: 'operator',
+        source_type: "user",
+        source_id: "operator",
         timestamp: Date.now(),
         confidence: 1.0,
       });
@@ -31,8 +64,8 @@ export function Chat() {
       // 2. Optional: Write semantic if enabled
       if (isMemoryWriteEnabled) {
         await api.semantic.create(text, [episodicRes.id], {
-          source_type: 'user',
-          source_id: 'operator',
+          source_type: "user",
+          source_id: "operator",
           timestamp: Date.now(),
           confidence: 1.0,
         });
@@ -41,9 +74,9 @@ export function Chat() {
       return episodicRes;
     },
     onSuccess: () => {
-      setInput('');
-      queryClient.invalidateQueries({ queryKey: ['episodic'] });
-      queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      setInput("");
+      queryClient.invalidateQueries({ queryKey: ["episodic"] });
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
     },
   });
 
@@ -66,21 +99,27 @@ export function Chat() {
       <header className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur">
         <div>
           <h1 className="text-2xl font-bold text-white">Operator Chat</h1>
-          <p className="text-gray-400 text-sm">Secure channel • Episodic logging active</p>
+          <p className="text-gray-400 text-sm">
+            Secure channel • Episodic logging active
+          </p>
         </div>
-        
+
         <button
           onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
           className={clsx(
             "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
-            isMemoryWriteEnabled 
-              ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400" 
-              : "bg-gray-800 border-gray-700 text-gray-400"
+            isMemoryWriteEnabled
+              ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
+              : "bg-gray-800 border-gray-700 text-gray-400",
           )}
         >
-          {isMemoryWriteEnabled ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+          {isMemoryWriteEnabled ? (
+            <ToggleRight className="w-5 h-5" />
+          ) : (
+            <ToggleLeft className="w-5 h-5" />
+          )}
           <span className="text-sm font-medium">
-            Semantic Write: {isMemoryWriteEnabled ? 'ON' : 'OFF'}
+            Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
           </span>
         </button>
       </header>
@@ -98,7 +137,10 @@ export function Chat() {
           </div>
         ) : (
           history?.map((msg) => (
-            <div key={msg.id} className="flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2">
+            <div
+              key={msg.id}
+              className="flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2"
+            >
               <div className="flex items-baseline gap-2">
                 <span className="text-xs font-mono text-gray-500">
                   {new Date(msg.createdAt).toLocaleTimeString()}
@@ -113,7 +155,7 @@ export function Chat() {
             </div>
           ))
         )}
-        
+
         {/* Optimistic / Pending Message */}
         {sendMessage.isPending && (
           <div className="flex flex-col gap-1 opacity-50">
@@ -135,8 +177,30 @@ export function Chat() {
             Failed to send: {sendMessage.error.message}
           </div>
         )}
-        
-        <form onSubmit={handleSubmit} className="flex gap-4">
+
+        <form onSubmit={handleSubmit} className="flex gap-4 items-center">
+          {/* Image Upload */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileSelect}
+          />
+          <button
+            type="button"
+            className="p-2 text-gray-400 hover:text-emerald-400 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach Image"
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <ImageIcon className="w-5 h-5" />
+            )}
+          </button>
+
           <input
             type="text"
             value={input}

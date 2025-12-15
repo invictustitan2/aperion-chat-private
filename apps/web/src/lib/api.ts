@@ -1,4 +1,8 @@
-import { EpisodicRecord, IdentityRecord } from "@aperion/memory-core";
+import {
+  EpisodicRecord,
+  IdentityRecord,
+  ReceiptRecord,
+} from "@aperion/memory-core";
 import { logApiError } from "./errorLog";
 
 const API_BASE_URL =
@@ -151,14 +155,53 @@ export const api = {
     },
   },
   receipts: {
-    list: async (limit = 50): Promise<Receipt[]> => {
-      return fetchJson(
-        `${API_BASE_URL}/v1/receipts?limit=${limit}`,
+    list: (limit = 50, since = 0) =>
+      fetchJson<ReceiptRecord[]>(
+        `${API_BASE_URL}/v1/receipts?limit=${limit}&since=${since}`,
         { headers },
-        {
-          friendlyName: "Fetch receipts",
+        { friendlyName: "Fetch receipts" },
+      ),
+  },
+
+  media: {
+    upload: async (file: File): Promise<{ success: boolean; key: string }> => {
+      // We are actually using PUT /v1/media/:key with body as file content directly for R2
+      // But let's check our index.ts implementation.
+      // router.put("/v1/media/:key", ... body is request.body)
+      // So client should generate a key (or server should?).
+      // The current backend PUT implementation takes :key in param.
+      // Let's generate a random key here or use filename if unique enough.
+      const key = `${Date.now()}-${file.name}`;
+
+      const res = await fetch(`${API_BASE_URL}/v1/media/${key}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          // Content-Type might be set automatically or we set it
         },
-      );
+        body: file,
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+      return res.json();
     },
+    getUrl: (key: string) => `${API_BASE_URL}/v1/media/${key}`,
+  },
+
+  dev: {
+    logs: (limit = 100) =>
+      fetchJson<DevLog[]>(
+        `${API_BASE_URL}/api/dev/logs?limit=${limit}`,
+        { headers },
+        { friendlyName: "Fetch dev logs" },
+      ),
+    clear: () =>
+      fetchJson<{ success: boolean }>(
+        `${API_BASE_URL}/api/dev/logs/clear`,
+        { method: "POST", headers },
+        { friendlyName: "Clear dev logs" },
+      ),
   },
 };

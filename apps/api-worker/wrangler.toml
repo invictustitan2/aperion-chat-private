@@ -25,3 +25,12 @@ index_name = "aperion-vectors"
 
 [ai]
 binding = "AI"
+
+[[queues]]
+binding = "MEMORY_QUEUE"
+queue_name = "aperion-memory-queue"
+consumers = [{ queue = "aperion-memory-queue", max_batch_size = 10, max_batch_timeout = 5 }]
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "aperion-media"
