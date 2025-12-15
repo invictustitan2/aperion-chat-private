@@ -6,3 +6,5 @@ export interface BaseRecord {
 }
 
 export * from "./hash.js";
+
+export * from "./shortcuts.js";

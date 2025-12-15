@@ -16,6 +16,13 @@ describe("API Worker", () => {
       vars: { API_TOKEN },
       d1Databases: ["MEMORY_DB"],
     });
+
+    // Warm up the Worker bundle/boot so individual tests don't hit startup/compile latency.
+    await worker.fetch("/v1/runbooks/hash", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${API_TOKEN}` },
+      body: "warmup",
+    });
   }, 30000);
 
   afterAll(async () => {

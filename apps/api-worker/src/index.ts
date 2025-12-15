@@ -7,11 +7,17 @@ import {
 import { MemoryWriteGate } from "@aperion/policy";
 import { computeHash, hashRunbookTask } from "@aperion/shared";
 import { AutoRouter, IRequest, error, json } from "itty-router";
+import { errorHandler } from "./middleware/errorHandler";
+import { bytesToBase64 } from "./lib/base64";
 
 export interface Env {
   MEMORY_DB: D1Database;
   CACHE_KV: KVNamespace;
   API_TOKEN: string;
+  GOOGLE_CLOUD_PROJECT_ID?: string;
+  GOOGLE_APPLICATION_CREDENTIALS_JSON?: string;
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
 }
 
 // Helper to validate auth
@@ -111,6 +117,120 @@ router.get("/v1/episodic", withAuth, async (request, env) => {
   }));
 
   return json(parsed);
+});
+
+// --- Voice Chat ---
+
+async function handleVoiceChat(request: IRequest, env: Env) {
+  // Note: request is already authenticated by `withAuth`.
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("multipart/form-data")) {
+    return error(
+      400,
+      "Expected multipart/form-data with an 'audio' file field",
+    );
+  }
+
+  const form = await request.formData();
+  const audio = form.get("audio");
+  if (!(audio instanceof File)) {
+    return error(400, "Missing 'audio' file");
+  }
+
+  const { transcribeAudio } = await import("./lib/speechToText");
+  const { synthesizeSpeech } = await import("./lib/textToSpeech");
+  const { generateAssistantReply } = await import("./lib/gemini");
+
+  const bytes = new Uint8Array(await audio.arrayBuffer());
+  const userText = await transcribeAudio({ bytes }, false, {
+    GOOGLE_APPLICATION_CREDENTIALS_JSON:
+      env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+  });
+
+  if (!userText.trim()) {
+    return error(400, "Speech-to-text produced empty transcription");
+  }
+
+  // For now, voice-chat mirrors the existing "Operator Chat" behavior: it logs an episodic record.
+  const provenance: MemoryProvenance = {
+    source_type: "user",
+    source_id: "operator",
+    timestamp: Date.now(),
+    confidence: 1.0,
+  };
+
+  const receipt = MemoryWriteGate.shouldWriteEpisodic({
+    content: userText,
+    provenance,
+  });
+
+  await env.MEMORY_DB.prepare(
+    "INSERT INTO receipts (id, timestamp, decision, reason_codes, inputs_hash) VALUES (?, ?, ?, ?, ?)",
+  )
+    .bind(
+      crypto.randomUUID(),
+      receipt.timestamp,
+      receipt.decision,
+      JSON.stringify(receipt.reasonCodes),
+      receipt.inputsHash,
+    )
+    .run();
+
+  if (receipt.decision !== "allow") {
+    return error(403, `Policy denied: ${JSON.stringify(receipt.reasonCodes)}`);
+  }
+
+  const record: EpisodicRecord = {
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+    type: "episodic",
+    content: userText,
+    provenance,
+    hash: "",
+  };
+  record.hash = computeHash(record);
+
+  await env.MEMORY_DB.prepare(
+    "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
+  )
+    .bind(
+      record.id,
+      record.createdAt,
+      record.content,
+      JSON.stringify(record.provenance),
+      record.hash,
+    )
+    .run();
+
+  const assistantText =
+    (await generateAssistantReply(userText, {
+      GEMINI_API_KEY: env.GEMINI_API_KEY,
+      GEMINI_MODEL: env.GEMINI_MODEL,
+    })) || "";
+
+  if (!assistantText.trim()) {
+    return error(502, "LLM produced an empty response");
+  }
+  const audioBytes = await synthesizeSpeech(assistantText, {
+    GOOGLE_APPLICATION_CREDENTIALS_JSON:
+      env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+  });
+
+  return json({
+    userText,
+    assistantText,
+    audio: bytesToBase64(audioBytes),
+    episodicId: record.id,
+  });
+}
+
+router.post("/v1/voice-chat", withAuth, async (request, env) => {
+  return handleVoiceChat(request, env);
+});
+
+// Back-compat alias with the "expected prompt" naming.
+router.post("/api/voice-chat", withAuth, async (request, env) => {
+  return handleVoiceChat(request, env);
 });
 
 // --- Semantic ---
@@ -228,10 +348,10 @@ router.post("/v1/identity", withAuth, async (request, env) => {
   try {
     // Upsert for identity
     await env.MEMORY_DB.prepare(
-      `INSERT INTO identity (key, id, created_at, value, provenance, hash, last_verified) 
+      `INSERT INTO identity (key, id, created_at, value, provenance, hash, last_verified)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(key) DO UPDATE SET
-       id=excluded.id, created_at=excluded.created_at, value=excluded.value, 
+       id=excluded.id, created_at=excluded.created_at, value=excluded.value,
        provenance=excluded.provenance, hash=excluded.hash, last_verified=excluded.last_verified`,
     )
       .bind(
@@ -304,5 +424,11 @@ router.get("/v1/receipts", withAuth, async (request, env) => {
 });
 
 export default {
-  fetch: router.fetch,
+  fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
+    try {
+      return await router.fetch(request as IRequest, env, ctx);
+    } catch (err) {
+      return errorHandler(err);
+    }
+  },
 };

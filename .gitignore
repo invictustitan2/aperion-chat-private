@@ -8,6 +8,10 @@ dist/
 coverage/
 .mise.toml
 
+# Test artifacts
+playwright-report/
+test-results/
+
 # Logs and Secrets
 *.log
 .dev.vars

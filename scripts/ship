@@ -13,12 +13,12 @@ if [[ -n $(git status --porcelain) ]]; then
   else
     COMMIT_MSG="$1"
   fi
-  
+
   if [ -z "$COMMIT_MSG" ]; then
     echo "❌ Commit message required."
     exit 1
   fi
-  
+
   git add .
   git commit -m "$COMMIT_MSG"
 fi
@@ -37,11 +37,11 @@ RUN_ID=""
 for i in $(seq 1 $MAX_RETRIES); do
   # Try to find a run for this specific commit
   RUN_ID=$(gh run list --commit "$CURRENT_SHA" --limit 1 --json databaseId --jq '.[0].databaseId')
-  
+
   if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
     break
   fi
-  
+
   echo -n "."
   sleep 2
 done
