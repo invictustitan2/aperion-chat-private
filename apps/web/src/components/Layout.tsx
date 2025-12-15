@@ -1,13 +1,12 @@
-import React from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { clsx } from "clsx";
 import {
-  MessageSquare,
+  AlertTriangle,
   Brain,
   FileText,
+  MessageSquare,
   Shield,
-  AlertTriangle,
 } from "lucide-react";
-import { clsx } from "clsx";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 export function Layout() {
   const location = useLocation();
@@ -16,7 +15,7 @@ export function Layout() {
     { path: "/chat", label: "Chat", icon: MessageSquare },
     { path: "/memory", label: "Memory", icon: Brain },
     { path: "/receipts", label: "Receipts", icon: FileText },
-    { path: "/errors", label: "Errors", icon: AlertTriangle },
+    { path: "/status", label: "System Status", icon: AlertTriangle },
   ];
 
   return (

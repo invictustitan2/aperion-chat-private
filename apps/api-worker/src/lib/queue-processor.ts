@@ -15,7 +15,7 @@ export type MemoryQueueMessage =
     };
 
 export async function processMemoryBatch(
-  messages: Message<MemoryQueueMessage>[],
+  messages: readonly Message<MemoryQueueMessage>[],
   env: Env,
 ): Promise<void> {
   for (const message of messages) {

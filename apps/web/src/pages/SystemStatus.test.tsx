@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearErrorEntries, logApiError } from "../lib/errorLog";
-import { Errors } from "./Errors";
+import { SystemStatus } from "./SystemStatus";
 
 // Mock the API to avoid network calls and provide test data
 vi.mock("../lib/api", () => ({
@@ -30,7 +30,7 @@ function renderWithClient(ui: React.ReactNode) {
   );
 }
 
-describe("Errors page", () => {
+describe("SystemStatus page", () => {
   beforeEach(() => {
     clearErrorEntries();
     // Clear localStorage mock if jsdom supports it fully, usually window.localStorage is enough
@@ -39,7 +39,7 @@ describe("Errors page", () => {
   });
 
   it("shows empty state", async () => {
-    renderWithClient(<Errors />);
+    renderWithClient(<SystemStatus />);
     expect(
       await screen.findByText("No logs found for this filter."),
     ).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("Errors page", () => {
       message: "Unauthorized",
       responseBody: '{"error":"Unauthorized"}',
     });
-    renderWithClient(<Errors />);
+    renderWithClient(<SystemStatus />);
 
     // It should appear in the list (might need to wait for client/server merge memo)
     expect(await screen.findByText("Unauthorized")).toBeInTheDocument();
