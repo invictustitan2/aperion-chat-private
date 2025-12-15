@@ -11,6 +11,7 @@
 
 - **Always progressive**: Never remove features; only improve.
 - **Tests required**: Every new module/function must have tests; no placeholders; all tests must pass.
+- **Reliability First**: See [Reliability Plan](./docs/RELIABILITY_PLAN.md) and [Dev Tools](./docs/dev-tools.md).
 
 ## Setup
 

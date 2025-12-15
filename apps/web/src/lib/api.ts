@@ -68,7 +68,35 @@ export interface Receipt {
   reason: string;
 }
 
+export interface DevLog {
+  id: string;
+  timestamp: number;
+  level: string;
+  message: string;
+  stack_trace?: string;
+  metadata?: string;
+  source?: string;
+}
+
 export const api = {
+  dev: {
+    logs: async (limit = 100): Promise<DevLog[]> => {
+      return fetchJson(
+        `${API_BASE_URL}/api/dev/logs?limit=${limit}`,
+        { headers },
+        {
+          friendlyName: "Fetch dev logs",
+        },
+      );
+    },
+    clear: async (): Promise<{ success: boolean }> => {
+      return fetchJson(
+        `${API_BASE_URL}/api/dev/logs/clear`,
+        { method: "POST", headers },
+        { friendlyName: "Clear dev logs" },
+      );
+    },
+  },
   episodic: {
     list: async (limit = 50): Promise<EpisodicRecord[]> => {
       return fetchJson(

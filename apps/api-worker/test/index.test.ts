@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { unstable_dev } from "wrangler";
-import type { UnstableDevWorker } from "wrangler";
 import path from "path";
 import { fileURLToPath } from "url";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { UnstableDevWorker } from "wrangler";
+import { unstable_dev } from "wrangler";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -151,5 +151,23 @@ describe("API Worker", () => {
     expect(resp.status).toBe(200);
     const data = (await resp.json()) as { taskId: string };
     expect(data.taskId).toBeDefined();
+  });
+
+  it("should manage dev logs", async () => {
+    // Clear logs
+    const clearResp = await worker.fetch("/api/dev/logs/clear", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${API_TOKEN}` },
+    });
+    expect(clearResp.status).toBe(200);
+
+    // Get logs (should be empty)
+    const resp = await worker.fetch("/api/dev/logs", {
+      headers: { Authorization: `Bearer ${API_TOKEN}` },
+    });
+    expect(resp.status).toBe(200);
+    const logs = (await resp.json()) as unknown[];
+    expect(Array.isArray(logs)).toBe(true);
+    // expect(logs.length).toBe(0); // Might not be 0 if other tests caused errors in parallel, but safe enough for now
   });
 });

@@ -423,11 +423,50 @@ router.get("/v1/receipts", withAuth, async (request, env) => {
   );
 });
 
+router.get("/api/dev/logs", withAuth, async (request, env) => {
+  try {
+    const { results } = await env.MEMORY_DB.prepare(
+      "SELECT * FROM dev_logs ORDER BY timestamp DESC LIMIT 100",
+    ).all();
+    return json(results);
+  } catch (e) {
+    // If table doesn't exist yet or other error, return empty
+    console.error(e);
+    return json([]);
+  }
+});
+
+router.post("/api/dev/logs/clear", withAuth, async (request, env) => {
+  await env.MEMORY_DB.prepare("DELETE FROM dev_logs").run();
+  return json({ success: true });
+});
+
 export default {
   fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
     try {
       return await router.fetch(request as IRequest, env, ctx);
-    } catch (err) {
+    } catch (err: unknown) {
+      try {
+        const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error ? err.stack : undefined;
+        ctx.waitUntil(
+          env.MEMORY_DB.prepare(
+            "INSERT INTO dev_logs (id, timestamp, level, message, stack_trace, source) VALUES (?, ?, ?, ?, ?, ?)",
+          )
+            .bind(
+              crypto.randomUUID(),
+              Date.now(),
+              "ERROR",
+              message,
+              stack,
+              "api-worker",
+            )
+            .run(),
+        );
+      } catch (logErr) {
+        console.error("Failed to log error to DB", logErr);
+      }
+
       return errorHandler(err);
     }
   },

@@ -53,8 +53,81 @@ echo "� Tip: Use 'ship' to commit, push, and watch CI."
 echo "🐚 Spawning shell..."
 echo ""
 
-# Add scripts to PATH so 'ship' works directly
+# Additional Dev Shell Commands (Functions exported to subshell)
+function ship() {
+    echo '🚀 Running verification pipeline...'
+    pnpm typecheck && pnpm lint && pnpm test && echo '✅ Ready to Ship!'
+}
+export -f ship
+
+function verify() {
+    pnpm typecheck && pnpm lint && pnpm test
+}
+export -f verify
+
+function test_suite() {
+    pnpm test
+}
+export -f test_suite
+
+function e2e() {
+    pnpm test:e2e
+}
+export -f e2e
+
+function logs() {
+    wrangler tail --name aperion-api-worker
+}
+export -f logs
+
+function db_local() {
+    wrangler d1 execute aperion-memory --local --command "$@"
+}
+export -f db_local
+
+function plan() {
+    cat docs/RELIABILITY_PLAN.md
+}
+export -f plan
+
+function ci_watch() {
+    gh run watch
+}
+export -f ci_watch
+
+function ci_list() {
+    gh run list
+}
+export -f ci_list
+
+function prev_url() {
+    # Tries to find the latest comment from github-actions with a preview link
+    gh pr view --json comments --jq '.comments[].body' | grep -o 'https://.*\.pages\.dev' | tail -n 1
+}
+export -f prev_url
+
+# Helper function
+function help_dev() {
+    echo "🛠️  Dev Shell Commands:"
+    echo "  verify      - Run typecheck, lint, and unit tests"
+    echo "  ship        - Full verification before git push"
+    echo "  e2e         - Run Playwright E2E tests"
+    echo "  logs        - Tail production logs (requires login)"
+    echo "  plan        - View Reliability Plan"
+    echo "  test_suite  - Run Vitest"
+    echo "  ci_watch    - Watch current GitHub Action run"
+    echo "  ci_list     - List recent GitHub Action runs"
+    echo "  prev_url    - Get latest Preview Deployment URL from PR"
+}
+export -f help_dev
+
 export PATH="$PWD/scripts:$PATH"
+
+echo "================================================================"
+echo "✅ Environment loaded. Strict mode enabled."
+echo "ℹ️  Type 'help_dev' to see available commands."
+echo "🐚 Spawning shell..."
+echo ""
 
 # Spawn a new shell with the environment variables
 exec "${SHELL:-bash}"

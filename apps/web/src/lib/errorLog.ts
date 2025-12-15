@@ -1,4 +1,4 @@
-export type ErrorKind = "api" | "runtime";
+export type ErrorKind = "api" | "runtime" | "server";
 
 export type ErrorEntry = {
   id: string;
