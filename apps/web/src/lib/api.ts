@@ -1,8 +1,4 @@
-import {
-  EpisodicRecord,
-  IdentityRecord,
-  ReceiptRecord,
-} from "@aperion/memory-core";
+import { EpisodicRecord, IdentityRecord } from "@aperion/memory-core";
 import { logApiError } from "./errorLog";
 
 const API_BASE_URL =
@@ -17,6 +13,26 @@ const headers = {
   "Content-Type": "application/json",
   Authorization: `Bearer ${AUTH_TOKEN}`,
 };
+
+// Define ReceiptRecord if missing from core
+export interface ReceiptRecord {
+  id: string;
+  timestamp: number;
+  action: "allow" | "deny" | "defer";
+  allowed: boolean;
+  reason: string;
+  reason_codes?: string[];
+}
+
+export interface DevLog {
+  id: string;
+  timestamp: number;
+  level: string;
+  message: string;
+  stack_trace?: string;
+  metadata?: string;
+  source?: string;
+}
 
 async function fetchJson<T>(
   url: string,
@@ -64,43 +80,7 @@ async function fetchJson<T>(
   }
 }
 
-export interface Receipt {
-  id: string;
-  timestamp: number;
-  action: string;
-  allowed: boolean;
-  reason: string;
-}
-
-export interface DevLog {
-  id: string;
-  timestamp: number;
-  level: string;
-  message: string;
-  stack_trace?: string;
-  metadata?: string;
-  source?: string;
-}
-
 export const api = {
-  dev: {
-    logs: async (limit = 100): Promise<DevLog[]> => {
-      return fetchJson(
-        `${API_BASE_URL}/api/dev/logs?limit=${limit}`,
-        { headers },
-        {
-          friendlyName: "Fetch dev logs",
-        },
-      );
-    },
-    clear: async (): Promise<{ success: boolean }> => {
-      return fetchJson(
-        `${API_BASE_URL}/api/dev/logs/clear`,
-        { method: "POST", headers },
-        { friendlyName: "Clear dev logs" },
-      );
-    },
-  },
   episodic: {
     list: async (limit = 50): Promise<EpisodicRecord[]> => {
       return fetchJson(
@@ -162,15 +142,8 @@ export const api = {
         { friendlyName: "Fetch receipts" },
       ),
   },
-
   media: {
     upload: async (file: File): Promise<{ success: boolean; key: string }> => {
-      // We are actually using PUT /v1/media/:key with body as file content directly for R2
-      // But let's check our index.ts implementation.
-      // router.put("/v1/media/:key", ... body is request.body)
-      // So client should generate a key (or server should?).
-      // The current backend PUT implementation takes :key in param.
-      // Let's generate a random key here or use filename if unique enough.
       const key = `${Date.now()}-${file.name}`;
 
       const res = await fetch(`${API_BASE_URL}/v1/media/${key}`, {
@@ -189,7 +162,6 @@ export const api = {
     },
     getUrl: (key: string) => `${API_BASE_URL}/v1/media/${key}`,
   },
-
   dev: {
     logs: (limit = 100) =>
       fetchJson<DevLog[]>(
