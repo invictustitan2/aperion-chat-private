@@ -27,11 +27,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Verify (Lint, Typecheck, Unit Tests)
-        run: pnpm verify
-
       - name: Apply D1 Migrations (Local)
         run: cd apps/api-worker && npx wrangler d1 migrations apply aperion-memory --local
+
+      - name: Verify (Lint, Typecheck, Unit Tests)
+        run: pnpm verify
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
