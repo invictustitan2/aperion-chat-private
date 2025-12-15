@@ -18,3 +18,10 @@ id = "212d43171f574b06b22f6fa4f24ca8a1"
 
 [vars]
 # API_TOKEN will be set via secrets
+
+[[vectorize]]
+binding = "MEMORY_VECTORS"
+index_name = "aperion-vectors"
+
+[ai]
+binding = "AI"

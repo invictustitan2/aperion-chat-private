@@ -27,19 +27,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
       - name: Apply D1 Migrations (Local)
         run: cd apps/api-worker && npx wrangler d1 migrations apply aperion-memory --local
 
-      - name: Unit Tests
-        run: pnpm test
+      - name: Verify (Lint, Typecheck, Unit Tests)
+        run: pnpm verify
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test | grep @playwright/test | sed 's/.*@playwright\/test //')" >> $GITHUB_ENV
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
 
       - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps
 
       - name: E2E Tests
