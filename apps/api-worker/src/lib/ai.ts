@@ -1,5 +1,3 @@
-import { Ai } from "@cloudflare/workers-types";
-
 export interface AiConfig {
   binding: Ai;
   embeddingModel: string;
