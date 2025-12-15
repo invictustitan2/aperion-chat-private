@@ -26,10 +26,14 @@ index_name = "aperion-vectors"
 [ai]
 binding = "AI"
 
-[[queues]]
+[[queues.producers]]
 binding = "MEMORY_QUEUE"
-queue_name = "aperion-memory-queue"
-consumers = [{ queue = "aperion-memory-queue", max_batch_size = 10, max_batch_timeout = 5 }]
+queue = "aperion-memory-queue"
+
+[[queues.consumers]]
+queue = "aperion-memory-queue"
+max_batch_size = 10
+max_batch_timeout = 5
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
