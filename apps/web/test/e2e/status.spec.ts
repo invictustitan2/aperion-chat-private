@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("errors page shows empty state", async ({ page }) => {
+test("system status page shows empty state", async ({ page }) => {
   // Mock API to return empty logs
   await page.route("**/api/dev/logs*", async (route) => {
     const headers = {
@@ -13,7 +13,7 @@ test("errors page shows empty state", async ({ page }) => {
     await route.fulfill({ headers, json: [] });
   });
 
-  await page.goto("/errors");
+  await page.goto("/status");
   await expect(
     page.getByRole("heading", { name: "Debug Console", level: 1 }),
   ).toBeVisible();

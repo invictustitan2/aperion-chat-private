@@ -1,11 +1,10 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Chat } from "./pages/Chat";
 import { Memory } from "./pages/Memory";
 import { Receipts } from "./pages/Receipts";
-import { Errors } from "./pages/Errors";
+import { SystemStatus } from "./pages/SystemStatus";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +25,8 @@ function App() {
             <Route path="chat" element={<Chat />} />
             <Route path="memory" element={<Memory />} />
             <Route path="receipts" element={<Receipts />} />
-            <Route path="errors" element={<Errors />} />
+            <Route path="errors" element={<Navigate to="/status" replace />} />
+            <Route path="status" element={<SystemStatus />} />
           </Route>
         </Routes>
       </BrowserRouter>

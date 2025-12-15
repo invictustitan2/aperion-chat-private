@@ -9,7 +9,9 @@ import { computeHash, hashRunbookTask } from "@aperion/shared";
 import { AutoRouter, IRequest, error, json } from "itty-router";
 import { generateEmbedding } from "./lib/ai";
 import { bytesToBase64 } from "./lib/base64";
-import { MemoryQueueMessage } from "./lib/queue-processor";
+import { cleanupLogs } from "./lib/janitor";
+
+import { MemoryQueueMessage, processMemoryBatch } from "./lib/queue-processor";
 import { errorHandler } from "./middleware/errorHandler";
 
 export interface Env {
@@ -574,6 +576,8 @@ router.post("/api/dev/logs/clear", withAuth, async (request, env) => {
   return json({ success: true });
 });
 
+// ... existing imports ...
+
 export default {
   fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
     try {
@@ -602,5 +606,15 @@ export default {
 
       return errorHandler(err);
     }
+  },
+  queue: async (batch: MessageBatch<MemoryQueueMessage>, env: Env) => {
+    await processMemoryBatch(batch.messages, env);
+  },
+  scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    ctx.waitUntil(
+      cleanupLogs(env).then((res) =>
+        console.log(`Deleted ${res.deleted} logs`),
+      ),
+    );
   },
 };

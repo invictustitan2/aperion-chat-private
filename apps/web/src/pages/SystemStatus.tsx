@@ -82,7 +82,7 @@ function EntryRow({ entry }: { entry: DisplayEntry }) {
   );
 }
 
-export function Errors() {
+export function SystemStatus() {
   const [version, setVersion] = useState(0);
   const [filter, setFilter] = useState<"all" | "client" | "server">("all");
   const queryClient = useQueryClient();
