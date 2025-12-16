@@ -1,0 +1,22 @@
+import { IRequest } from "itty-router";
+
+export function getCorsHeaders(request: IRequest): Record<string, string> {
+  const origin = request.headers.get("Origin") || "";
+
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://chat.aperion.cc",
+  ];
+
+  const isPreviewDeploy = origin.endsWith(".pages.dev");
+  const isAllowed = allowedOrigins.includes(origin) || isPreviewDeploy;
+
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[2],
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    "Access-Control-Allow-Credentials": "true",
+  };
+}

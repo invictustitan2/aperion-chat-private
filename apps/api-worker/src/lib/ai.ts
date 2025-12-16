@@ -67,12 +67,33 @@ export interface ChatMessage {
  * Generate a chat completion using Workers AI
  * @param taskType - Determines model selection and limits (default: "chat")
  */
+export interface AiToolDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: string;
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+export interface AiToolCall {
+  name: string;
+  arguments: Record<string, unknown>;
+  id?: string;
+}
+
+/**
+ * Generate a chat completion using Workers AI
+ * @param taskType - Determines model selection and limits (default: "chat")
+ */
 export async function generateChatCompletion(
   ai: Ai,
   messages: ChatMessage[],
   systemPrompt?: string,
   taskType: TaskType = "chat",
-): Promise<string> {
+  tools?: AiToolDefinition[],
+): Promise<{ response: string; tool_calls?: AiToolCall[] }> {
   const limits = AI_LIMITS[taskType];
   const model = taskType === "reasoning" ? AI_MODELS.reasoning : AI_MODELS.chat;
 
@@ -84,15 +105,27 @@ export async function generateChatCompletion(
     : trimmedMessages;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await ai.run(model as any, {
+  const input: any = {
     messages: fullMessages,
     max_tokens: limits.maxTokens,
-  });
+  };
 
-  // Workers AI returns { response: string } for text generation
-  const result = response as { response?: string };
-  if (!result.response) {
+  if (tools && tools.length > 0) {
+    input.tools = tools;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await ai.run(model as any, input);
+
+  // Workers AI returns { response: string, tool_calls?: [...] } for function calling models
+  const result = response as { response?: string; tool_calls?: AiToolCall[] };
+
+  if (!result.response && !result.tool_calls) {
     throw new Error("Failed to generate chat completion");
   }
-  return result.response;
+
+  return {
+    response: result.response || "",
+    tool_calls: result.tool_calls,
+  };
 }

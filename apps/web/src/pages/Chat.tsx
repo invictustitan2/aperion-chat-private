@@ -255,38 +255,40 @@ export function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-full" ref={chatContainerRef}>
+    <div className="flex flex-col h-full relative" ref={chatContainerRef}>
       {/* Header */}
-      <header className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur">
+      <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
         <div>
-          <h1 className="text-2xl font-bold text-white">Operator Chat</h1>
-          <p className="text-gray-400 text-sm">
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+            Operator Chat
+          </h1>
+          <p className="text-gray-400 text-xs md:text-sm">
             Secure channel • Episodic logging active
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 self-end md:self-auto">
           {/* Export Button */}
           <button
             onClick={handleExport}
             disabled={isExporting || !history?.length}
             className={clsx(
-              "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
+              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
               isExporting
-                ? "bg-gray-800 border-gray-700 text-gray-500"
+                ? "bg-white/5 border-white/10 text-gray-500"
                 : exportSuccess
-                  ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                  : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200",
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
             )}
           >
             {isExporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
             ) : exportSuccess ? (
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
             ) : (
-              <Download className="w-4 h-4" />
+              <Download className="w-3 h-3 md:w-4 md:h-4" />
             )}
-            <span className="text-sm font-medium">
+            <span className="font-medium">
               {isExporting
                 ? "Exporting..."
                 : exportSuccess
@@ -299,18 +301,18 @@ export function Chat() {
           <button
             onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
             className={clsx(
-              "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
+              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
               isMemoryWriteEnabled
-                ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                : "bg-gray-800 border-gray-700 text-gray-400",
+                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
             )}
           >
             {isMemoryWriteEnabled ? (
-              <ToggleRight className="w-5 h-5" />
+              <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
             ) : (
-              <ToggleLeft className="w-5 h-5" />
+              <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
             )}
-            <span className="text-sm font-medium">
+            <span className="font-medium">
               Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
             </span>
           </button>
@@ -319,51 +321,70 @@ export function Chat() {
 
       {/* Export Error Message */}
       {exportError && (
-        <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 flex items-center gap-2 text-sm">
+        <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
           <AlertCircle className="w-4 h-4" />
           {exportError}
         </div>
       )}
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef}>
+      <div
+        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
+        ref={scrollRef}
+      >
         {isLoading ? (
           <div className="flex justify-center py-10">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           </div>
         ) : error ? (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 flex items-center gap-3">
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
             <AlertCircle className="w-5 h-5" />
             <span>Error loading history: {error.message}</span>
           </div>
         ) : (
-          history?.map((msg) => (
-            <div
-              key={msg.id}
-              className="flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-2"
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="text-xs font-mono text-gray-500">
-                  {new Date(msg.createdAt).toLocaleTimeString()}
-                </span>
-                <span className="text-xs font-mono text-emerald-500/50">
-                  {msg.id.slice(0, 8)}
-                </span>
+          history?.map((msg) => {
+            const isUser = String(msg.provenance?.source_type) === "user";
+            return (
+              <div
+                key={msg.id}
+                className={clsx(
+                  "flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
+                  isUser ? "self-end items-end" : "self-start items-start",
+                )}
+              >
+                <div className="flex items-baseline gap-2 px-1">
+                  <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                    {isUser ? "You" : "Aperion"}
+                  </span>
+                  <span className="text-[10px] font-mono text-white/20">
+                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+                <div
+                  className={clsx(
+                    "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
+                    isUser
+                      ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
+                      : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
+                  )}
+                >
+                  {msg.content}
+                </div>
               </div>
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3 text-gray-200 max-w-3xl">
-                {msg.content}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
 
         {/* Optimistic / Pending Message */}
         {sendMessage.isPending && (
-          <div className="flex flex-col gap-1 opacity-50">
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3 text-gray-200 max-w-3xl">
+          <div className="flex flex-col gap-1 opacity-60 self-end items-end">
+            <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
               {input}
             </div>
-            <span className="text-xs text-emerald-500 flex items-center gap-1">
+            <span className="text-[10px] text-emerald-500 flex items-center gap-1">
               <Loader2 className="w-3 h-3 animate-spin" /> Sending...
             </span>
           </div>
@@ -371,15 +392,15 @@ export function Chat() {
       </div>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-gray-800 bg-gray-900">
+      <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))]">
         {sendMessage.isError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-sm text-red-400 flex items-center gap-2">
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             Failed to send: {sendMessage.error.message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex gap-4 items-center">
+        <form onSubmit={handleSubmit} className="flex gap-2 md:gap-3 items-end">
           {/* Image Upload */}
           <input
             type="file"
@@ -390,7 +411,7 @@ export function Chat() {
           />
           <button
             type="button"
-            className="p-2 text-gray-400 hover:text-emerald-400 transition-colors"
+            className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10"
             onClick={() => fileInputRef.current?.click()}
             title="Attach Image"
             disabled={isUploading}
@@ -406,12 +427,12 @@ export function Chat() {
           <button
             type="button"
             className={clsx(
-              "p-2 transition-colors rounded-full",
+              "p-3 transition-all rounded-full",
               isRecording
-                ? "bg-red-500 text-white animate-pulse"
+                ? "bg-red-500/80 text-white animate-pulse shadow-lg shadow-red-500/40"
                 : isProcessingVoice
                   ? "bg-purple-500/20 text-purple-400"
-                  : "text-gray-400 hover:text-purple-400",
+                  : "bg-white/5 text-gray-400 hover:text-purple-400 hover:bg-white/10",
             )}
             onClick={isRecording ? stopRecording : startRecording}
             disabled={isProcessingVoice}
@@ -426,28 +447,30 @@ export function Chat() {
             )}
           </button>
 
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-            disabled={sendMessage.isPending}
-          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type a message..."
+              className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+              disabled={sendMessage.isPending}
+            />
+          </div>
+
           <button
             type="submit"
             disabled={!input.trim() || sendMessage.isPending}
-            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
           >
-            <Send className="w-4 h-4" />
-            Send
+            <Send className="w-5 h-5" />
           </button>
         </form>
 
         {/* Voice Error */}
         {voiceError && (
-          <div className="mt-2 text-red-400 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
+          <div className="mt-2 text-red-400 text-xs flex items-center gap-2 px-2">
+            <AlertCircle className="w-3 h-3" />
             {voiceError}
           </div>
         )}

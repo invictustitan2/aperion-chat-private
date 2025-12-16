@@ -1,6 +1,6 @@
 import { EpisodicRecord, SemanticRecord } from "@aperion/memory-core";
 import { computeHash } from "@aperion/shared";
-import { Env } from "../index";
+import { Env } from "../types";
 import { generateChatCompletion, generateEmbedding } from "./ai";
 
 // Define the shape of messages sent to the queue
@@ -168,7 +168,7 @@ async function processSummarize(
   await env.MEMORY_DB.prepare(
     "UPDATE jobs SET status = 'completed', output = ?, updated_at = ? WHERE id = ?",
   )
-    .bind(JSON.stringify({ summary: response }), Date.now(), jobId)
+    .bind(JSON.stringify({ summary: response.response }), Date.now(), jobId)
     .run();
 }
 

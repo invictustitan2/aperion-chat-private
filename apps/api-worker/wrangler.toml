@@ -26,6 +26,14 @@ index_name = "aperion-vectors"
 [ai]
 binding = "AI"
 
+[[durable_objects.bindings]]
+name = "CHAT_STATE"
+class_name = "ChatState"
+
+[[migrations]]
+tag = "v1" # Should be unique for each migration
+new_classes = ["ChatState"]
+
 [[queues.producers]]
 binding = "MEMORY_QUEUE"
 queue = "aperion-memory-queue"
@@ -53,6 +61,10 @@ enabled = true
 head_sampling_rate = 1
 invocation_logs = true
 persist = true
+
+[[analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "aperion_metrics"
 
 # Test environment configuration
 # Minimal bindings for faster startup in tests

@@ -1,5 +1,5 @@
 import puppeteer from "@cloudflare/puppeteer";
-import { Env } from "../index";
+import { Env } from "../types";
 
 export async function renderChatToPdf(
   htmlContent: string,
