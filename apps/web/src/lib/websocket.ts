@@ -41,8 +41,8 @@ export class WebSocketClient {
   constructor(options: WebSocketClientOptions) {
     this.url = options.url;
     this.authToken = options.authToken;
-    this.reconnectInterval = options.reconnectInterval ?? 3000;
-    this.maxReconnectAttempts = options.maxReconnectAttempts ?? 5;
+    this.reconnectInterval = options.reconnectInterval ?? 5000;
+    this.maxReconnectAttempts = options.maxReconnectAttempts ?? 3;
     this.onMessage = options.onMessage;
     this.onConnect = options.onConnect;
     this.onDisconnect = options.onDisconnect;
@@ -64,7 +64,9 @@ export class WebSocketClient {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log("[WS] Connected to", this.url);
+        if (import.meta.env.DEV) {
+          console.log("[WS] Connected");
+        }
         this.reconnectAttempts = 0;
         this.startPing();
         this.onConnect?.();
@@ -75,12 +77,14 @@ export class WebSocketClient {
           const data = JSON.parse(event.data) as WebSocketMessage;
           this.onMessage?.(data);
         } catch {
-          console.warn("[WS] Failed to parse message:", event.data);
+          // Silently ignore parse errors
         }
       };
 
       this.ws.onclose = () => {
-        console.log("[WS] Disconnected");
+        if (import.meta.env.DEV) {
+          console.log("[WS] Disconnected");
+        }
         this.stopPing();
         this.onDisconnect?.();
 
@@ -89,11 +93,10 @@ export class WebSocketClient {
         }
       };
 
-      this.ws.onerror = (error) => {
-        console.error("[WS] Error:", error);
+      this.ws.onerror = () => {
+        // Silently handle errors - onclose will be called
       };
-    } catch (error) {
-      console.error("[WS] Failed to connect:", error);
+    } catch {
       this.attemptReconnect();
     }
   }
@@ -148,14 +151,18 @@ export class WebSocketClient {
 
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log("[WS] Max reconnect attempts reached");
+      if (import.meta.env.DEV) {
+        console.log("[WS] Max reconnect attempts reached");
+      }
       return;
     }
 
     this.reconnectAttempts++;
-    console.log(
-      `[WS] Reconnecting in ${this.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `[WS] Reconnecting in ${this.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+      );
+    }
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
