@@ -95,10 +95,11 @@ test.describe("Async Summarization", () => {
     await page.getByRole("button", { name: "Summarize with AI" }).click();
 
     // Verify Loading State
-    await expect(
-      page.getByRole("button", { name: "Summarizing..." }),
-    ).toBeVisible();
-    await expect(page.getByRole("button")).toBeDisabled();
+    const summarizeButton = page.getByRole("button", {
+      name: "Summarizing...",
+    });
+    await expect(summarizeButton).toBeVisible();
+    await expect(summarizeButton).toBeDisabled();
 
     // Verify Completion
     await expect(page.getByText("AI Summary")).toBeVisible({ timeout: 10000 });
