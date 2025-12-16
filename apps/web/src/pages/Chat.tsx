@@ -53,7 +53,7 @@ export function Chat() {
   // Mutation to send message
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
-      // 1. Always write episodic
+      // 1. Always write episodic (user message)
       const episodicRes = await api.episodic.create(text, {
         source_type: "user",
         source_id: "operator",
@@ -61,15 +61,19 @@ export function Chat() {
         confidence: 1.0,
       });
 
-      // 2. Optional: Write semantic if enabled
+      // 2. Optional: Write semantic if enabled (user explicitly confirmed via toggle)
       if (isMemoryWriteEnabled) {
         await api.semantic.create(text, [episodicRes.id], {
           source_type: "user",
           source_id: "operator",
           timestamp: Date.now(),
           confidence: 1.0,
+          explicit_confirm: true, // User toggled semantic write = explicit confirmation
         });
       }
+
+      // 3. Get AI response (which also stores in episodic memory)
+      await api.chat.send(text);
 
       return episodicRes;
     },

@@ -123,6 +123,22 @@ export const api = {
       );
     },
   },
+  chat: {
+    send: async (
+      message: string,
+      history?: Array<{ role: "user" | "assistant"; content: string }>,
+    ): Promise<{ id: string; response: string; timestamp: number }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/chat`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ message, history }),
+        },
+        { friendlyName: "Chat completion" },
+      );
+    },
+  },
   identity: {
     list: async (): Promise<IdentityRecord[]> => {
       return fetchJson(
