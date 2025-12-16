@@ -39,15 +39,15 @@ jobs:
         run: |
           cd apps/api-worker
           echo "=== Validating wrangler.toml configuration ==="
-          npx wrangler deploy --dry-run --env=test --outdir=./dist-test
+          npx wrangler deploy --dry-run --env="" --outdir=./dist-test
 
           echo ""
           echo "=== Checking for configuration errors ==="
-          npx wrangler deploy --dry-run --env=test 2>&1 | grep -i "error\|warning" || echo "No errors found"
+          npx wrangler deploy --dry-run --env="" 2>&1 | grep -i "error\|warning" || echo "No errors found"
 
           echo ""
           echo "=== Verifying worker can be bundled ==="
-          npx wrangler deploy --dry-run --env=test --minify=false
+          npx wrangler deploy --dry-run --env="" --minify=false
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
