@@ -115,8 +115,8 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 5.2 Keyboard Shortcuts
 
-- [ ] Add global keyboard shortcuts (e.g., Cmd+K for search, Cmd+N for new chat).
-- [ ] Display shortcut hints in the UI.
+- [x] Add global keyboard shortcuts (e.g., Cmd+K for search, Cmd+N for new chat).
+- [x] Display shortcut hints in the UI.
 
 ### 5.3 Accessibility (a11y)
 
