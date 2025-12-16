@@ -105,13 +105,13 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 ## 5. UI/UX Refinements
 
 **Objective**: Polish the user interface for a truly premium feel.
-**Status**: 🔜 Planned
+**Status**: � In Progress
 
 ### 5.1 Theming & Customization
 
-- [ ] Implement light mode option.
-- [ ] Allow accent color customization in Settings.
-- [ ] Persist theme preferences to Identity.
+- [x] Implement light mode option.
+- [x] Allow accent color customization in Settings. _(Framework ready: ThemeContext)_
+- [x] Persist theme preferences to Identity. _(Using localStorage for now)_
 
 ### 5.2 Keyboard Shortcuts
 

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Lazy load page components for code splitting
 const Chat = lazy(() =>
@@ -43,64 +44,69 @@ function PageLoader() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/chat" replace />} />
-            <Route
-              path="chat"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Chat />
-                </Suspense>
-              }
-            />
-            <Route
-              path="memory"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Memory />
-                </Suspense>
-              }
-            />
-            <Route
-              path="identity"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Identity />
-                </Suspense>
-              }
-            />
-            <Route
-              path="receipts"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Receipts />
-                </Suspense>
-              }
-            />
-            <Route path="errors" element={<Navigate to="/status" replace />} />
-            <Route
-              path="status"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <SystemStatus />
-                </Suspense>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <Settings />
-                </Suspense>
-              }
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Navigate to="/chat" replace />} />
+              <Route
+                path="chat"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Chat />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="memory"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Memory />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="identity"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Identity />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="receipts"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Receipts />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="errors"
+                element={<Navigate to="/status" replace />}
+              />
+              <Route
+                path="status"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <SystemStatus />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Settings />
+                  </Suspense>
+                }
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
