@@ -114,6 +114,9 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
         },
       });
 
+      if (resp.status !== 200) {
+        console.error(await resp.text());
+      }
       expect(resp.status).toBe(200);
     });
   });

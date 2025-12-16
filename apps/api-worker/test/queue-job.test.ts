@@ -11,7 +11,9 @@ type MemoryQueueMessage = any;
 
 // Mock dependencies
 vi.mock("../src/lib/ai", () => ({
-  generateChatCompletion: vi.fn().mockResolvedValue("Mock summary"),
+  generateChatCompletion: vi
+    .fn()
+    .mockResolvedValue({ response: "Mock summary" }),
   generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2]),
 }));
 
