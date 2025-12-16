@@ -15,7 +15,7 @@ test("system status page shows empty state", async ({ page }) => {
 
   await page.goto("/status");
   await expect(
-    page.getByRole("heading", { name: "Debug Console", level: 1 }),
+    page.getByRole("heading", { name: "System Status", level: 1 }),
   ).toBeVisible();
 
   await expect(page.getByText("No logs found for this filter.")).toBeVisible();

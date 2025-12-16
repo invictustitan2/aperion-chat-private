@@ -26,12 +26,12 @@ This document outlines the configuration required for each environment in the Ap
 
 ## Bindings (wrangler.toml)
 
-| Binding Name    | Type         | Description                                     |
-| :-------------- | :----------- | :---------------------------------------------- |
-| `MEMORY_DB`     | D1 Database  | Stores episodic memory and entity data.         |
-| `APERION_CACHE` | KV Namespace | Caches frequent policy lookups or session data. |
-| `AI`            | Workers AI   | (Optional) Access to Cloudflare AI models.      |
-| `VECTORIZE`     | Vectorize    | (Optional) Vector database for semantic search. |
+| Binding Name    | Type         | Description                                                 |
+| :-------------- | :----------- | :---------------------------------------------------------- |
+| `MEMORY_DB`     | D1 Database  | Stores episodic memory and entity data.                     |
+| `APERION_CACHE` | KV Namespace | Caches frequent policy lookups or session data.             |
+| `AI`            | Workers AI   | Access to Cloudflare AI models (Embeddings, Chat, Whisper). |
+| `VECTORIZE`     | Vectorize    | Vector database for semantic search and long-term memory.   |
 
 ## Deployment Checklist
 

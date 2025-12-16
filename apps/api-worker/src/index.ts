@@ -94,6 +94,16 @@ router.post("/v1/chat", withAuth, async (request, env) => {
   }
 
   try {
+    // Fetch user preferences
+    const prefResult = await env.MEMORY_DB.prepare(
+      "SELECT preferred_tone FROM identity WHERE key = 'user_preferences'",
+    ).first<{ preferred_tone: string }>();
+
+    let systemPrompt = SYSTEM_PROMPT;
+    if (prefResult?.preferred_tone) {
+      systemPrompt += `\n\nYour preferred tone is: ${prefResult.preferred_tone}. Adjust your responses accordingly.`;
+    }
+
     // Build conversation context from history (if provided) + current message
     const messages: ChatMessage[] = [
       ...(body.history || []).slice(-10), // Last 10 messages for context
@@ -104,7 +114,7 @@ router.post("/v1/chat", withAuth, async (request, env) => {
     const response = await generateChatCompletion(
       env.AI,
       messages,
-      SYSTEM_PROMPT,
+      systemPrompt,
     );
 
     // Store the AI response in episodic memory
@@ -235,6 +245,20 @@ router.get("/v1/episodic", withAuth, async (request, env) => {
   return json(parsed);
 });
 
+router.delete("/v1/episodic", withAuth, async (request, env) => {
+  const { confirm } = request.query;
+  if (confirm !== "true") {
+    return error(400, "Missing confirm=true query parameter");
+  }
+
+  try {
+    await env.MEMORY_DB.prepare("DELETE FROM episodic").run();
+    return json({ success: true, message: "Episodic memory cleared" });
+  } catch (e) {
+    return error(500, "Failed to clear memory");
+  }
+});
+
 // --- Voice Chat ---
 
 async function handleVoiceChat(request: IRequest, env: Env) {
@@ -253,15 +277,21 @@ async function handleVoiceChat(request: IRequest, env: Env) {
     return error(400, "Missing 'audio' file");
   }
 
-  const { transcribeAudio } = await import("./lib/speechToText");
-  const { synthesizeSpeech } = await import("./lib/textToSpeech");
-  const { generateAssistantReply } = await import("./lib/gemini");
-
   const bytes = new Uint8Array(await audio.arrayBuffer());
-  const userText = await transcribeAudio({ bytes }, false, {
-    GOOGLE_APPLICATION_CREDENTIALS_JSON:
-      env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
-  });
+  let userText = "";
+
+  // Use Workers AI Whisper for speech-to-text (preferred)
+  if (env.AI) {
+    const { transcribeWithWhisper } = await import("./lib/workersAiStt");
+    userText = await transcribeWithWhisper(env.AI, bytes);
+  } else {
+    // Fallback to Google Cloud STT
+    const { transcribeAudio } = await import("./lib/speechToText");
+    userText = await transcribeAudio({ bytes }, false, {
+      GOOGLE_APPLICATION_CREDENTIALS_JSON:
+        env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+    });
+  }
 
   if (!userText.trim()) {
     return error(400, "Speech-to-text produced empty transcription");
@@ -323,25 +353,57 @@ async function handleVoiceChat(request: IRequest, env: Env) {
       .run();
   }
 
-  const assistantText =
-    (await generateAssistantReply(userText, {
-      GEMINI_API_KEY: env.GEMINI_API_KEY,
-      GEMINI_MODEL: env.GEMINI_MODEL,
-    })) || "";
+  // Generate response using Workers AI (preferred) or Gemini (fallback)
+  let assistantText = "";
+  if (env.AI) {
+    assistantText =
+      (await generateChatCompletion(
+        env.AI,
+        [{ role: "user", content: userText }],
+        "You are a helpful voice assistant. Provide concise, clear responses suitable for speech output.",
+        "chat",
+      )) || "";
+  } else {
+    const { generateAssistantReply } = await import("./lib/gemini");
+    assistantText =
+      (await generateAssistantReply(userText, {
+        GEMINI_API_KEY: env.GEMINI_API_KEY,
+        GEMINI_MODEL: env.GEMINI_MODEL,
+      })) || "";
+  }
 
   if (!assistantText.trim()) {
-    return error(52, "LLM produced an empty response");
+    return error(502, "LLM produced an empty response");
   }
-  const audioBytes = await synthesizeSpeech(assistantText, {
-    GOOGLE_APPLICATION_CREDENTIALS_JSON:
-      env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
-  });
+
+  // Text-to-Speech: Use Google TTS (Workers AI doesn't have TTS yet)
+  // Return text for client-side Web Speech API synthesis as alternative
+  let audioBase64 = "";
+  let useFrontendTts = true;
+
+  if (env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    try {
+      const { synthesizeSpeech } = await import("./lib/textToSpeech");
+      const audioBytes = await synthesizeSpeech(assistantText, {
+        GOOGLE_APPLICATION_CREDENTIALS_JSON:
+          env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+      });
+      if (audioBytes.length > 0) {
+        audioBase64 = bytesToBase64(audioBytes);
+        useFrontendTts = false;
+      }
+    } catch (e) {
+      console.error("TTS failed, falling back to frontend synthesis:", e);
+    }
+  }
 
   return json({
     userText,
     assistantText,
-    audio: bytesToBase64(audioBytes),
+    audio: audioBase64,
     episodicId: record.id,
+    useFrontendTts, // Tells frontend to use Web Speech API if true
+    source: env.AI ? "workers-ai" : "gemini",
   });
 }
 
@@ -471,7 +533,11 @@ router.get("/v1/semantic/search", withAuth, async (request, env) => {
     return error(503, "AI/Vectorize not configured");
   }
 
+  const start = performance.now();
   const embedding = await generateEmbedding(env.AI, query as string);
+  console.log(
+    `Generated query embedding in ${(performance.now() - start).toFixed(2)}ms`,
+  );
 
   // 2. Search Vectors
   const matches = await env.MEMORY_VECTORS.query(embedding, {
@@ -513,6 +579,109 @@ router.get("/v1/semantic/search", withAuth, async (request, env) => {
   return json(hydrated);
 });
 
+// Summarize semantic search results using Workers AI
+router.post("/v1/semantic/summarize", withAuth, async (request, env) => {
+  const body = (await request.json()) as {
+    contents: string[];
+    query?: string;
+  };
+
+  if (!body.contents || body.contents.length === 0) {
+    return error(400, "Missing contents array");
+  }
+
+  // If Queue is configured, offload
+  if (env.MEMORY_QUEUE) {
+    const jobId = crypto.randomUUID();
+    const now = Date.now();
+
+    try {
+      // 1. Create Job Record
+      await env.MEMORY_DB.prepare(
+        "INSERT INTO jobs (id, type, status, created_at, updated_at, input) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+        .bind(
+          jobId,
+          "summarize",
+          "queued",
+          now,
+          now,
+          JSON.stringify(body), // Store input for debugging
+        )
+        .run();
+
+      // 2. Enqueue
+      await env.MEMORY_QUEUE.send({
+        type: "summarize",
+        jobId,
+        contents: body.contents,
+        query: body.query,
+      });
+
+      return json({ success: true, jobId, status: "queued" }, { status: 202 });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, `Failed to enqueue summarization: ${msg}`);
+    }
+  }
+
+  // Fallback Sync
+  if (!env.AI) {
+    return error(503, "Workers AI not configured");
+  }
+
+  // Use the summarization task type for cost-effective processing
+  const combinedContent = body.contents.join("\n\n---\n\n");
+  const prompt = body.query
+    ? `Based on the following search results for "${body.query}", provide a concise summary of the key information:\n\n${combinedContent}`
+    : `Summarize the following information concisely:\n\n${combinedContent}`;
+
+  try {
+    const response = await generateChatCompletion(
+      env.AI,
+      [{ role: "user", content: prompt }],
+      "You are a helpful assistant that provides concise, accurate summaries. Focus on the most relevant information and key points.",
+      "summarization",
+    );
+
+    return json({ summary: response });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return error(500, `Summarization failed: ${msg}`);
+  }
+});
+
+router.get("/v1/jobs/:id", withAuth, async (request, env) => {
+  const jobId = request.params.id;
+  const job = await env.MEMORY_DB.prepare("SELECT * FROM jobs WHERE id = ?")
+    .bind(jobId)
+    .first();
+
+  if (!job) {
+    return error(404, "Job not found");
+  }
+
+  // Parse JSON fields
+  let result = null;
+  if (job.output) {
+    try {
+      result = JSON.parse(job.output as string);
+    } catch {
+      result = job.output;
+    }
+  }
+
+  return json({
+    id: job.id,
+    type: job.type,
+    status: job.status,
+    createdAt: job.created_at,
+    updatedAt: job.updated_at,
+    result,
+    error: job.error,
+  });
+});
+
 // --- Media (R2) ---
 
 router.put("/v1/media/:key", withAuth, async (request, env) => {
@@ -543,6 +712,9 @@ router.get("/v1/media/:key", withAuth, async (request, env) => {
 router.post("/v1/identity", withAuth, async (request, env) => {
   const body = (await request.json()) as Partial<IdentityRecord> & {
     explicit_confirm?: boolean;
+    preferred_tone?: string;
+    memory_retention_days?: number;
+    interface_theme?: string;
   };
 
   if (!body.key || body.value === undefined || !body.provenance) {
@@ -569,7 +741,11 @@ router.post("/v1/identity", withAuth, async (request, env) => {
     return error(403, `Policy denied: ${JSON.stringify(receipt.reasonCodes)}`);
   }
 
-  const record: IdentityRecord = {
+  const record: IdentityRecord & {
+    preferred_tone?: string;
+    memory_retention_days?: number;
+    interface_theme?: string;
+  } = {
     id: crypto.randomUUID(),
     createdAt: Date.now(),
     type: "identity",
@@ -578,17 +754,21 @@ router.post("/v1/identity", withAuth, async (request, env) => {
     provenance: body.provenance as MemoryProvenance,
     hash: "",
     last_verified: Date.now(),
+    preferred_tone: body.preferred_tone,
+    memory_retention_days: body.memory_retention_days,
+    interface_theme: body.interface_theme,
   };
   record.hash = computeHash(record);
 
   try {
-    // Upsert for identity
+    // Upsert for identity including preferences
     await env.MEMORY_DB.prepare(
-      `INSERT INTO identity (key, id, created_at, value, provenance, hash, last_verified)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO identity (key, id, created_at, value, provenance, hash, last_verified, preferred_tone, memory_retention_days, interface_theme)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(key) DO UPDATE SET
        id=excluded.id, created_at=excluded.created_at, value=excluded.value,
-       provenance=excluded.provenance, hash=excluded.hash, last_verified=excluded.last_verified`,
+       provenance=excluded.provenance, hash=excluded.hash, last_verified=excluded.last_verified,
+       preferred_tone=excluded.preferred_tone, memory_retention_days=excluded.memory_retention_days, interface_theme=excluded.interface_theme`,
     )
       .bind(
         record.key,
@@ -598,6 +778,9 @@ router.post("/v1/identity", withAuth, async (request, env) => {
         JSON.stringify(record.provenance),
         record.hash,
         record.last_verified,
+        record.preferred_tone || null,
+        record.memory_retention_days || null,
+        record.interface_theme || null,
       )
       .run();
   } catch (e: unknown) {
@@ -622,6 +805,9 @@ router.get("/v1/identity", withAuth, async (request, env) => {
     provenance: JSON.parse(r.provenance as string),
     hash: r.hash,
     lastVerified: r.last_verified, // Transform to camelCase
+    preferredTone: r.preferred_tone,
+    memoryRetentionDays: r.memory_retention_days,
+    interfaceTheme: r.interface_theme,
   }));
 
   return json(parsed);
@@ -664,24 +850,6 @@ router.get("/v1/receipts", withAuth, async (request, env) => {
   );
 });
 
-router.get("/api/dev/logs", withAuth, async (request, env) => {
-  try {
-    const { results } = await env.MEMORY_DB.prepare(
-      "SELECT * FROM dev_logs ORDER BY timestamp DESC LIMIT 100",
-    ).all();
-    return json(results);
-  } catch (e) {
-    // If table doesn't exist yet or other error, return empty
-    console.error(e);
-    return json([]);
-  }
-});
-
-router.post("/api/dev/logs/clear", withAuth, async (request, env) => {
-  await env.MEMORY_DB.prepare("DELETE FROM dev_logs").run();
-  return json({ success: true });
-});
-
 // --- Chat Export ---
 import { renderChatToPdf } from "./lib/renderer";
 
@@ -717,27 +885,9 @@ export default {
     try {
       return await router.fetch(request as IRequest, env, ctx);
     } catch (err: unknown) {
-      try {
-        const message = err instanceof Error ? err.message : String(err);
-        const stack = err instanceof Error ? err.stack : undefined;
-        ctx.waitUntil(
-          env.MEMORY_DB.prepare(
-            "INSERT INTO dev_logs (id, timestamp, level, message, stack_trace, source) VALUES (?, ?, ?, ?, ?, ?)",
-          )
-            .bind(
-              crypto.randomUUID(),
-              Date.now(),
-              "ERROR",
-              message,
-              stack,
-              "api-worker",
-            )
-            .run(),
-        );
-      } catch (logErr) {
-        console.error("Failed to log error to DB", logErr);
-      }
-
+      // Log to console (Workers Observability)
+      console.error("Unhandled error:", err);
+      // Fallback to basic error handler if needed, or simple response
       return errorHandler(err);
     }
   },

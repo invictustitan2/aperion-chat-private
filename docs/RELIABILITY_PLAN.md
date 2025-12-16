@@ -60,15 +60,16 @@ Before merging or deploying, the following **MUST** pass:
 
 ### Phase 1: Foundation (Current)
 
-- [x] Create centralized dev logs (Completed).
+- [x] Create centralized dev logs (Migrated to Cloudflare Observability).
 - [x] Basic API integration tests (Completed).
 - [x] Upgrade `dev-shell.sh` with new aliases.
 - [x] Consolidate Playwright config.
 
 ### Phase 2: Coverage Expansion
 
-- [x] **Web**: Add E2E test for "Chat Flow" (User types -> Message appears -> Reply generated).
-- [x] **Web**: Add E2E test for "Memory View" (Episodic log renders).
+- [x] **Web**: Add E2E test for "Chat Flow" (User types -> Message appears -> Reply generated) + Export/Voice.
+- [x] **Web**: Add E2E test for "Memory View" (Episodic log renders) + Semantic Search/Summarization.
+- [x] **Web**: Add E2E test for "Identity" (Preferences editing).
 - [x] **API**: Add `policy` package unit tests.
 
 ### Phase 3: CI/CD Automation
@@ -78,6 +79,18 @@ Before merging or deploying, the following **MUST** pass:
 
 ## 🛑 Failure Handling
 
-- **API Errors**: Check `apps/web/src/pages/Errors.tsx` (The Debug Console).
-- **Worker Crash**: Use `wrangler tail` or look at `dev_logs` table.
+- **API Errors**: Check `apps/web/src/pages/SystemStatus.tsx` (The Debug Console).
+- **Worker Crash**: Use `wrangler tail` or Cloudflare Dashboard (Workers Observability).
 - **UI Glitch**: Check Browser Console + Playwright Traces.
+
+## 🔄 Updating Tests
+
+When adding new features or changing UI:
+
+1.  **Locate Test**: Check `apps/web/test/e2e/`.
+2.  **Add/Update Spec**:
+    - Use `page.route` to mock API responses (keeps tests fast and deterministic).
+    - Use `getByRole` for accessibility-first selectors.
+    - Use `test.step` to group logical actions.
+3.  **Run Locally**: `pnpm test:e2e` (runs all) or `pnpm test:e2e -g "search"` (runs specific test).
+4.  **Debug**: Use `pnpm test:e2e --ui` to open the interactive Playwright UI runner.
