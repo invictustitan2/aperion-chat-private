@@ -35,31 +35,90 @@ export interface Env {
   GEMINI_MODEL?: string;
 }
 
-// ... (Auth helper remains same)
-// Helper to validate auth
+// --- Authentication Middleware ---
+// Helper to validate auth with enhanced logging and validation
 const withAuth = (request: IRequest, env: Env) => {
   const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !env.API_TOKEN) {
-    return error(401, "Unauthorized: Missing credentials or server config");
+
+  // Check if auth header exists
+  if (!authHeader) {
+    console.warn("Authentication failed: Missing Authorization header", {
+      url: request.url,
+      method: request.method,
+    });
+    return error(401, "Unauthorized: Missing Authorization header");
   }
 
+  // Check if API_TOKEN is configured
+  if (!env.API_TOKEN) {
+    console.error("Authentication failed: API_TOKEN not configured in Worker");
+    return error(401, "Unauthorized: Server authentication not configured");
+  }
+
+  // Validate Bearer scheme
+  if (!authHeader.startsWith("Bearer ")) {
+    console.warn("Authentication failed: Invalid Authorization scheme", {
+      url: request.url,
+      scheme: authHeader.split(" ")[0],
+    });
+    return error(
+      401,
+      "Unauthorized: Invalid authentication scheme. Use 'Bearer <token>'",
+    );
+  }
+
+  // Extract and validate token
   const token = authHeader.replace("Bearer ", "");
+  if (!token || token.trim() === "") {
+    console.warn("Authentication failed: Empty token", {
+      url: request.url,
+    });
+    return error(401, "Unauthorized: Empty authentication token");
+  }
+
   if (token !== env.API_TOKEN) {
+    console.warn("Authentication failed: Invalid token", {
+      url: request.url,
+      tokenPrefix: token.substring(0, 8) + "...",
+    });
     return error(403, "Forbidden: Invalid credentials");
   }
+
+  // Authentication successful - no return means continue
 };
 
 // --- CORS Middleware ---
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+// Environment-aware CORS configuration for security
+function getCorsHeaders(request: IRequest): Record<string, string> {
+  const origin = request.headers.get("Origin") || "";
+
+  // Allowed origins based on environment
+  const allowedOrigins = [
+    "http://localhost:5173", // Local Vite dev server
+    "http://127.0.0.1:5173", // Local Vite dev server (IP)
+    "https://chat.aperion.cc", // Production frontend
+  ];
+
+  // Also allow Cloudflare Pages preview deployments
+  const isPreviewDeploy = origin.endsWith(".pages.dev");
+
+  // Determine if origin is allowed
+  const isAllowed = allowedOrigins.includes(origin) || isPreviewDeploy;
+
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[2], // Default to production
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400", // Cache preflight for 24 hours
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
 
 const router = AutoRouter<IRequest, [Env, ExecutionContext]>({
   // Add CORS headers to all responses
   finally: [
-    (response: Response) => {
+    (response: Response, request: IRequest) => {
+      const corsHeaders = getCorsHeaders(request);
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([key, value]) => {
         newHeaders.set(key, value);
@@ -74,7 +133,8 @@ const router = AutoRouter<IRequest, [Env, ExecutionContext]>({
 });
 
 // Handle preflight OPTIONS requests
-router.options("*", () => {
+router.options("*", (request) => {
+  const corsHeaders = getCorsHeaders(request);
   return new Response(null, {
     status: 204,
     headers: corsHeaders,

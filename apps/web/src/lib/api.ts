@@ -4,7 +4,9 @@ import { logApiError } from "./errorLog";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787";
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN;
-const authHeaders = AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {};
+const authHeaders: Record<string, string> = AUTH_TOKEN
+  ? { Authorization: `Bearer ${AUTH_TOKEN}` }
+  : {};
 
 if (!AUTH_TOKEN) {
   console.warn(
