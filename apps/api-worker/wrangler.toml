@@ -44,3 +44,6 @@ crons = ["0 0 * * *"]
 
 [browser]
 binding = "BROWSER"
+
+[observability]
+enabled = true

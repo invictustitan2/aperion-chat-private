@@ -1,15 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
 import {
   AlertCircle,
   Bug,
+  ExternalLink,
   Globe,
   RefreshCw,
   Server,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api";
 import {
   clearErrorEntries,
   getErrorEntries,
@@ -84,98 +83,88 @@ function EntryRow({ entry }: { entry: DisplayEntry }) {
 
 export function SystemStatus() {
   const [version, setVersion] = useState(0);
-  const [filter, setFilter] = useState<"all" | "client" | "server">("all");
-  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState<"all" | "client" | "api">("all");
 
-  // 1. Client Logs
+  // Client Logs Subscription
   useEffect(() => {
     return subscribeToErrorLog(() => setVersion((v) => v + 1));
   }, []);
 
-  const clientLogs = useMemo(() => {
+  const logs = useMemo(() => {
     void version;
-    return getErrorEntries();
+    return getErrorEntries().sort((a, b) => b.ts - a.ts);
   }, [version]);
 
-  // 2. Server Logs
-  const serverQuery = useQuery({
-    queryKey: ["dev-logs"],
-    queryFn: () => api.dev.logs(100),
-    refetchInterval: 5000, // Live polling
-  });
-
-  const clearMutation = useMutation({
-    mutationFn: async () => {
-      clearErrorEntries();
-      await api.dev.clear();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dev-logs"] });
-    },
-  });
-
-  // 3. Merge
-  const allLogs: DisplayEntry[] = useMemo(() => {
-    const serverEntries: DisplayEntry[] = (serverQuery.data || []).map((l) => ({
-      id: l.id,
-      ts: l.timestamp,
-      kind: "server",
-      message: l.message,
-      stack: l.stack_trace,
-      level: l.level,
-    }));
-
-    return [...clientLogs, ...serverEntries].sort((a, b) => b.ts - a.ts);
-  }, [clientLogs, serverQuery.data]);
-
-  const filteredLogs = allLogs.filter((l) => {
-    if (filter === "client") return l.kind !== "server";
-    if (filter === "server") return l.kind === "server";
+  const filteredLogs = logs.filter((l) => {
+    if (filter === "client") return l.kind === "runtime";
+    if (filter === "api") return l.kind === "api";
     return true;
   });
 
-  const apiCount = allLogs.filter((e) => e.kind === "api").length;
-  const runtimeCount = allLogs.filter((e) => e.kind === "runtime").length;
-  const serverCount = allLogs.filter((e) => e.kind === "server").length;
+  const apiCount = logs.filter((e) => e.kind === "api").length;
+  const runtimeCount = logs.filter((e) => e.kind === "runtime").length;
 
   return (
     <div className="p-6 space-y-6">
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Debug Console</h1>
+          <h1 className="text-2xl font-bold text-white">System Status</h1>
           <p className="text-gray-400 text-sm">
-            Unified log of client application and server worker errors.
+            Client-side error logs and API status.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => serverQuery.refetch()}
+            onClick={() => setVersion((v) => v + 1)}
             className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
             title="Refresh logs"
           >
-            <RefreshCw
-              className={clsx(
-                "w-4 h-4",
-                serverQuery.isFetching && "animate-spin",
-              )}
-            />
+            <RefreshCw className="w-4 h-4" />
           </button>
           <button
-            onClick={() => clearMutation.mutate()}
+            onClick={() => {
+              clearErrorEntries();
+              setVersion((v) => v + 1);
+            }}
             className={clsx(
               "flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors",
-              allLogs.length
+              logs.length
                 ? "bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700/60"
                 : "bg-gray-900 border-gray-800 text-gray-500 cursor-not-allowed",
             )}
-            disabled={!allLogs.length || clearMutation.isPending}
+            disabled={!logs.length}
           >
             <Trash2 className="w-4 h-4" />
-            {clearMutation.isPending ? "Clearing..." : "Clear All"}
+            Clear Client Logs
           </button>
         </div>
       </header>
+
+      {/* Cloudflare Banner */}
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <Server className="w-5 h-5 text-blue-400 mt-0.5 sm:mt-0" />
+          <div>
+            <h3 className="text-blue-400 font-medium text-sm">
+              Server Logs (Workers Observability)
+            </h3>
+            <p className="text-gray-400 text-xs mt-1">
+              Backend logs are streamed directly to Cloudflare. Use the
+              dashboard to view real-time server errors and traces.
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://dash.cloudflare.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          Open Dashboard
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
 
       {/* Tabs / Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -192,24 +181,7 @@ export function SystemStatus() {
             Total Events
           </div>
           <div className="text-gray-200 font-mono mt-1 text-lg">
-            {allLogs.length}
-          </div>
-        </button>
-
-        <button
-          onClick={() => setFilter("server")}
-          className={clsx(
-            "text-left bg-gray-800 border rounded-lg px-4 py-3 transition-colors",
-            filter === "server"
-              ? "border-blue-500/50 ring-1 ring-blue-500/20"
-              : "border-gray-700 hover:border-gray-600",
-          )}
-        >
-          <div className="text-gray-400 text-xs uppercase tracking-wider">
-            Server
-          </div>
-          <div className="text-blue-400 font-mono mt-1 text-lg">
-            {serverCount}
+            {logs.length}
           </div>
         </button>
 
@@ -230,14 +202,22 @@ export function SystemStatus() {
           </div>
         </button>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 opacity-75">
-          <div className="text-gray-500 text-xs uppercase tracking-wider">
+        <button
+          onClick={() => setFilter("api")}
+          className={clsx(
+            "text-left bg-gray-800 border rounded-lg px-4 py-3 transition-colors",
+            filter === "api"
+              ? "border-emerald-500/50 ring-1 ring-emerald-500/20"
+              : "border-gray-700 hover:border-gray-600",
+          )}
+        >
+          <div className="text-gray-400 text-xs uppercase tracking-wider">
             API Network
           </div>
           <div className="text-emerald-500 font-mono mt-1 text-lg">
             {apiCount}
           </div>
-        </div>
+        </button>
       </div>
 
       {filteredLogs.length === 0 ? (

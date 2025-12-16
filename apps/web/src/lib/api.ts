@@ -122,6 +122,44 @@ export const api = {
         { friendlyName: "Create semantic" },
       );
     },
+    search: async (
+      query: string,
+      limit = 5,
+    ): Promise<
+      Array<{
+        id: string;
+        content: string;
+        score: number;
+        createdAt: number;
+        provenance: Record<string, unknown>;
+        references: string[];
+      }>
+    > => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/semantic/search?query=${encodeURIComponent(query)}&limit=${limit}`,
+        { headers },
+        { friendlyName: "Semantic search" },
+      );
+    },
+    summarize: async (
+      contents: string[],
+      query?: string,
+    ): Promise<{ summary: string }> => {
+      return fetchJson(`${API_BASE_URL}/v1/semantic/summarize`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ contents, query }),
+      });
+    },
+  },
+  jobs: {
+    get: async (id: string): Promise<unknown> => {
+      // Type 'Job' properly if possible, for now returning unknown
+      return fetchJson(`${API_BASE_URL}/v1/jobs/${id}`, {
+        method: "GET",
+        headers,
+      });
+    },
   },
   chat: {
     send: async (
@@ -138,6 +176,51 @@ export const api = {
         { friendlyName: "Chat completion" },
       );
     },
+    export: async (html: string): Promise<Blob> => {
+      const res = await fetch(`${API_BASE_URL}/v1/chat/export`, {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ html }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Export failed");
+      }
+
+      return res.blob();
+    },
+    voice: async (
+      audioBlob: Blob,
+    ): Promise<{
+      userText: string;
+      assistantText: string;
+      audio: string;
+      episodicId: string;
+      useFrontendTts: boolean;
+      source: "workers-ai" | "gemini";
+    }> => {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+
+      const res = await fetch(`${API_BASE_URL}/v1/voice-chat`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Voice chat failed");
+      }
+
+      return res.json();
+    },
   },
   identity: {
     list: async (): Promise<IdentityRecord[]> => {
@@ -147,6 +230,37 @@ export const api = {
         {
           friendlyName: "Fetch identity",
         },
+      );
+    },
+    create: async (
+      key: string,
+      value: unknown,
+      provenance: {
+        source_type: string;
+        source_id: string;
+        timestamp: number;
+        confidence: number;
+      },
+      extras?: {
+        preferred_tone?: string;
+        memory_retention_days?: number;
+        interface_theme?: string;
+      },
+    ): Promise<{ success: boolean; id: string }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/identity`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            key,
+            value,
+            provenance,
+            explicit_confirm: true,
+            ...extras,
+          }),
+        },
+        { friendlyName: "Create identity" },
       );
     },
   },
@@ -177,19 +291,5 @@ export const api = {
       return res.json();
     },
     getUrl: (key: string) => `${API_BASE_URL}/v1/media/${key}`,
-  },
-  dev: {
-    logs: (limit = 100) =>
-      fetchJson<DevLog[]>(
-        `${API_BASE_URL}/api/dev/logs?limit=${limit}`,
-        { headers },
-        { friendlyName: "Fetch dev logs" },
-      ),
-    clear: () =>
-      fetchJson<{ success: boolean }>(
-        `${API_BASE_URL}/api/dev/logs/clear`,
-        { method: "POST", headers },
-        { friendlyName: "Clear dev logs" },
-      ),
   },
 };

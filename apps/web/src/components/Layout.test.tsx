@@ -15,7 +15,9 @@ describe("Layout", () => {
 
     expect(screen.getByText("Chat")).toBeInTheDocument();
     expect(screen.getByText("Memory")).toBeInTheDocument();
+    expect(screen.getByText("Identity")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
     expect(screen.getByText("System Status")).toBeInTheDocument();
+    expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 });
