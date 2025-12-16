@@ -1,12 +1,27 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { Chat } from "./pages/Chat";
-import { Identity } from "./pages/Identity";
-import { Memory } from "./pages/Memory";
-import { Receipts } from "./pages/Receipts";
-import { Settings } from "./pages/Settings";
-import { SystemStatus } from "./pages/SystemStatus";
+
+// Lazy load page components for code splitting
+const Chat = lazy(() =>
+  import("./pages/Chat").then((m) => ({ default: m.Chat })),
+);
+const Memory = lazy(() =>
+  import("./pages/Memory").then((m) => ({ default: m.Memory })),
+);
+const Identity = lazy(() =>
+  import("./pages/Identity").then((m) => ({ default: m.Identity })),
+);
+const Receipts = lazy(() =>
+  import("./pages/Receipts").then((m) => ({ default: m.Receipts })),
+);
+const Settings = lazy(() =>
+  import("./pages/Settings").then((m) => ({ default: m.Settings })),
+);
+const SystemStatus = lazy(() =>
+  import("./pages/SystemStatus").then((m) => ({ default: m.SystemStatus })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +32,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Loading spinner for lazy-loaded components
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -24,13 +48,55 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/chat" replace />} />
-            <Route path="chat" element={<Chat />} />
-            <Route path="memory" element={<Memory />} />
-            <Route path="identity" element={<Identity />} />
-            <Route path="receipts" element={<Receipts />} />
+            <Route
+              path="chat"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Chat />
+                </Suspense>
+              }
+            />
+            <Route
+              path="memory"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Memory />
+                </Suspense>
+              }
+            />
+            <Route
+              path="identity"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Identity />
+                </Suspense>
+              }
+            />
+            <Route
+              path="receipts"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Receipts />
+                </Suspense>
+              }
+            />
             <Route path="errors" element={<Navigate to="/status" replace />} />
-            <Route path="status" element={<SystemStatus />} />
-            <Route path="settings" element={<Settings />} />
+            <Route
+              path="status"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SystemStatus />
+                </Suspense>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Settings />
+                </Suspense>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

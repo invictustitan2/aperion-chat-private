@@ -19,9 +19,9 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 1.2 Lazy Loading & Code Splitting
 
-- [ ] Implement route-based code splitting in Vite.
-- [ ] Lazy load heavy components (e.g., `Memory.tsx`, `Settings.tsx`).
-- [ ] Add loading spinners/skeletons for improved perceived performance.
+- [x] Implement route-based code splitting in Vite.
+- [x] Lazy load heavy components (e.g., `Memory.tsx`, `Settings.tsx`).
+- [x] Add loading spinners/skeletons for improved perceived performance.
 
 ### 1.3 API Response Optimization
 
