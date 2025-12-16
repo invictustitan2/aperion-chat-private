@@ -153,8 +153,9 @@ export const api = {
     },
   },
   jobs: {
-    get: async (id: string): Promise<unknown> => {
-      // Type 'Job' properly if possible, for now returning unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get: async (id: string): Promise<any> => {
+      // Type 'Job' properly if possible, for now returning any
       return fetchJson(`${API_BASE_URL}/v1/jobs/${id}`, {
         method: "GET",
         headers,
