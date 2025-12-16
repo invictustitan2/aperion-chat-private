@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     // Timeout configuration for worker tests
     testTimeout: 10000, // 10 seconds for individual tests
-    hookTimeout: 60000, // 60 seconds for beforeAll/afterAll hooks
+    hookTimeout: 120000, // 120 seconds for beforeAll/afterAll hooks (CI needs more time)
     // Use single fork to prevent worker conflicts
     pool: "forks",
     poolOptions: {

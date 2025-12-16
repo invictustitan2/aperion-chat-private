@@ -2,6 +2,47 @@ import path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { unstable_dev, Unstable_DevWorker } from "wrangler";
 
+/**
+ * Helper to wait for worker to be ready by polling until it responds
+ * This allows tests to proceed immediately once worker is live,
+ * rather than waiting for the full timeout period
+ */
+async function waitForWorkerReady(
+  worker: Unstable_DevWorker,
+  token: string,
+  maxAttempts = 60,
+  intervalMs = 2000,
+): Promise<void> {
+  console.log("Waiting for worker to be ready...");
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const resp = await worker.fetch("http://localhost/v1/identity", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (resp.status === 200 || resp.status === 401 || resp.status === 403) {
+        // Worker is responding (even if auth fails, it's alive)
+        console.log(
+          `✓ Worker ready after ${attempt} attempts (~${(attempt * intervalMs) / 1000}s)`,
+        );
+        return;
+      }
+    } catch (error) {
+      // Worker not ready yet, continue polling
+      if (attempt % 5 === 0) {
+        console.log(`  Still waiting... (attempt ${attempt}/${maxAttempts})`);
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error(
+    `Worker failed to become ready after ${maxAttempts} attempts`,
+  );
+}
+
 describe("Authentication Middleware", () => {
   let worker: Unstable_DevWorker | undefined;
   const TEST_TOKEN = "test-secure-token-12345";
@@ -13,6 +54,7 @@ describe("Authentication Middleware", () => {
       const scriptPath = path.join(workerDir, "src", "index.ts");
       const configPath = path.join(workerDir, "wrangler.toml");
 
+      console.log("Starting worker...");
       worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
         vars: {
@@ -22,21 +64,13 @@ describe("Authentication Middleware", () => {
         persist: true, // Enable local persistence for D1
       });
 
-      // Warmup: Make a test request to ensure worker is fully ready
-      console.log("Warming up worker...");
-      try {
-        const warmupResp = await worker.fetch("http://localhost/v1/identity", {
-          headers: { Authorization: `Bearer ${TEST_TOKEN}` },
-        });
-        console.log(`Worker warmup complete (status: ${warmupResp.status})`);
-      } catch (e) {
-        console.warn("Worker warmup request failed, continuing anyway:", e);
-      }
+      // Wait for worker to be ready (polls until responsive)
+      await waitForWorkerReady(worker, TEST_TOKEN);
     } catch (error) {
       console.error("Failed to start worker:", error);
       throw error;
     }
-  }, 60000); // 60 second timeout for worker startup in CI
+  }, 120000); // 120 second timeout for CI environment
 
   afterAll(async () => {
     if (worker) {
