@@ -129,3 +129,97 @@ export async function generateChatCompletion(
     tool_calls: result.tool_calls,
   };
 }
+
+/**
+ * Generate a streaming chat completion using Workers AI
+ * Returns a ReadableStream of SSE-formatted events
+ */
+export async function generateChatCompletionStream(
+  ai: Ai,
+  messages: ChatMessage[],
+  systemPrompt?: string,
+  taskType: TaskType = "chat",
+): Promise<ReadableStream<Uint8Array>> {
+  const limits = AI_LIMITS[taskType];
+  const model = taskType === "reasoning" ? AI_MODELS.reasoning : AI_MODELS.chat;
+
+  // Trim messages to context limit for cost efficiency
+  const trimmedMessages = messages.slice(-limits.maxContext);
+
+  const fullMessages: ChatMessage[] = systemPrompt
+    ? [{ role: "system", content: systemPrompt }, ...trimmedMessages]
+    : trimmedMessages;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await ai.run(model as any, {
+    messages: fullMessages,
+    max_tokens: limits.maxTokens,
+    stream: true,
+  });
+
+  // Workers AI returns an EventSource-like stream for streaming responses
+  // We need to transform it into SSE format for the client
+  const encoder = new TextEncoder();
+
+  // The response from Workers AI streaming is already a ReadableStream
+  // We just need to format it as SSE events
+  const stream = response as ReadableStream<Uint8Array>;
+
+  const transformStream = new TransformStream<Uint8Array, Uint8Array>({
+    async transform(chunk, controller) {
+      // Workers AI stream chunks are already in a usable format
+      // We wrap them in SSE format: "data: <chunk>\n\n"
+      const text = new TextDecoder().decode(chunk);
+
+      // Parse the response - Workers AI returns JSON chunks like {"response": "token"}
+      try {
+        // The stream format from Workers AI is NDJSON or SSE-like
+        // Each line is a JSON object: {"response": "token"}
+        const lines = text.split("\n").filter((line) => line.trim());
+        for (const line of lines) {
+          // Skip "data: [DONE]" messages
+          if (line === "data: [DONE]") {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            continue;
+          }
+
+          // Remove "data: " prefix if present (SSE format from Workers AI)
+          const jsonStr = line.startsWith("data: ") ? line.slice(6) : line;
+          if (!jsonStr.trim()) continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.response) {
+              // Emit as SSE event
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ token: parsed.response })}\n\n`,
+                ),
+              );
+            }
+          } catch {
+            // If parsing fails, just forward the raw text as a token
+            if (jsonStr.trim()) {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ token: jsonStr })}\n\n`,
+                ),
+              );
+            }
+          }
+        }
+      } catch {
+        // Fallback: emit raw chunk as token
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ token: text })}\n\n`),
+        );
+      }
+    },
+    flush(controller) {
+      // Send the done signal
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+    },
+  });
+
+  return stream.pipeThrough(transformStream);
+}

@@ -63,7 +63,11 @@ export function Chat() {
     refetchInterval: 5000, // Poll for updates
   });
 
-  // Mutation to send message
+  // State for streaming response
+  const [streamingResponse, setStreamingResponse] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  // Mutation to send message (now with streaming)
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
       // 1. Always write episodic (user message)
@@ -85,15 +89,33 @@ export function Chat() {
         });
       }
 
-      // 3. Get AI response (which also stores in episodic memory)
-      await api.chat.send(text);
+      // 3. Get AI response via streaming
+      setIsStreaming(true);
+      setStreamingResponse("");
+
+      await api.chat.stream(
+        text,
+        [],
+        (token) => {
+          // Append each token as it arrives
+          setStreamingResponse((prev) => prev + token);
+        },
+        () => {
+          // Stream complete - refresh to get persisted response
+          setIsStreaming(false);
+          queryClient.invalidateQueries({ queryKey: ["episodic"] });
+        },
+      );
 
       return episodicRes;
     },
     onSuccess: () => {
       setInput("");
-      queryClient.invalidateQueries({ queryKey: ["episodic"] });
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    },
+    onError: () => {
+      setIsStreaming(false);
+      setStreamingResponse("");
     },
   });
 
@@ -379,7 +401,7 @@ export function Chat() {
         )}
 
         {/* Optimistic / Pending Message */}
-        {sendMessage.isPending && (
+        {sendMessage.isPending && !isStreaming && (
           <div className="flex flex-col gap-1 opacity-60 self-end items-end">
             <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
               {input}
@@ -387,6 +409,25 @@ export function Chat() {
             <span className="text-[10px] text-emerald-500 flex items-center gap-1">
               <Loader2 className="w-3 h-3 animate-spin" /> Sending...
             </span>
+          </div>
+        )}
+
+        {/* Streaming AI Response */}
+        {isStreaming && streamingResponse && (
+          <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
+            <div className="flex items-baseline gap-2 px-1">
+              <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                Aperion
+              </span>
+              <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                Streaming
+              </span>
+            </div>
+            <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
+              {streamingResponse}
+              <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
+            </div>
           </div>
         )}
       </div>

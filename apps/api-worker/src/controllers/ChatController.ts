@@ -1,4 +1,5 @@
 import { IRequest, error, json } from "itty-router";
+import { ChatMessage, generateChatCompletionStream } from "../lib/ai";
 import { ChatRequestSchema } from "../lib/schemas";
 import { ChatService } from "../services/ChatService";
 import { Env } from "../types";
@@ -28,6 +29,53 @@ export class ChatController {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       return error(500, `Chat completion failed: ${msg}`);
+    }
+  }
+
+  /**
+   * Stream chat response using SSE (Server-Sent Events)
+   * Returns tokens as they are generated
+   */
+  static async stream(request: IRequest, env: Env) {
+    const jsonBody = await request.json();
+    const parseResult = ChatRequestSchema.safeParse(jsonBody);
+
+    if (!parseResult.success) {
+      return error(
+        400,
+        `Invalid input: ${parseResult.error.issues.map((e) => e.message).join(", ")}`,
+      );
+    }
+
+    const body = parseResult.data;
+
+    const SYSTEM_PROMPT = `You are Aperion, a helpful and intelligent AI assistant. You are part of a memory-augmented chat system that remembers conversations. Be concise, friendly, and helpful. If you don't know something, say so.`;
+
+    // Build messages array
+    const messages: ChatMessage[] = [
+      ...((body.history as ChatMessage[]) || []).slice(-10),
+      { role: "user" as const, content: body.message },
+    ];
+
+    try {
+      const stream = await generateChatCompletionStream(
+        env.AI,
+        messages,
+        SYSTEM_PROMPT,
+        "chat",
+      );
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, `Streaming failed: ${msg}`);
     }
   }
 

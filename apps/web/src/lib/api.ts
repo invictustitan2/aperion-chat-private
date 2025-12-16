@@ -205,6 +205,73 @@ export const api = {
 
       return res.blob();
     },
+    /**
+     * Stream chat response tokens via SSE
+     * @param message - User message
+     * @param history - Chat history
+     * @param onToken - Callback invoked for each token received
+     * @param onDone - Callback invoked when stream completes
+     */
+    stream: async (
+      message: string,
+      history: Array<{ role: "user" | "assistant"; content: string }> = [],
+      onToken: (token: string) => void,
+      onDone?: () => void,
+    ): Promise<void> => {
+      const response = await fetch(`${API_BASE_URL}/v1/chat/stream`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ message, history }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || "Streaming failed");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("ReadableStream not supported");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let reading = true;
+
+      while (reading) {
+        const { done, value } = await reader.read();
+        if (done) {
+          reading = false;
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process SSE events from buffer
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") {
+              onDone?.();
+              return;
+            }
+            try {
+              const parsed = JSON.parse(data) as { token?: string };
+              if (parsed.token) {
+                onToken(parsed.token);
+              }
+            } catch {
+              // Ignore parse errors for malformed lines
+            }
+          }
+        }
+      }
+
+      onDone?.();
+    },
     voice: async (
       audioBlob: Blob,
     ): Promise<{
