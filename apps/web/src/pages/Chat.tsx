@@ -4,24 +4,34 @@ import {
   AlertCircle,
   CheckCircle,
   Copy,
+  Share2,
+  Plus,
   Download,
   ImageIcon,
   Loader2,
   Mic,
   MicOff,
+  Pencil,
+  RotateCcw,
   Send,
+  Trash2,
   ThumbsDown,
   ThumbsUp,
   ToggleLeft,
   ToggleRight,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
+import { MessageContent } from "../components/MessageContent";
 
 export function Chat() {
+  const [searchParams] = useSearchParams();
+
   // WebSocket integration for real-time features
   const { isConnected, typingUsers, sendTyping } = useWebSocket();
   const [input, setInput] = useState("");
@@ -34,15 +44,105 @@ export function Chat() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [tone, setTone] = useState<"default" | "concise" | "detailed">(
+    "default",
+  );
+  const [highlightMessageId, setHighlightMessageId] = useState<string | null>(
+    null,
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const queryClient = useQueryClient();
+
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
+  const [renamingConversationId, setRenamingConversationId] = useState<
+    string | null
+  >(null);
+  const [conversationTitleDraft, setConversationTitleDraft] = useState("");
+
+  // Load tone preference (best-effort)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pref = await api.preferences.get("ai.tone");
+        if (cancelled) return;
+        const v = typeof pref.value === "string" ? pref.value : "";
+        if (v === "concise" || v === "detailed" || v === "default") {
+          setTone(v);
+        }
+      } catch {
+        // ignore (missing pref or API unavailable)
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onChangeTone = async (next: "default" | "concise" | "detailed") => {
+    setTone(next);
+    try {
+      await api.preferences.set("ai.tone", next);
+    } catch {
+      // ignore
+    }
+  };
+
+  const shareConversationLink = async () => {
+    if (!activeConversationId) return;
+    const url = new URL(window.location.href);
+    url.pathname = "/chat";
+    url.searchParams.set("conversation", activeConversationId);
+    url.searchParams.delete("message");
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopiedId("__share_conversation__");
+      setTimeout(() => setCopiedId(null), 1200);
+    } catch {
+      // ignore
+    }
+  };
+
+  const shareMessageLink = async (messageId: string) => {
+    const url = new URL(window.location.href);
+    url.pathname = "/chat";
+    if (activeConversationId) {
+      url.searchParams.set("conversation", activeConversationId);
+    } else {
+      url.searchParams.delete("conversation");
+    }
+    url.searchParams.set("message", messageId);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopiedId(`share:${messageId}`);
+      setTimeout(() => setCopiedId(null), 1200);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Support opening shared links: ?conversation=...&message=...
+  useEffect(() => {
+    const conv = searchParams.get("conversation");
+    const msg = searchParams.get("message");
+
+    if (conv && conv !== activeConversationId) {
+      setActiveConversationId(conv);
+    }
+    if (msg) setHighlightMessageId(msg);
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,25 +170,129 @@ export function Chat() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["episodic"],
-    queryFn: () => api.episodic.list(50),
+    queryKey: ["episodic", activeConversationId],
+    queryFn: () =>
+      api.episodic.list(50, {
+        conversationId: activeConversationId || undefined,
+      }),
     refetchInterval: 5000, // Poll for updates
+  });
+
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations"],
+    queryFn: () => api.conversations.list(50, 0),
+    refetchInterval: 5000,
+  });
+
+  const createConversation = useMutation({
+    mutationFn: async () => {
+      return api.conversations.create();
+    },
+    onSuccess: (c) => {
+      setActiveConversationId(c.id);
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["episodic"] });
+    },
+  });
+
+  const renameConversation = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      return api.conversations.rename(id, title);
+    },
+    onSuccess: () => {
+      setRenamingConversationId(null);
+      setConversationTitleDraft("");
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  const deleteConversation = useMutation({
+    mutationFn: async (id: string) => {
+      return api.conversations.delete(id);
+    },
+    onSuccess: (_res, id) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      if (activeConversationId === id) {
+        setActiveConversationId(null);
+      }
+    },
   });
 
   // State for streaming response
   const [streamingResponse, setStreamingResponse] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingDerivedFrom, setStreamingDerivedFrom] = useState<string[]>(
+    [],
+  );
+
+  const regenerateResponse = useMutation({
+    mutationFn: async () => {
+      const msgs = history || [];
+      let lastUserIdx = -1;
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        if (String(msgs[i].provenance?.source_type) === "user") {
+          lastUserIdx = i;
+          break;
+        }
+      }
+
+      if (lastUserIdx === -1) throw new Error("No user message to regenerate");
+
+      const prompt = msgs[lastUserIdx].content;
+      const historySlice = msgs.slice(
+        Math.max(0, lastUserIdx - 10),
+        lastUserIdx,
+      );
+      const historyForModel = historySlice.map((m) => ({
+        role:
+          String(m.provenance?.source_type) === "user"
+            ? ("user" as const)
+            : ("assistant" as const),
+        content: m.content,
+      }));
+
+      setIsStreaming(true);
+      setStreamingResponse("");
+      setStreamingDerivedFrom([]);
+
+      await api.chat.stream(
+        prompt,
+        historyForModel,
+        activeConversationId || undefined,
+        (token) => setStreamingResponse((prev) => prev + token),
+        (meta) => {
+          if (Array.isArray(meta.derived_from)) {
+            setStreamingDerivedFrom(meta.derived_from);
+          }
+        },
+        () => {
+          setIsStreaming(false);
+          queryClient.invalidateQueries({ queryKey: ["episodic"] });
+        },
+      );
+    },
+    onError: () => {
+      setIsStreaming(false);
+      setStreamingResponse("");
+    },
+  });
 
   // Mutation to send message (now with streaming)
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
       // 1. Always write episodic (user message)
-      const episodicRes = await api.episodic.create(text, {
-        source_type: "user",
-        source_id: "operator",
-        timestamp: Date.now(),
-        confidence: 1.0,
-      });
+      const episodicRes = await api.episodic.create(
+        text,
+        {
+          source_type: "user",
+          source_id: "operator",
+          timestamp: Date.now(),
+          confidence: 1.0,
+        },
+        activeConversationId
+          ? { conversation_id: activeConversationId }
+          : undefined,
+      );
 
       // 2. Optional: Write semantic if enabled (user explicitly confirmed via toggle)
       if (isMemoryWriteEnabled) {
@@ -104,13 +308,28 @@ export function Chat() {
       // 3. Get AI response via streaming
       setIsStreaming(true);
       setStreamingResponse("");
+      setStreamingDerivedFrom([]);
+
+      const historyForModel = (history || []).slice(-10).map((m) => ({
+        role:
+          String(m.provenance?.source_type) === "user"
+            ? ("user" as const)
+            : ("assistant" as const),
+        content: m.content,
+      }));
 
       await api.chat.stream(
         text,
-        [],
+        historyForModel,
+        activeConversationId || undefined,
         (token) => {
           // Append each token as it arrives
           setStreamingResponse((prev) => prev + token);
+        },
+        (meta) => {
+          if (Array.isArray(meta.derived_from)) {
+            setStreamingDerivedFrom(meta.derived_from);
+          }
         },
         () => {
           // Stream complete - refresh to get persisted response
@@ -137,6 +356,23 @@ export function Chat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [history]);
+
+  // If a shared message is specified, scroll to it once it exists.
+  useEffect(() => {
+    const msg = searchParams.get("message");
+    if (!msg) return;
+    if (!history || history.length === 0) return;
+
+    const el = document.querySelector(
+      `[data-message-id="${CSS.escape(msg)}"]`,
+    ) as HTMLElement | null;
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightMessageId(msg);
+    const t = window.setTimeout(() => setHighlightMessageId(null), 2500);
+    return () => window.clearTimeout(t);
+  }, [history, searchParams]);
 
   const handleExport = async () => {
     if (!history || history.length === 0) {
@@ -311,339 +547,658 @@ export function Chat() {
     // TODO: Send rating to backend for AI improvement
   };
 
+  const updateMessage = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      return api.episodic.update(id, content);
+    },
+    onSuccess: () => {
+      setEditingMessageId(null);
+      setEditingContent("");
+      setEditError(null);
+      queryClient.invalidateQueries({ queryKey: ["episodic"] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      setEditError(msg || "Failed to update message");
+    },
+  });
+
+  const startEditing = (id: string, content: string) => {
+    setEditError(null);
+    setEditingMessageId(id);
+    setEditingContent(content);
+  };
+
+  const cancelEditing = () => {
+    setEditError(null);
+    setEditingMessageId(null);
+    setEditingContent("");
+  };
+
+  const saveEditing = () => {
+    if (!editingMessageId) return;
+    const trimmed = editingContent.trim();
+    if (!trimmed) {
+      setEditError("Message cannot be empty");
+      return;
+    }
+    setEditError(null);
+    updateMessage.mutate({ id: editingMessageId, content: trimmed });
+  };
+
   return (
-    <div className="flex flex-col h-full relative" ref={chatContainerRef}>
-      {/* Header */}
-      <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-            Operator Chat
-          </h1>
-          {/* Connection Status */}
-          <span
-            className={clsx(
-              "p-1 rounded-full",
-              isConnected ? "text-emerald-400" : "text-red-400",
-            )}
-            title={isConnected ? "Connected" : "Disconnected"}
-          >
-            {isConnected ? (
-              <Wifi className="w-4 h-4" />
-            ) : (
-              <WifiOff className="w-4 h-4" />
-            )}
-          </span>
-        </div>
-        <p className="text-gray-400 text-xs md:text-sm">
-          Secure channel • Episodic logging active
-        </p>
-
-        <div className="flex items-center gap-2 self-end md:self-auto">
-          {/* Export Button */}
+    <div
+      className="flex flex-col md:flex-row h-full relative"
+      ref={chatContainerRef}
+    >
+      {/* Conversations Sidebar */}
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 glass-dark">
+        <div className="p-4 flex items-center justify-between gap-2">
+          <div className="text-sm font-semibold text-white">Conversations</div>
           <button
-            onClick={handleExport}
-            disabled={isExporting || !history?.length}
-            className={clsx(
-              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
-              isExporting
-                ? "bg-white/5 border-white/10 text-gray-500"
-                : exportSuccess
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
-            )}
+            onClick={() => createConversation.mutate()}
+            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            title="New conversation"
+            disabled={createConversation.isPending}
           >
-            {isExporting ? (
-              <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
-            ) : exportSuccess ? (
-              <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+            {createConversation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Download className="w-3 h-3 md:w-4 md:h-4" />
+              <Plus className="w-4 h-4" />
             )}
-            <span className="font-medium">
-              {isExporting
-                ? "Exporting..."
-                : exportSuccess
-                  ? "Exported!"
-                  : "Export PDF"}
-            </span>
-          </button>
-
-          {/* Semantic Write Toggle */}
-          <button
-            onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
-            className={clsx(
-              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
-              isMemoryWriteEnabled
-                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
-            )}
-          >
-            {isMemoryWriteEnabled ? (
-              <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
-            ) : (
-              <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
-            )}
-            <span className="font-medium">
-              Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
-            </span>
           </button>
         </div>
-      </header>
 
-      {/* Export Error Message */}
-      {exportError && (
-        <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
-          <AlertCircle className="w-4 h-4" />
-          {exportError}
-        </div>
-      )}
+        <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-[calc(100vh-9rem)] overflow-y-auto no-scrollbar">
+          <button
+            onClick={() => setActiveConversationId(null)}
+            className={clsx(
+              "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+              activeConversationId === null
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "text-gray-300 hover:bg-white/5",
+            )}
+            title="View all messages"
+          >
+            All Messages
+          </button>
 
-      {/* Chat Area */}
-      <div
-        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
-        ref={scrollRef}
-      >
-        {isLoading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
-            <AlertCircle className="w-5 h-5" />
-            <span>Error loading history: {error.message}</span>
-          </div>
-        ) : (
-          history?.map((msg) => {
-            const isUser = String(msg.provenance?.source_type) === "user";
-            return (
-              <div
-                key={msg.id}
-                className={clsx(
-                  "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
-                  isUser ? "self-end items-end" : "self-start items-start",
-                )}
-              >
-                <div className="flex items-baseline gap-2 px-1">
-                  <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                    {isUser ? "You" : "Aperion"}
-                  </span>
-                  <span className="text-[10px] font-mono text-white/20">
-                    {new Date(msg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
+          {conversationsQuery.isLoading ? (
+            <div className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+            </div>
+          ) : conversationsQuery.error ? (
+            <div className="px-3 py-2 text-sm text-red-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> Failed to load
+            </div>
+          ) : (
+            conversationsQuery.data?.map((c) => {
+              const isActive = activeConversationId === c.id;
+              const isRenaming = renamingConversationId === c.id;
+              return (
                 <div
+                  key={c.id}
                   className={clsx(
-                    "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
-                    isUser
-                      ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
-                      : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
+                    "group flex items-center gap-2 px-2 py-1 rounded-lg",
+                    isActive ? "bg-white/5" : "hover:bg-white/5",
                   )}
                 >
-                  {msg.content}
-                </div>
-
-                {/* Message Actions */}
-                <div
-                  className={clsx(
-                    "flex items-center gap-1 px-1 transition-opacity duration-200",
-                    "opacity-0 group-hover:opacity-100",
-                    isUser ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  {/* Copy Button */}
                   <button
-                    onClick={() => handleCopy(msg.id, msg.content)}
-                    className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                    title="Copy to clipboard"
+                    onClick={() => setActiveConversationId(c.id)}
+                    className={clsx(
+                      "flex-1 min-w-0 text-left px-2 py-2 rounded-md text-sm transition-colors",
+                      isActive ? "text-emerald-300" : "text-gray-300",
+                    )}
+                    title={c.title}
                   >
-                    {copiedId === msg.id ? (
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    {isRenaming ? (
+                      <input
+                        value={conversationTitleDraft}
+                        onChange={(e) =>
+                          setConversationTitleDraft(e.target.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            renameConversation.mutate({
+                              id: c.id,
+                              title: conversationTitleDraft,
+                            });
+                          }
+                          if (e.key === "Escape") {
+                            setRenamingConversationId(null);
+                            setConversationTitleDraft("");
+                          }
+                        }}
+                        className="w-full bg-black/20 border border-white/10 rounded-md px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                        autoFocus
+                        disabled={renameConversation.isPending}
+                      />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <span className="block truncate">{c.title}</span>
                     )}
                   </button>
 
-                  {/* Rating Buttons (AI messages only) */}
-                  {!isUser && (
-                    <>
-                      <button
-                        onClick={() => handleRate(msg.id, "up")}
-                        className={clsx(
-                          "p-1.5 rounded-md transition-all",
-                          ratedMessages[msg.id] === "up"
-                            ? "text-emerald-400 bg-emerald-500/20"
-                            : "text-gray-500 hover:text-white hover:bg-white/10",
-                        )}
-                        title="Good response"
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleRate(msg.id, "down")}
-                        className={clsx(
-                          "p-1.5 rounded-md transition-all",
-                          ratedMessages[msg.id] === "down"
-                            ? "text-red-400 bg-red-500/20"
-                            : "text-gray-500 hover:text-white hover:bg-white/10",
-                        )}
-                        title="Poor response"
-                      >
-                        <ThumbsDown className="w-3.5 h-3.5" />
-                      </button>
-                    </>
+                  {!isRenaming && (
+                    <button
+                      onClick={() => {
+                        setRenamingConversationId(c.id);
+                        setConversationTitleDraft(c.title);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                      title="Rename"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                   )}
-                </div>
-              </div>
-            );
-          })
-        )}
 
-        {/* Optimistic / Pending Message */}
-        {sendMessage.isPending && !isStreaming && (
-          <div className="flex flex-col gap-1 opacity-60 self-end items-end">
-            <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
-              {input}
-            </div>
-            <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-              <Loader2 className="w-3 h-3 animate-spin" /> Sending...
+                  <button
+                    onClick={() => deleteConversation.mutate(c.id)}
+                    className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                    title="Delete"
+                    disabled={deleteConversation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </aside>
+
+      <div className="flex-1 flex flex-col h-full">
+        {/* Header */}
+        <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+              Operator Chat
+            </h1>
+            {/* Connection Status */}
+            <span
+              className={clsx(
+                "p-1 rounded-full",
+                isConnected ? "text-emerald-400" : "text-red-400",
+              )}
+              title={isConnected ? "Connected" : "Disconnected"}
+            >
+              {isConnected ? (
+                <Wifi className="w-4 h-4" />
+              ) : (
+                <WifiOff className="w-4 h-4" />
+              )}
             </span>
           </div>
-        )}
+          <p className="text-gray-400 text-xs md:text-sm">
+            Secure channel • Episodic logging active • Context: last{" "}
+            {Math.min(history?.length ?? 0, 10)} messages
+          </p>
 
-        {/* Streaming AI Response */}
-        {isStreaming && streamingResponse && (
-          <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
-            <div className="flex items-baseline gap-2 px-1">
-              <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                Aperion
-              </span>
-              <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-                Streaming
-              </span>
-            </div>
-            <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
-              {streamingResponse}
-              <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
-            </div>
-          </div>
-        )}
-
-        {/* Typing Indicator */}
-        {typingUsers.length > 0 && (
-          <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
-            <div className="flex gap-1">
-              <span
-                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              />
-              <span
-                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <span
-                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
-            </div>
-            <span>{typingUsers.join(", ")} is typing...</span>
-          </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        {sendMessage.isError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            Failed to send: {sendMessage.error.message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex gap-2 md:gap-3 items-end">
-          {/* Image Upload */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={handleFileSelect}
-          />
-          <button
-            type="button"
-            className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10"
-            onClick={() => fileInputRef.current?.click()}
-            title="Attach Image"
-            disabled={isUploading}
-          >
-            {isUploading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <ImageIcon className="w-5 h-5" />
-            )}
-          </button>
-
-          {/* Voice Recording */}
-          <button
-            type="button"
-            className={clsx(
-              "p-3 transition-all rounded-full",
-              isRecording
-                ? "bg-red-500/80 text-white animate-pulse shadow-lg shadow-red-500/40"
-                : isProcessingVoice
-                  ? "bg-purple-500/20 text-purple-400"
-                  : "bg-white/5 text-gray-400 hover:text-purple-400 hover:bg-white/10",
-            )}
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={isProcessingVoice}
-            title={isRecording ? "Stop Recording" : "Voice Chat"}
-          >
-            {isProcessingVoice ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : isRecording ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
-          </button>
-
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                // Broadcast typing event to other clients
-                if (e.target.value) {
-                  sendTyping();
+          <div className="flex items-center gap-2 self-end md:self-auto">
+            {/* Tone Selector */}
+            <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm">
+              <span className="text-gray-400 font-medium">Tone</span>
+              <select
+                value={tone}
+                onChange={(e) =>
+                  onChangeTone(
+                    e.target.value as "default" | "concise" | "detailed",
+                  )
                 }
-              }}
-              placeholder="Type a message..."
-              className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
-              disabled={sendMessage.isPending}
-            />
+                className="bg-transparent text-gray-200 outline-none"
+                aria-label="AI tone"
+              >
+                <option value="default">Default</option>
+                <option value="concise">Concise</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+
+            {/* Regenerate last response */}
+            <button
+              onClick={() => regenerateResponse.mutate()}
+              disabled={
+                regenerateResponse.isPending ||
+                isStreaming ||
+                isLoading ||
+                !(history || []).some(
+                  (m) => String(m.provenance?.source_type) === "user",
+                )
+              }
+              className={clsx(
+                "p-2 rounded-full border transition-all backdrop-blur-sm",
+                regenerateResponse.isPending || isStreaming
+                  ? "bg-white/5 border-white/10 text-gray-600"
+                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+              )}
+              title="Regenerate last response"
+            >
+              {regenerateResponse.isPending || isStreaming ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RotateCcw className="w-4 h-4" />
+              )}
+            </button>
+
+            {/* Share Conversation */}
+            <button
+              onClick={shareConversationLink}
+              disabled={!activeConversationId}
+              className={clsx(
+                "p-2 rounded-full border transition-all backdrop-blur-sm",
+                activeConversationId
+                  ? "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                  : "bg-white/5 border-white/10 text-gray-600 cursor-not-allowed",
+              )}
+              title={
+                activeConversationId
+                  ? "Copy shareable conversation link"
+                  : "Select a conversation to share"
+              }
+            >
+              {copiedId === "__share_conversation__" ? (
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <Share2 className="w-4 h-4" />
+              )}
+            </button>
+
+            {/* Export Button */}
+            <button
+              onClick={handleExport}
+              disabled={isExporting || !history?.length}
+              className={clsx(
+                "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
+                isExporting
+                  ? "bg-white/5 border-white/10 text-gray-500"
+                  : exportSuccess
+                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+              )}
+            >
+              {isExporting ? (
+                <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
+              ) : exportSuccess ? (
+                <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+              ) : (
+                <Download className="w-3 h-3 md:w-4 md:h-4" />
+              )}
+              <span className="font-medium">
+                {isExporting
+                  ? "Exporting..."
+                  : exportSuccess
+                    ? "Exported!"
+                    : "Export PDF"}
+              </span>
+            </button>
+
+            {/* Semantic Write Toggle */}
+            <button
+              onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
+              className={clsx(
+                "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
+                isMemoryWriteEnabled
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
+              )}
+            >
+              {isMemoryWriteEnabled ? (
+                <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
+              ) : (
+                <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
+              )}
+              <span className="font-medium">
+                Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
+              </span>
+            </button>
           </div>
+        </header>
 
-          <button
-            type="submit"
-            aria-label="Send"
-            disabled={!input.trim() || sendMessage.isPending}
-            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* Voice Error */}
-        {voiceError && (
-          <div className="mt-2 text-red-400 text-xs flex items-center gap-2 px-2">
-            <AlertCircle className="w-3 h-3" />
-            {voiceError}
+        {/* Export Error Message */}
+        {exportError && (
+          <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
+            <AlertCircle className="w-4 h-4" />
+            {exportError}
           </div>
         )}
+
+        {/* Chat Area */}
+        <div
+          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
+          ref={scrollRef}
+        >
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
+              <AlertCircle className="w-5 h-5" />
+              <span>Error loading history: {error.message}</span>
+            </div>
+          ) : (
+            history?.map((msg) => {
+              const isUser = String(msg.provenance?.source_type) === "user";
+              const isEditing = editingMessageId === msg.id;
+              return (
+                <div
+                  key={msg.id}
+                  data-message-id={msg.id}
+                  className={clsx(
+                    "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
+                    isUser ? "self-end items-end" : "self-start items-start",
+                  )}
+                >
+                  <div className="flex items-baseline gap-2 px-1">
+                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                      {isUser ? "You" : "Aperion"}
+                    </span>
+                    <span className="text-[10px] font-mono text-white/20">
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div
+                    className={clsx(
+                      "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
+                      highlightMessageId === msg.id &&
+                        "ring-1 ring-white/20 border-white/20",
+                      isUser
+                        ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
+                        : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
+                    )}
+                  >
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingContent}
+                          onChange={(e) => setEditingContent(e.target.value)}
+                          rows={3}
+                          className={clsx(
+                            "w-full resize-y bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all",
+                          )}
+                          disabled={updateMessage.isPending}
+                        />
+                        {editError && (
+                          <div className="text-xs text-red-400 flex items-center gap-2">
+                            <AlertCircle className="w-3 h-3" />
+                            {editError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <MessageContent content={msg.content} />
+                    )}
+                  </div>
+
+                  {/* Message Actions */}
+                  <div
+                    className={clsx(
+                      "flex items-center gap-1 px-1 transition-opacity duration-200",
+                      "opacity-0 group-hover:opacity-100",
+                      isUser ? "flex-row-reverse" : "flex-row",
+                    )}
+                  >
+                    {/* Share Link */}
+                    <button
+                      onClick={() => shareMessageLink(msg.id)}
+                      className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                      title="Copy shareable message link"
+                      disabled={isEditing}
+                    >
+                      {copiedId === `share:${msg.id}` ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Share2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+
+                    {/* Copy Button */}
+                    <button
+                      onClick={() => handleCopy(msg.id, msg.content)}
+                      className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                      title="Copy to clipboard"
+                      disabled={isEditing}
+                    >
+                      {copiedId === msg.id ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+
+                    {/* Edit Buttons (user messages only) */}
+                    {isUser && (
+                      <>
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={saveEditing}
+                              className={clsx(
+                                "p-1.5 rounded-md transition-all",
+                                updateMessage.isPending
+                                  ? "text-gray-600 bg-white/5"
+                                  : "text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30",
+                              )}
+                              title="Save edit"
+                              disabled={updateMessage.isPending}
+                            >
+                              {updateMessage.isPending ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                              title="Cancel edit"
+                              disabled={updateMessage.isPending}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => startEditing(msg.id, msg.content)}
+                            className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                            title="Edit message"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {/* Rating Buttons (AI messages only) */}
+                    {!isUser && (
+                      <>
+                        <button
+                          onClick={() => handleRate(msg.id, "up")}
+                          className={clsx(
+                            "p-1.5 rounded-md transition-all",
+                            ratedMessages[msg.id] === "up"
+                              ? "text-emerald-400 bg-emerald-500/20"
+                              : "text-gray-500 hover:text-white hover:bg-white/10",
+                          )}
+                          title="Good response"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleRate(msg.id, "down")}
+                          className={clsx(
+                            "p-1.5 rounded-md transition-all",
+                            ratedMessages[msg.id] === "down"
+                              ? "text-red-400 bg-red-500/20"
+                              : "text-gray-500 hover:text-white hover:bg-white/10",
+                          )}
+                          title="Poor response"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Optimistic / Pending Message */}
+          {sendMessage.isPending && !isStreaming && (
+            <div className="flex flex-col gap-1 opacity-60 self-end items-end">
+              <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
+                {input}
+              </div>
+              <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> Sending...
+              </span>
+            </div>
+          )}
+
+          {/* Streaming AI Response */}
+          {isStreaming && streamingResponse && (
+            <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
+              <div className="flex items-baseline gap-2 px-1">
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                  Aperion
+                </span>
+                <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                  Streaming
+                </span>
+              </div>
+              <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
+                <MessageContent content={streamingResponse} />
+                <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
+              </div>
+              {streamingDerivedFrom.length > 0 && (
+                <div className="px-1 text-[10px] font-mono text-gray-500">
+                  Influenced by: {streamingDerivedFrom.length} memory
+                  {streamingDerivedFrom.length === 1 ? "" : "ies"}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
+              <div className="flex gap-1">
+                <span
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <span
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                />
+              </div>
+              <span>{typingUsers.join(", ")} is typing...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          {sendMessage.isError && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Failed to send: {sendMessage.error.message}
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex gap-2 md:gap-3 items-end"
+          >
+            {/* Image Upload */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
+            <button
+              type="button"
+              className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10"
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach Image"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <ImageIcon className="w-5 h-5" />
+              )}
+            </button>
+
+            {/* Voice Recording */}
+            <button
+              type="button"
+              className={clsx(
+                "p-3 transition-all rounded-full",
+                isRecording
+                  ? "bg-red-500/80 text-white animate-pulse shadow-lg shadow-red-500/40"
+                  : isProcessingVoice
+                    ? "bg-purple-500/20 text-purple-400"
+                    : "bg-white/5 text-gray-400 hover:text-purple-400 hover:bg-white/10",
+              )}
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isProcessingVoice}
+              title={isRecording ? "Stop Recording" : "Voice Chat"}
+            >
+              {isProcessingVoice ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </button>
+
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Broadcast typing event to other clients
+                  if (e.target.value) {
+                    sendTyping();
+                  }
+                }}
+                placeholder="Type a message..."
+                className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+                disabled={sendMessage.isPending}
+              />
+            </div>
+
+            <button
+              type="submit"
+              aria-label="Send"
+              disabled={!input.trim() || sendMessage.isPending}
+              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </form>
+
+          {/* Voice Error */}
+          {voiceError && (
+            <div className="mt-2 text-red-400 text-xs flex items-center gap-2 px-2">
+              <AlertCircle className="w-3 h-3" />
+              {voiceError}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

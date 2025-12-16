@@ -2,6 +2,7 @@ import { EpisodicRecord, SemanticRecord } from "@aperion/memory-core";
 import { computeHash } from "@aperion/shared";
 import { Env } from "../types";
 import { generateChatCompletion, generateEmbedding } from "./ai";
+import { ConversationsService } from "../services/ConversationsService";
 
 // Define the shape of messages sent to the queue
 export type MemoryQueueMessage =
@@ -74,8 +75,11 @@ async function processEpisodic(record: EpisodicRecord, env: Env) {
     record.hash = computeHash(record);
   }
 
+  const conversationId = (record as unknown as { conversation_id?: string })
+    .conversation_id;
+
   await env.MEMORY_DB.prepare(
-    "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO episodic (id, created_at, content, provenance, hash, conversation_id) VALUES (?, ?, ?, ?, ?, ?)",
   )
     .bind(
       record.id,
@@ -83,8 +87,13 @@ async function processEpisodic(record: EpisodicRecord, env: Env) {
       record.content,
       JSON.stringify(record.provenance),
       record.hash,
+      conversationId || null,
     )
     .run();
+
+  if (conversationId) {
+    await new ConversationsService(env).touch(conversationId, record.createdAt);
+  }
 }
 
 async function processSemantic(record: SemanticRecord, env: Env) {

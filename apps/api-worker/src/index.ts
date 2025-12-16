@@ -1,11 +1,17 @@
 import { AutoRouter, IRequest, error } from "itty-router";
+import { AnalyticsController } from "./controllers/AnalyticsController";
 import { ChatController } from "./controllers/ChatController";
+import { ConversationsController } from "./controllers/ConversationsController";
 import { EpisodicController } from "./controllers/EpisodicController";
 import { IdentityController } from "./controllers/IdentityController";
+import { InsightsController } from "./controllers/InsightsController";
 import { JobsController } from "./controllers/JobsController";
 import { LogsController } from "./controllers/LogsController";
 import { MediaController } from "./controllers/MediaController";
+import { KnowledgeController } from "./controllers/KnowledgeController";
+import { PreferencesController } from "./controllers/PreferencesController";
 import { ReceiptsController } from "./controllers/ReceiptsController";
+import { RelationshipsController } from "./controllers/RelationshipsController";
 import { RunbooksController } from "./controllers/RunbooksController";
 import { SemanticController } from "./controllers/SemanticController";
 import { VoiceController } from "./controllers/VoiceController";
@@ -71,9 +77,30 @@ router.post("/v1/chat/stream", withAuth, ChatController.stream);
 router.post("/v1/chat/export", withAuth, ChatController.export);
 router.post("/v1/chat/analyze", withAuth, ChatController.analyze);
 
+// Conversations
+router.get("/v1/conversations", withAuth, ConversationsController.list);
+router.post("/v1/conversations", withAuth, ConversationsController.create);
+router.put("/v1/conversations/:id", withAuth, ConversationsController.rename);
+router.delete(
+  "/v1/conversations/:id",
+  withAuth,
+  ConversationsController.delete,
+);
+
+// Preferences
+router.get("/v1/preferences/:key", withAuth, PreferencesController.get);
+router.put("/v1/preferences/:key", withAuth, PreferencesController.set);
+
+// Analytics
+router.get("/v1/analytics", withAuth, AnalyticsController.dashboard);
+
+// Insights
+router.post("/v1/insights/summary", withAuth, InsightsController.summarize);
+
 // Episodic
 router.post("/v1/episodic", withAuth, EpisodicController.create);
 router.get("/v1/episodic", withAuth, EpisodicController.list);
+router.put("/v1/episodic/:id", withAuth, EpisodicController.update);
 router.delete("/v1/episodic", withAuth, EpisodicController.delete);
 
 // Semantic
@@ -81,6 +108,14 @@ router.post("/v1/semantic", withAuth, SemanticController.create);
 router.get("/v1/semantic/search", withAuth, SemanticController.search);
 router.get("/v1/semantic/hybrid", withAuth, SemanticController.hybridSearch);
 router.post("/v1/semantic/summarize", withAuth, SemanticController.summarize);
+
+// Knowledge
+router.get("/v1/knowledge", withAuth, KnowledgeController.list);
+router.post("/v1/knowledge/promote", withAuth, KnowledgeController.promote);
+
+// Relationships
+router.get("/v1/relationships", withAuth, RelationshipsController.list);
+router.post("/v1/relationships", withAuth, RelationshipsController.create);
 
 // Identity
 router.post("/v1/identity", withAuth, IdentityController.upsert);

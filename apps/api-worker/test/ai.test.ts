@@ -1,4 +1,3 @@
-import { Ai } from "@cloudflare/workers-types";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { generateEmbedding } from "../src/lib/ai";
 

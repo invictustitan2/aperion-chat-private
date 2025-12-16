@@ -19,6 +19,7 @@ export class VoiceController {
 
     const form = await request.formData();
     const audio = form.get("audio");
+    const conversationId = form.get("conversation_id")?.toString();
     if (!(audio instanceof File)) {
       return error(400, "Missing 'audio' file");
     }
@@ -87,10 +88,16 @@ export class VoiceController {
 
     // Queue Write
     if (env.MEMORY_QUEUE) {
-      await env.MEMORY_QUEUE.send({ type: "episodic", record });
+      await env.MEMORY_QUEUE.send({
+        type: "episodic",
+        record: {
+          ...(record as unknown as Record<string, unknown>),
+          ...(conversationId ? { conversation_id: conversationId } : {}),
+        } as unknown as EpisodicRecord,
+      });
     } else {
       await env.MEMORY_DB.prepare(
-        "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO episodic (id, created_at, content, provenance, hash, conversation_id) VALUES (?, ?, ?, ?, ?, ?)",
       )
         .bind(
           record.id,
@@ -98,6 +105,7 @@ export class VoiceController {
           record.content,
           JSON.stringify(record.provenance),
           record.hash,
+          conversationId || null,
         )
         .run();
     }

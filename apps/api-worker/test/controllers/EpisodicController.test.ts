@@ -9,6 +9,7 @@ vi.mock("../../src/services/EpisodicService", () => {
     EpisodicService: vi.fn().mockImplementation(() => ({
       create: vi.fn(),
       list: vi.fn(),
+      update: vi.fn(),
       clear: vi.fn(),
     })),
   };
@@ -73,7 +74,7 @@ describe("EpisodicController", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Cache-Control")).toBe("private, max-age=5");
-      expect(mockList).toHaveBeenCalledWith(10, 0);
+      expect(mockList).toHaveBeenCalledWith(10, 0, undefined);
     });
   });
 
@@ -95,6 +96,58 @@ describe("EpisodicController", () => {
       const response = await EpisodicController.delete(mockRequest, mockEnv);
       expect(response.status).toBe(200);
       expect(mockClear).toHaveBeenCalled();
+    });
+  });
+
+  describe("update", () => {
+    it("should return 400 if id missing", async () => {
+      mockRequest.params = {};
+      mockRequest.json.mockResolvedValue({ content: "updated" });
+
+      const response = await EpisodicController.update(mockRequest, mockEnv);
+      expect(response.status).toBe(400);
+    });
+
+    it("should return 400 for invalid body", async () => {
+      mockRequest.params = { id: "m1" };
+      mockRequest.json.mockResolvedValue({});
+
+      const response = await EpisodicController.update(mockRequest, mockEnv);
+      expect(response.status).toBe(400);
+    });
+
+    it("should update content", async () => {
+      mockRequest.params = { id: "m1" };
+      mockRequest.json.mockResolvedValue({ content: "updated" });
+
+      const mockUpdate = vi.fn().mockResolvedValue({ success: true, id: "m1" });
+      (
+        EpisodicService as unknown as ReturnType<typeof vi.fn>
+      ).mockImplementation(() => ({
+        update: mockUpdate,
+      }));
+
+      const response = await EpisodicController.update(mockRequest, mockEnv);
+      expect(response.status).toBe(200);
+      expect(mockUpdate).toHaveBeenCalledWith("m1", { content: "updated" });
+    });
+
+    it("should update tags", async () => {
+      mockRequest.params = { id: "m1" };
+      mockRequest.json.mockResolvedValue({ tags: ["work", "personal"] });
+
+      const mockUpdate = vi.fn().mockResolvedValue({ success: true, id: "m1" });
+      (
+        EpisodicService as unknown as ReturnType<typeof vi.fn>
+      ).mockImplementation(() => ({
+        update: mockUpdate,
+      }));
+
+      const response = await EpisodicController.update(mockRequest, mockEnv);
+      expect(response.status).toBe(200);
+      expect(mockUpdate).toHaveBeenCalledWith("m1", {
+        tags: ["work", "personal"],
+      });
     });
   });
 });

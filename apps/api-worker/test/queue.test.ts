@@ -1,45 +1,36 @@
-import {
-  Ai,
-  D1Database,
-  Message,
-  VectorizeIndex,
-} from "@cloudflare/workers-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Env } from "../src/index";
 import {
   MemoryQueueMessage,
   processMemoryBatch,
 } from "../src/lib/queue-processor";
+import {
+  createFakeAi,
+  createFakeD1Database,
+  createFakeVectorizeIndex,
+  createMockEnv,
+} from "./bindings/mockBindings";
 
 describe("Queue Processor", () => {
-  let mockEnv: Partial<Env>;
-  let mockDB: D1Database;
-  let mockAI: Ai;
-  let mockVectors: VectorizeIndex;
+  let env: ReturnType<typeof createMockEnv>;
+  let db: ReturnType<typeof createFakeD1Database>;
+  let vectors: ReturnType<typeof createFakeVectorizeIndex>;
+  let ai: ReturnType<typeof createFakeAi>;
 
   beforeEach(() => {
-    const mockStmt = {
-      bind: vi.fn().mockReturnThis(),
-      run: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as D1PreparedStatement;
+    db = createFakeD1Database();
+    vectors = createFakeVectorizeIndex();
+    ai = createFakeAi({ embedding: [0.1, 0.2] });
+    vi.spyOn(ai as unknown as { run: (...args: unknown[]) => unknown }, "run");
+    vi.spyOn(
+      vectors as unknown as { insert: (...args: unknown[]) => unknown },
+      "insert",
+    );
 
-    mockDB = {
-      prepare: vi.fn().mockReturnValue(mockStmt),
-    } as unknown as D1Database;
-
-    mockAI = {
-      run: vi.fn().mockResolvedValue({ data: [[0.1, 0.2]] }),
-    } as unknown as Ai;
-
-    mockVectors = {
-      insert: vi.fn().mockResolvedValue({}),
-    } as unknown as VectorizeIndex;
-
-    mockEnv = {
-      MEMORY_DB: mockDB,
-      AI: mockAI,
-      MEMORY_VECTORS: mockVectors,
-    };
+    env = createMockEnv({
+      MEMORY_DB: db,
+      AI: ai,
+      MEMORY_VECTORS: vectors,
+    });
   });
 
   it("should process episodic messages", async () => {
@@ -60,11 +51,11 @@ describe("Queue Processor", () => {
       },
     ] as unknown as Message<MemoryQueueMessage>[];
 
-    await processMemoryBatch(messages, mockEnv as Env);
+    await processMemoryBatch(messages, env);
 
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO episodic"),
-    );
+    expect(
+      db.prepared.some((p) => p.query.includes("INSERT INTO episodic")),
+    ).toBe(true);
     expect(messages[0].ack).toHaveBeenCalled();
   });
 
@@ -86,22 +77,33 @@ describe("Queue Processor", () => {
       },
     ] as unknown as Message<MemoryQueueMessage>[];
 
-    await processMemoryBatch(messages, mockEnv as Env);
+    await processMemoryBatch(messages, env);
 
-    expect(mockAI.run).toHaveBeenCalled(); // Should generate embedding
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO semantic"),
-    );
-    expect(mockVectors.insert).toHaveBeenCalled();
+    expect(
+      (ai as unknown as { run: (...args: unknown[]) => unknown }).run,
+    ).toHaveBeenCalled();
+    expect(
+      db.prepared.some((p) => p.query.includes("INSERT INTO semantic")),
+    ).toBe(true);
+    expect(
+      (vectors as unknown as { insert: (...args: unknown[]) => unknown })
+        .insert,
+    ).toHaveBeenCalled();
     expect(messages[0].ack).toHaveBeenCalled();
   });
 
   it("should retry if processing fails", async () => {
-    const mockStmtThrow = {
-      bind: vi.fn().mockReturnThis(),
-      run: vi.fn().mockRejectedValue(new Error("DB Error")),
-    } as unknown as PreparedStatement;
-    mockDB.prepare = vi.fn().mockReturnValue(mockStmtThrow);
+    db = createFakeD1Database({
+      run: async () => {
+        throw new Error("DB Error");
+      },
+    });
+
+    env = createMockEnv({
+      MEMORY_DB: db,
+      AI: ai,
+      MEMORY_VECTORS: vectors,
+    });
 
     const messages = [
       {
@@ -115,7 +117,7 @@ describe("Queue Processor", () => {
       },
     ] as unknown as Message<MemoryQueueMessage>[];
 
-    await processMemoryBatch(messages, mockEnv as Env);
+    await processMemoryBatch(messages, env);
     expect(messages[0].retry).toHaveBeenCalled();
   });
 });

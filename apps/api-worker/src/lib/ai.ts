@@ -17,7 +17,7 @@ export async function generateEmbedding(
   });
 
   // response is { shape: [1, 768], data: [[...]] } usually
-  // The types for @cloudflare/workers-types AI run output can be generic
+  // Wrangler runtime AI types are intentionally generic here
   // We expect { data: number[][] } for embeddings
   const data = (response as { data: number[][] }).data;
   if (!data || !data[0]) {

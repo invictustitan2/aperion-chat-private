@@ -6,6 +6,8 @@
 - **Cloudflare-first stack**: Workers + D1 + KV + Durable Objects + Workers AI + Vectorize.
 - **Optional AWS sidecar** for additional capabilities.
 - **Provenance-first memory engine**.
+- **New product surfaces**: Analytics, Knowledge, and Insights tabs.
+- **Directional relationships**: evidence-backed “reason receipts” between memories.
 
 ## Philosophy
 

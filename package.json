@@ -12,6 +12,9 @@
     "format": "prettier --write .",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "coverage:report": "node ./scripts/coverage/report.mjs",
     "test:e2e": "playwright test",
     "ship": "echo '🚀 Running verification pipeline...'; pnpm typecheck && pnpm lint && pnpm test && echo '✅ Ready to Ship!'",
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
@@ -19,18 +22,21 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.42.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitest/coverage-v8": "^1.6.1",
     "eslint": "^8.57.0",
     "husky": "^9.1.7",
+    "jsdom": "^27.3.0",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
     "prettier": "^3.2.5",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
-    "wrangler": "^4.54.0"
+    "wrangler": "^4.55.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

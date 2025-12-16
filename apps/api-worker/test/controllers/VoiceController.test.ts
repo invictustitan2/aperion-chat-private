@@ -3,7 +3,12 @@ import { MemoryWriteGate } from "@aperion/policy";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VoiceController } from "../../src/controllers/VoiceController";
 import { generateChatCompletion } from "../../src/lib/ai";
-import { Env } from "../../src/types";
+import type { Env } from "../../src/types";
+import {
+  createFakeD1Database,
+  createFakeQueue,
+  createMockEnv,
+} from "../bindings/mockBindings";
 
 // Setup mocks
 vi.mock("@aperion/policy", () => ({
@@ -27,6 +32,8 @@ vi.mock("../../src/lib/textToSpeech", () => ({
 describe("VoiceController", () => {
   let mockRequest: any;
   let mockEnv: Env;
+  let db: ReturnType<typeof createFakeD1Database>;
+  let queue: ReturnType<typeof createFakeQueue>;
   let mockFormData: FormData;
   let mockFile: File;
 
@@ -44,17 +51,13 @@ describe("VoiceController", () => {
       formData: vi.fn().mockResolvedValue(mockFormData),
     };
 
-    mockEnv = {
-      AI: {}, // Presence implies use Workers AI
-      MEMORY_DB: {
-        prepare: vi.fn().mockReturnThis(),
-        bind: vi.fn().mockReturnThis(),
-        run: vi.fn().mockResolvedValue({}),
-      },
-      MEMORY_QUEUE: {
-        send: vi.fn(), // If queue is present
-      },
-    } as unknown as Env;
+    db = createFakeD1Database();
+    queue = createFakeQueue();
+    vi.spyOn(queue, "send");
+    mockEnv = createMockEnv({
+      MEMORY_DB: db,
+      MEMORY_QUEUE: queue as any,
+    });
 
     vi.clearAllMocks();
   });
@@ -104,12 +107,12 @@ describe("VoiceController", () => {
     });
 
     // Verify DB Receipt
-    expect(mockEnv.MEMORY_DB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO receipts"),
-    );
+    expect(
+      db.prepared.some((p) => p.query.includes("INSERT INTO receipts")),
+    ).toBe(true);
 
     // Verify Queue Send
-    expect(mockEnv.MEMORY_QUEUE.send).toHaveBeenCalledWith(
+    expect(queue.send).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "episodic",
         record: expect.objectContaining({ content: "Hello world" }),

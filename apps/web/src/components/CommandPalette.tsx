@@ -1,9 +1,12 @@
 import { clsx } from "clsx";
 import {
+  BarChart3,
   Brain,
   Command,
   FileText,
+  Loader2,
   MessageSquare,
+  Moon,
   ScrollText,
   Search,
   Settings,
@@ -12,6 +15,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
+import { getTheme, toggleTheme } from "../lib/theme";
 
 interface CommandItem {
   id: string;
@@ -32,6 +37,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [memorySearchResults, setMemorySearchResults] = useState<
+    Array<{ id: string; content: string; score: number; createdAt: number }>
+  >([]);
+  const [isMemorySearching, setIsMemorySearching] = useState(false);
+  const [memorySearchError, setMemorySearchError] = useState<string | null>(
+    null,
+  );
 
   // Define all commands
   const commands: CommandItem[] = [
@@ -54,6 +66,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: Brain,
       action: () => {
         navigate("/memory");
+        onClose();
+      },
+      category: "navigation",
+    },
+    {
+      id: "nav-analytics",
+      label: "Go to Analytics",
+      description: "View usage and memory growth",
+      icon: BarChart3,
+      action: () => {
+        navigate("/analytics");
         onClose();
       },
       category: "navigation",
@@ -132,10 +155,21 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       },
       category: "action",
     },
+    {
+      id: "action-toggle-theme",
+      label: "Toggle Theme",
+      description: `Switch to ${getTheme() === "dark" ? "light" : "dark"} mode`,
+      icon: Moon,
+      action: () => {
+        toggleTheme();
+        onClose();
+      },
+      category: "action",
+    },
   ];
 
   // Filter commands based on query
-  const filteredCommands = query
+  const filteredStaticCommands = query
     ? commands.filter(
         (cmd) =>
           cmd.label.toLowerCase().includes(query.toLowerCase()) ||
@@ -143,12 +177,72 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       )
     : commands;
 
+  const memoryResultCommands: CommandItem[] = memorySearchResults.map((r) => {
+    const snippet =
+      r.content.length > 80 ? `${r.content.slice(0, 80)}…` : r.content;
+    return {
+      id: `mem-${r.id}`,
+      label: snippet,
+      description: `Memory match • ${(r.score ?? 0).toFixed(2)} • ${new Date(r.createdAt).toLocaleDateString()}`,
+      icon: Brain,
+      action: () => {
+        const q = encodeURIComponent(query);
+        const open = encodeURIComponent(r.id);
+        navigate(`/memory?q=${q}&open=${open}`);
+        onClose();
+      },
+      category: "search",
+    };
+  });
+
+  const filteredCommands = [...filteredStaticCommands, ...memoryResultCommands];
+
   // Group commands by category
   const groupedCommands = {
     navigation: filteredCommands.filter((c) => c.category === "navigation"),
     action: filteredCommands.filter((c) => c.category === "action"),
     search: filteredCommands.filter((c) => c.category === "search"),
   };
+
+  // Debounced semantic memory search
+  useEffect(() => {
+    const q = query.trim();
+    if (!isOpen) return;
+
+    if (q.length < 2) {
+      setMemorySearchResults([]);
+      setIsMemorySearching(false);
+      setMemorySearchError(null);
+      return;
+    }
+
+    setIsMemorySearching(true);
+    setMemorySearchError(null);
+
+    const nextTimer = window.setTimeout(async () => {
+      try {
+        const results = await api.semantic.search(q, 5);
+        setMemorySearchResults(
+          results.map((r) => ({
+            id: r.id,
+            content: r.content,
+            score: r.score,
+            createdAt: r.createdAt,
+          })),
+        );
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setMemorySearchResults([]);
+        setMemorySearchError(msg || "Memory search failed");
+      } finally {
+        setIsMemorySearching(false);
+      }
+    }, 200);
+
+    return () => {
+      window.clearTimeout(nextTimer);
+    };
+  }, [query, isOpen]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
@@ -185,6 +279,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       inputRef.current?.focus();
       setQuery("");
       setSelectedIndex(0);
+      setMemorySearchResults([]);
+      setIsMemorySearching(false);
+      setMemorySearchError(null);
     }
   }, [isOpen]);
 
@@ -243,6 +340,24 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             </div>
           ) : (
             <>
+              {query.trim().length >= 2 && (
+                <div className="px-2 py-2 text-xs text-gray-500 flex items-center justify-between">
+                  <span className="uppercase tracking-wider">
+                    Quick memory search
+                  </span>
+                  {isMemorySearching && (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Searching…
+                    </span>
+                  )}
+                </div>
+              )}
+              {memorySearchError && (
+                <div className="px-2 pb-2 text-xs text-red-400">
+                  {memorySearchError}
+                </div>
+              )}
               {groupedCommands.navigation.length > 0 && (
                 <div className="mb-2">
                   <div className="px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -267,6 +382,24 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     Actions
                   </div>
                   {groupedCommands.action.map((cmd) => {
+                    const globalIdx = filteredCommands.indexOf(cmd);
+                    return (
+                      <CommandRow
+                        key={cmd.id}
+                        command={cmd}
+                        isSelected={selectedIndex === globalIdx}
+                        onClick={cmd.action}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+              {groupedCommands.search.length > 0 && (
+                <div className="mb-2">
+                  <div className="px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Search
+                  </div>
+                  {groupedCommands.search.map((cmd) => {
                     const globalIdx = filteredCommands.indexOf(cmd);
                     return (
                       <CommandRow

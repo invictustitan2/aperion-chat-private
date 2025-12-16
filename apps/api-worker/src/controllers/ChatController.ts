@@ -1,7 +1,10 @@
 import { IRequest, error, json } from "itty-router";
-import { ChatMessage, generateChatCompletionStream } from "../lib/ai";
+import { AI_LIMITS, AI_MODELS, ChatMessage } from "../lib/ai";
 import { ChatRequestSchema } from "../lib/schemas";
+import { EpisodicService } from "../services/EpisodicService";
 import { ChatService } from "../services/ChatService";
+import { PreferencesService } from "../services/PreferencesService";
+import { SemanticService } from "../services/SemanticService";
 import { Env } from "../types";
 
 export class ChatController {
@@ -24,6 +27,7 @@ export class ChatController {
         body.message,
         body.history,
         body.model,
+        body.conversation_id,
       );
       return json(result);
     } catch (e: unknown) {
@@ -49,21 +53,153 @@ export class ChatController {
 
     const body = parseResult.data;
 
-    const SYSTEM_PROMPT = `You are Aperion, a helpful and intelligent AI assistant. You are part of a memory-augmented chat system that remembers conversations. Be concise, friendly, and helpful. If you don't know something, say so.`;
+    let SYSTEM_PROMPT = `You are Aperion, a helpful and intelligent AI assistant. You are part of a memory-augmented chat system that remembers conversations. Be concise, friendly, and helpful. If you don't know something, say so.`;
 
-    // Build messages array
-    const messages: ChatMessage[] = [
-      ...((body.history as ChatMessage[]) || []).slice(-10),
-      { role: "user" as const, content: body.message },
-    ];
+    // Optional: tone preference from preferences table.
+    try {
+      const pref = await new PreferencesService(env).get("ai.tone");
+      if (typeof pref?.value === "string" && pref.value.trim()) {
+        SYSTEM_PROMPT += `\n\nPreferred tone: ${pref.value.trim()}. Adjust your responses accordingly.`;
+      }
+    } catch {
+      // ignore (tests may not provide MEMORY_DB)
+    }
 
     try {
-      const stream = await generateChatCompletionStream(
-        env.AI,
-        messages,
-        SYSTEM_PROMPT,
-        "chat",
-      );
+      const limits = AI_LIMITS.chat;
+      const model = AI_MODELS.chat;
+
+      // Basic contextual memory injection for streaming path.
+      // We keep this intentionally lightweight and tolerant of missing AI/Vectorize.
+      let derivedFrom: string[] = [];
+      try {
+        const semantic = new SemanticService(env);
+        const hits = await semantic.hybridSearch(body.message, 5);
+        derivedFrom = hits.map((h) => String(h.id));
+        if (hits.length > 0) {
+          const memoryBlock = hits
+            .map(
+              (m, idx) =>
+                `(${idx + 1}) [semantic:${m.id}] ${String(m.content).slice(0, 280)}`,
+            )
+            .join("\n");
+          SYSTEM_PROMPT += `\n\nRelevant memories (cite as [semantic:<id>] when used):\n${memoryBlock}`;
+        }
+      } catch {
+        // ignore
+      }
+
+      // Build messages array
+      const messages: ChatMessage[] = [
+        ...((body.history as ChatMessage[]) || []).slice(-limits.maxContext),
+        { role: "user" as const, content: body.message },
+      ];
+
+      const fullMessages: ChatMessage[] = SYSTEM_PROMPT
+        ? [{ role: "system", content: SYSTEM_PROMPT }, ...messages]
+        : messages;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const aiResponse = await env.AI.run(model as any, {
+        messages: fullMessages,
+        max_tokens: limits.maxTokens,
+        stream: true,
+      });
+
+      const aiStream = aiResponse as ReadableStream<Uint8Array>;
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      const stream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          const reader = aiStream.getReader();
+          let buffer = "";
+          let assistantText = "";
+
+          try {
+            // Emit meta first so the client can display influenced-by.
+            if (derivedFrom.length > 0) {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ meta: { derived_from: derivedFrom } })}\n\n`,
+                ),
+              );
+            }
+
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+
+              const lines = buffer.split("\n");
+              buffer = lines.pop() || "";
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                if (trimmed === "data: [DONE]" || trimmed === "[DONE]") {
+                  continue;
+                }
+
+                const jsonStr = trimmed.startsWith("data: ")
+                  ? trimmed.slice(6)
+                  : trimmed;
+                if (!jsonStr.trim()) continue;
+
+                try {
+                  const parsed = JSON.parse(jsonStr) as { response?: string };
+                  if (parsed.response) {
+                    assistantText += parsed.response;
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify({ token: parsed.response })}\n\n`,
+                      ),
+                    );
+                  }
+                } catch {
+                  // Fallback: forward raw line and treat as token
+                  assistantText += jsonStr;
+                  controller.enqueue(
+                    encoder.encode(
+                      `data: ${JSON.stringify({ token: jsonStr })}\n\n`,
+                    ),
+                  );
+                }
+              }
+            }
+
+            // Persist assistant response BEFORE sending [DONE] so clients can refetch immediately.
+            const content = assistantText.trim();
+            if (content) {
+              const episodic = new EpisodicService(env);
+              await episodic.create({
+                content,
+                provenance: {
+                  source_type: "model",
+                  source_id: "workers-ai",
+                  timestamp: Date.now(),
+                  confidence: 1.0,
+                  ...(derivedFrom.length > 0
+                    ? { derived_from: derivedFrom }
+                    : {}),
+                },
+                ...(body.conversation_id
+                  ? { conversation_id: body.conversation_id }
+                  : {}),
+              });
+            }
+
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          } catch (e) {
+            console.error("Streaming pipeline failed:", e);
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          }
+        },
+      });
 
       return new Response(stream, {
         headers: {

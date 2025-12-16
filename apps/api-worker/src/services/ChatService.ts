@@ -2,26 +2,107 @@ import { computeHash } from "@aperion/shared";
 import { ChatMessage, generateChatCompletion } from "../lib/ai";
 import { generateAssistantReply } from "../lib/gemini";
 import { TOOLS, executeTool } from "../lib/tools";
+import { PreferencesService } from "./PreferencesService";
+import { SemanticService } from "./SemanticService";
 import { Env } from "../types";
+
+type UsedMemory = {
+  type: "semantic";
+  id: string;
+  score?: number;
+  excerpt: string;
+};
 
 export class ChatService {
   constructor(private env: Env) {}
+
+  private async selectRelevantMemories(
+    query: string,
+    limit = 5,
+  ): Promise<UsedMemory[]> {
+    const q = query.trim();
+    if (!q) return [];
+
+    // Prefer semantic hybrid search when AI/Vectorize are configured.
+    try {
+      const semantic = new SemanticService(this.env);
+      const results = await semantic.hybridSearch(q, limit);
+      return results.slice(0, limit).map((r) => ({
+        type: "semantic" as const,
+        id: String(r.id),
+        score: r.score,
+        excerpt: String(r.content).slice(0, 280),
+      }));
+    } catch {
+      // fall through
+    }
+
+    // Fallback: keyword search directly in D1.
+    const tokens = q
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 2)
+      .slice(0, 6);
+
+    if (tokens.length === 0) return [];
+
+    const where = tokens.map(() => "LOWER(content) LIKE ?").join(" OR ");
+    const params = tokens.map((t) => `%${t}%`);
+
+    const { results } = await this.env.MEMORY_DB.prepare(
+      `SELECT id, content FROM semantic WHERE ${where} ORDER BY created_at DESC LIMIT ?`,
+    )
+      .bind(...params, limit)
+      .all();
+
+    return (
+      (results as Array<Record<string, unknown>> | undefined | null)
+        ?.slice(0, limit)
+        .map((r) => ({
+          type: "semantic" as const,
+          id: String(r.id),
+          excerpt: String(r.content ?? "").slice(0, 280),
+        })) || []
+    );
+  }
 
   async processMessage(
     userMessage: string,
     history: ChatMessage[] = [],
     modelProvider: "workers-ai" | "gemini" = "workers-ai",
+    conversationId?: string,
   ) {
     const SYSTEM_PROMPT = `You are Aperion, a helpful and intelligent AI assistant. You are part of a memory-augmented chat system that remembers conversations. Be concise, friendly, and helpful. If you don't know something, say so.`;
 
-    // Fetch user preferences
-    const prefResult = await this.env.MEMORY_DB.prepare(
-      "SELECT preferred_tone FROM identity WHERE key = 'user_preferences'",
-    ).first<{ preferred_tone: string }>();
+    // Fetch user tone preference.
+    // Preferred source: preferences table (key: ai.tone)
+    // Fallback: legacy identity.preferred_tone (key: 'user_preferences')
+    let preferredTone: string | null = null;
+    try {
+      const pref = await new PreferencesService(this.env).get("ai.tone");
+      if (typeof pref?.value === "string" && pref.value.trim()) {
+        preferredTone = pref.value.trim();
+      }
+    } catch {
+      // ignore (e.g., missing table in older deployments)
+    }
+
+    if (!preferredTone) {
+      try {
+        const prefResult = await this.env.MEMORY_DB.prepare(
+          "SELECT preferred_tone FROM identity WHERE key = 'user_preferences'",
+        ).first<{ preferred_tone: string }>();
+        if (prefResult?.preferred_tone?.trim()) {
+          preferredTone = prefResult.preferred_tone.trim();
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     let systemPrompt = SYSTEM_PROMPT;
-    if (prefResult?.preferred_tone) {
-      systemPrompt += `\n\nYour preferred tone is: ${prefResult.preferred_tone}. Adjust your responses accordingly.`;
+    if (preferredTone) {
+      systemPrompt += `\n\nPreferred tone: ${preferredTone}. Adjust your responses accordingly.`;
     }
 
     // Context Management (Basic Truncation)
@@ -29,6 +110,15 @@ export class ChatService {
       ...(history || []).slice(-10),
       { role: "user" as const, content: userMessage },
     ];
+
+    // Contextual Memory Injection (P0 baseline): retrieve a few relevant semantic memories.
+    const usedMemories = await this.selectRelevantMemories(userMessage, 5);
+    if (usedMemories.length > 0) {
+      const memoryBlock = usedMemories
+        .map((m, idx) => `(${idx + 1}) [semantic:${m.id}] ${m.excerpt}`)
+        .join("\n");
+      systemPrompt += `\n\nRelevant memories (cite as [semantic:<id>] when used):\n${memoryBlock}`;
+    }
 
     let finalResponse = "";
 
@@ -109,10 +199,12 @@ export class ChatService {
       source_id: modelProvider,
       timestamp,
       confidence: 1.0,
+      // Use existing provenance field for citations.
+      derived_from: usedMemories.map((m) => m.id),
     });
 
     await this.env.MEMORY_DB.prepare(
-      "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO episodic (id, created_at, content, provenance, hash, conversation_id) VALUES (?, ?, ?, ?, ?, ?)",
     )
       .bind(
         id,
@@ -120,6 +212,7 @@ export class ChatService {
         finalResponse,
         provenance,
         computeHash(finalResponse),
+        conversationId || null,
       )
       .run();
 
@@ -127,6 +220,7 @@ export class ChatService {
       id,
       response: finalResponse,
       timestamp,
+      usedMemories,
     };
   }
 }

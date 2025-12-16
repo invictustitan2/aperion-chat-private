@@ -12,13 +12,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
+import { applyTheme, getTheme, onThemeChange, toggleTheme } from "../lib/theme";
 
 export function Settings() {
   const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("theme") !== "light";
-    }
-    return true;
+    return getTheme() === "dark";
   });
 
   // API Health Check
@@ -71,16 +69,14 @@ export function Settings() {
   };
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDark]);
+    applyTheme(getTheme());
+    return onThemeChange((t) => setIsDark(t === "dark"));
+  }, []);
 
-  const toggleTheme = () => setIsDark(!isDark);
+  const onToggleTheme = () => {
+    const next = toggleTheme();
+    setIsDark(next === "dark");
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -139,7 +135,7 @@ export function Settings() {
               </p>
             </div>
             <button
-              onClick={toggleTheme}
+              onClick={onToggleTheme}
               className={clsx(
                 "relative inline-flex h-10 w-20 items-center rounded-full transition-colors",
                 isDark ? "bg-gray-700" : "bg-yellow-100",

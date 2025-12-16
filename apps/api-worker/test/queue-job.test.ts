@@ -1,50 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { processMemoryBatch } from "../src/lib/queue-processor";
-
-// Define simple mocks for types to avoid complex imports
-type Env = any;
-type D1Database = any;
-type Message<T> = any;
-type MemoryQueueMessage = any;
-
-// Mock dependencies
-vi.mock("../src/lib/ai", () => ({
-  generateChatCompletion: vi
-    .fn()
-    .mockResolvedValue({ response: "Mock summary" }),
-  generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2]),
-}));
-
-const mockDB = {
-  prepare: vi.fn().mockReturnThis(),
-  bind: vi.fn().mockReturnThis(),
-  run: vi.fn().mockResolvedValue({}),
-};
-
-// Mock Env
-const mockEnv = {
-  MEMORY_DB: {
-    prepare: vi.fn().mockReturnThis(),
-    bind: vi.fn().mockReturnThis(),
-    run: vi.fn().mockResolvedValue({}),
-  } as unknown as D1Database,
-  AI: {},
-  MEMORY_VECTORS: {
-    insert: vi.fn(),
-  },
-  MEMORY_QUEUE: {
-    send: vi.fn(),
-  },
-} as unknown as Env;
+import {
+  MemoryQueueMessage,
+  processMemoryBatch,
+} from "../src/lib/queue-processor";
+import {
+  createFakeAi,
+  createFakeD1Database,
+  createFakeQueue,
+  createFakeVectorizeIndex,
+  createMockEnv,
+} from "./bindings/mockBindings";
 
 describe("Queue Processor Jobs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mockDB in mockEnv to ensure it uses the local mockDB for consistency
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockEnv.MEMORY_DB as any) = mockDB;
   });
 
   it("should process summarize job", async () => {
@@ -60,20 +30,44 @@ describe("Queue Processor Jobs", () => {
       retry: vi.fn(),
     } as unknown as Message<MemoryQueueMessage>;
 
-    await processMemoryBatch([message], mockEnv);
+    const db = createFakeD1Database();
+    const queue = createFakeQueue<MemoryQueueMessage>();
+    const vectors = createFakeVectorizeIndex();
+    vi.spyOn(queue, "send");
+    vi.spyOn(
+      vectors as unknown as { insert: (...args: unknown[]) => unknown },
+      "insert",
+    );
+
+    const env = createMockEnv({
+      MEMORY_DB: db,
+      MEMORY_QUEUE: queue,
+      MEMORY_VECTORS: vectors,
+      AI: createFakeAi({ chatResponse: "Mock summary", embedding: [0.1, 0.2] }),
+    });
+
+    await processMemoryBatch([message], env);
 
     // Verify DB updates (Processing -> Completed)
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE jobs SET status = 'processing'"),
-    );
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE jobs SET status = 'completed'"),
-    );
-    expect(mockDB.bind).toHaveBeenCalledWith(
-      expect.stringContaining('{"summary":"Mock summary"}'),
-      expect.any(Number),
-      "job-123",
-    );
+    expect(
+      db.prepared.some((p) =>
+        p.query.includes("UPDATE jobs SET status = 'processing'"),
+      ),
+    ).toBe(true);
+    expect(
+      db.prepared.some((p) =>
+        p.query.includes("UPDATE jobs SET status = 'completed'"),
+      ),
+    ).toBe(true);
+    expect(
+      db.prepared.some((p) =>
+        p.binds.some(
+          (b) =>
+            typeof b === "string" && b.includes('{"summary":"Mock summary"}'),
+        ),
+      ),
+    ).toBe(true);
+    expect(db.prepared.some((p) => p.binds.includes("job-123"))).toBe(true);
 
     // Verify AI call implicit via mock result usage
     expect(message.ack).toHaveBeenCalled();
@@ -91,19 +85,42 @@ describe("Queue Processor Jobs", () => {
       retry: vi.fn(),
     } as unknown as Message<MemoryQueueMessage>;
 
-    await processMemoryBatch([message], mockEnv);
+    const db = createFakeD1Database();
+    const queue = createFakeQueue<MemoryQueueMessage>();
+    const vectors = createFakeVectorizeIndex();
+    vi.spyOn(queue, "send");
+    vi.spyOn(
+      vectors as unknown as { insert: (...args: unknown[]) => unknown },
+      "insert",
+    );
 
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE jobs SET status = 'processing'"),
-    );
-    expect(mockDB.prepare).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE jobs SET status = 'completed'"),
-    );
-    expect(mockDB.bind).toHaveBeenCalledWith(
-      expect.stringContaining('{"embedding":[0.1,0.2]}'),
-      expect.any(Number),
-      "job-456",
-    );
+    const env = createMockEnv({
+      MEMORY_DB: db,
+      MEMORY_QUEUE: queue,
+      MEMORY_VECTORS: vectors,
+      AI: createFakeAi({ chatResponse: "Mock summary", embedding: [0.1, 0.2] }),
+    });
+
+    await processMemoryBatch([message], env);
+
+    expect(
+      db.prepared.some((p) =>
+        p.query.includes("UPDATE jobs SET status = 'processing'"),
+      ),
+    ).toBe(true);
+    expect(
+      db.prepared.some((p) =>
+        p.query.includes("UPDATE jobs SET status = 'completed'"),
+      ),
+    ).toBe(true);
+    expect(
+      db.prepared.some((p) =>
+        p.binds.some(
+          (b) => typeof b === "string" && b.includes('{"embedding":[0.1,0.2]}'),
+        ),
+      ),
+    ).toBe(true);
+    expect(db.prepared.some((p) => p.binds.includes("job-456"))).toBe(true);
 
     expect(message.ack).toHaveBeenCalled();
   });

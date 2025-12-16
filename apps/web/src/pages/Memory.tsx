@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
 import {
   AlertCircle,
@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 
 interface SearchResult {
@@ -23,7 +24,211 @@ interface SearchResult {
   references: string[];
 }
 
+function RelationshipsPanel({ kind, id }: { kind: "semantic"; id: string }) {
+  const queryClient = useQueryClient();
+
+  const [type, setType] = useState<
+    "EVIDENCE_FOR" | "INTERPRETS" | "REFINES" | "CONFLICTS_WITH" | "SUPERSEDES"
+  >("EVIDENCE_FOR");
+  const [fromKind, setFromKind] = useState<"episodic" | "semantic">("episodic");
+  const [fromId, setFromId] = useState("");
+  const [rationale, setRationale] = useState("");
+  const [confidence, setConfidence] = useState<string>("");
+
+  const relationshipsQuery = useQuery({
+    queryKey: ["relationships", kind, id],
+    queryFn: () => api.relationships.list({ kind, id, limit: 50, since: 0 }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const conf = confidence.trim() ? Number(confidence) : undefined;
+      return api.relationships.create({
+        type,
+        from_kind: fromKind,
+        from_id: fromId.trim(),
+        to_kind: kind,
+        to_id: id,
+        rationale: rationale.trim(),
+        created_by: "user",
+        confidence: conf,
+      });
+    },
+    onSuccess: async () => {
+      setFromId("");
+      setRationale("");
+      setConfidence("");
+      await queryClient.invalidateQueries({
+        queryKey: ["relationships", kind, id],
+      });
+    },
+  });
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs text-gray-500 uppercase">Relationships</h4>
+        <button
+          type="button"
+          onClick={() => relationshipsQuery.refetch()}
+          className="px-2 py-1 rounded-lg text-xs border border-gray-700 text-gray-300 hover:bg-gray-800"
+          disabled={relationshipsQuery.isFetching}
+        >
+          Refresh
+        </button>
+      </div>
+
+      {relationshipsQuery.isLoading ? (
+        <div className="text-xs text-gray-500">Loading relationships…</div>
+      ) : relationshipsQuery.isError ? (
+        <div className="text-xs text-red-400">
+          {(relationshipsQuery.error as Error).message}
+        </div>
+      ) : (relationshipsQuery.data?.length ?? 0) === 0 ? (
+        <div className="text-xs text-gray-500">
+          No relationships yet for this memory.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {relationshipsQuery.data?.map((r) => {
+            const directionLabel =
+              r.fromKind === kind && r.fromId === id
+                ? `→ ${r.toKind}:${r.toId}`
+                : `← ${r.fromKind}:${r.fromId}`;
+
+            const otherContent =
+              r.fromKind === kind && r.fromId === id
+                ? r.toContent
+                : r.fromContent;
+
+            return (
+              <div
+                key={r.id}
+                className="bg-gray-900/40 border border-gray-700 rounded-lg p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-gray-300">
+                        {r.type}
+                      </span>
+                      <span className="text-[11px] text-gray-500 font-mono">
+                        {directionLabel}
+                      </span>
+                      {typeof r.confidence === "number" && (
+                        <span className="text-[11px] text-gray-500 font-mono">
+                          {(r.confidence * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-400 whitespace-pre-wrap">
+                      {r.rationale}
+                    </div>
+                    {otherContent && (
+                      <div className="mt-2 text-xs text-gray-300 line-clamp-2">
+                        {otherContent}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-gray-600 font-mono whitespace-nowrap">
+                    {new Date(r.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="border-t border-gray-700/50 pt-3 space-y-2">
+        <div className="text-xs text-gray-500 uppercase">Add relationship</div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <select
+            value={type}
+            onChange={(e) =>
+              setType(
+                e.target.value as
+                  | "EVIDENCE_FOR"
+                  | "INTERPRETS"
+                  | "REFINES"
+                  | "CONFLICTS_WITH"
+                  | "SUPERSEDES",
+              )
+            }
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+          >
+            <option value="EVIDENCE_FOR">EVIDENCE_FOR</option>
+            <option value="INTERPRETS">INTERPRETS</option>
+            <option value="REFINES">REFINES</option>
+            <option value="CONFLICTS_WITH">CONFLICTS_WITH</option>
+            <option value="SUPERSEDES">SUPERSEDES</option>
+          </select>
+
+          <select
+            value={fromKind}
+            onChange={(e) =>
+              setFromKind(e.target.value as "episodic" | "semantic")
+            }
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+          >
+            <option value="episodic">from episodic</option>
+            <option value="semantic">from semantic</option>
+          </select>
+
+          <input
+            value={fromId}
+            onChange={(e) => setFromId(e.target.value)}
+            placeholder="from_id (e.g. episodic UUID)"
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <input
+            value={rationale}
+            onChange={(e) => setRationale(e.target.value)}
+            placeholder="Rationale (why this changes reasoning)"
+            className="md:col-span-3 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+          />
+          <input
+            value={confidence}
+            onChange={(e) => setConfidence(e.target.value)}
+            placeholder="confidence (0..1)"
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => createMutation.mutate()}
+            disabled={
+              createMutation.isPending || !fromId.trim() || !rationale.trim()
+            }
+            className={clsx(
+              "px-3 py-2 rounded-lg text-xs border",
+              createMutation.isPending
+                ? "border-gray-700 text-gray-500"
+                : "border-purple-500/40 text-purple-300 hover:bg-purple-500/10",
+            )}
+          >
+            Add
+          </button>
+          {createMutation.isError && (
+            <div className="text-xs text-red-400">
+              {(createMutation.error as Error).message}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Memory() {
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<
     "identity" | "episodic" | "semantic"
   >("identity");
@@ -45,6 +250,43 @@ export function Memory() {
     queryFn: () => api.episodic.list(50),
   });
 
+  const [tagFilter, setTagFilter] = useState("");
+  const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
+  const [editingTagsValue, setEditingTagsValue] = useState("");
+
+  const parseTags = (text: string): string[] => {
+    const tags = text
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    return Array.from(new Set(tags)).slice(0, 25);
+  };
+
+  const episodicFiltered = React.useMemo(() => {
+    const rows = episodicQuery.data ?? [];
+    const required = parseTags(tagFilter);
+    if (required.length === 0) return rows;
+
+    return rows.filter((r) => {
+      const tags = Array.isArray((r as { tags?: unknown }).tags)
+        ? ((r as { tags?: unknown }).tags as string[])
+        : [];
+      const tagSet = new Set(tags.map((t) => String(t).toLowerCase()));
+      return required.every((t) => tagSet.has(t));
+    });
+  }, [episodicQuery.data, tagFilter]);
+
+  const updateEpisodicMutation = useMutation({
+    mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
+      return api.episodic.update(id, { tags });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["episodic"] });
+      setEditingTagsId(null);
+      setEditingTagsValue("");
+    },
+  });
+
   // Semantic Search Mutation
   const searchMutation = useMutation({
     mutationFn: async ({ query, limit }: { query: string; limit: number }) => {
@@ -56,6 +298,24 @@ export function Memory() {
       setSummary(null); // Clear previous summary
     },
   });
+
+  // Support deep-linking into semantic search from command palette: /memory?q=...&open=...
+  React.useEffect(() => {
+    const q = (searchParams.get("q") || "").trim();
+    if (!q) return;
+
+    setActiveTab("semantic");
+    setSearchQuery(q);
+    searchMutation.mutate({ query: q, limit: searchLimit });
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const open = searchParams.get("open");
+    if (!open) return;
+    if (searchResults.some((r) => r.id === open)) {
+      setExpandedResult(open);
+    }
+  }, [searchParams, searchResults]);
 
   // Job Polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -203,7 +463,7 @@ export function Memory() {
 
         {/* Episodic Tab */}
         {activeTab === "episodic" && (
-          <div className="space-y-2">
+          <div className="space-y-4">
             {episodicQuery.isLoading ? (
               <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
             ) : episodicQuery.error ? (
@@ -212,31 +472,142 @@ export function Memory() {
                 Error: {episodicQuery.error.message}
               </div>
             ) : (
-              <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-900/50 text-gray-400">
-                    <tr>
-                      <th className="p-3 font-medium">Time</th>
-                      <th className="p-3 font-medium">Content</th>
-                      <th className="p-3 font-medium">Source</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-700/50">
-                    {episodicQuery.data?.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-700/20">
-                        <td className="p-3 text-gray-500 font-mono whitespace-nowrap">
-                          {new Date(record.createdAt).toLocaleString()}
-                        </td>
-                        <td className="p-3 text-gray-200">{record.content}</td>
-                        <td className="p-3 text-gray-400">
-                          {record.provenance.source_type}:
-                          {record.provenance.source_id}
-                        </td>
+              <>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="text-sm text-gray-400">
+                    Showing {episodicFiltered.length} of{" "}
+                    {episodicQuery.data?.length ?? 0}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-500">Tag filter</div>
+                    <input
+                      value={tagFilter}
+                      onChange={(e) => setTagFilter(e.target.value)}
+                      placeholder="e.g. work, personal"
+                      className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500"
+                    />
+                    {tagFilter.trim() && (
+                      <button
+                        onClick={() => setTagFilter("")}
+                        className="px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 border border-gray-700"
+                        title="Clear tag filter"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-900/50 text-gray-400">
+                      <tr>
+                        <th className="p-3 font-medium">Time</th>
+                        <th className="p-3 font-medium">Content</th>
+                        <th className="p-3 font-medium">Tags</th>
+                        <th className="p-3 font-medium">Source</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700/50">
+                      {episodicFiltered.map((record) => (
+                        <tr key={record.id} className="hover:bg-gray-700/20">
+                          <td className="p-3 text-gray-500 font-mono whitespace-nowrap">
+                            {new Date(record.createdAt).toLocaleString()}
+                          </td>
+                          <td className="p-3 text-gray-200">
+                            {record.content}
+                          </td>
+                          <td className="p-3">
+                            {editingTagsId === record.id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  value={editingTagsValue}
+                                  onChange={(e) =>
+                                    setEditingTagsValue(e.target.value)
+                                  }
+                                  className="w-56 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+                                  placeholder="comma,separated,tags"
+                                />
+                                <button
+                                  disabled={updateEpisodicMutation.isPending}
+                                  onClick={() =>
+                                    updateEpisodicMutation.mutate({
+                                      id: record.id,
+                                      tags: parseTags(editingTagsValue),
+                                    })
+                                  }
+                                  className={clsx(
+                                    "px-2 py-1 rounded-lg text-xs border",
+                                    updateEpisodicMutation.isPending
+                                      ? "border-gray-700 text-gray-500"
+                                      : "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10",
+                                  )}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  disabled={updateEpisodicMutation.isPending}
+                                  onClick={() => {
+                                    setEditingTagsId(null);
+                                    setEditingTagsValue("");
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-xs border border-gray-700 text-gray-300 hover:bg-gray-800"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap gap-1">
+                                  {(record.tags ?? []).length === 0 ? (
+                                    <span className="text-xs text-gray-500">
+                                      —
+                                    </span>
+                                  ) : (
+                                    record.tags?.map((t) => (
+                                      <button
+                                        key={t}
+                                        onClick={() => {
+                                          const existing = parseTags(tagFilter);
+                                          if (existing.includes(t)) return;
+                                          const next = [...existing, t].join(
+                                            ", ",
+                                          );
+                                          setTagFilter(next);
+                                        }}
+                                        className="px-2 py-0.5 rounded-full text-[11px] border border-gray-700 text-gray-300 hover:bg-gray-900"
+                                        title="Add to filter"
+                                      >
+                                        {t}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    setEditingTagsId(record.id);
+                                    setEditingTagsValue(
+                                      (record.tags ?? []).join(", "),
+                                    );
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-xs border border-gray-700 text-gray-300 hover:bg-gray-800"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 text-gray-400">
+                            {record.provenance.source_type}:
+                            {record.provenance.source_id}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -426,6 +797,8 @@ export function Memory() {
                               {result.id}
                             </p>
                           </div>
+
+                          <RelationshipsPanel kind="semantic" id={result.id} />
                         </div>
                       )}
                     </div>

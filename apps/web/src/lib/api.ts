@@ -45,6 +45,105 @@ export interface DevLog {
   source?: string;
 }
 
+export interface ConversationRecord {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  metadata?: unknown;
+}
+
+export interface PreferenceRecord {
+  key: string;
+  value: unknown;
+  updatedAt: number;
+}
+
+export interface KnowledgeRecord {
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  title: string;
+  content: string;
+  sourceSemanticId?: string | null;
+  tags: string[];
+  metadata?: unknown;
+}
+
+export interface AnalyticsDashboardResponse {
+  generatedAt: number;
+  days: Array<{
+    date: string;
+    episodicCount: number;
+    semanticCount: number;
+    userMessages: number;
+    assistantMessages: number;
+  }>;
+  summary: Array<{
+    range: "24h" | "7d" | "30d";
+    episodicCount: number;
+    semanticCount: number;
+    userMessages: number;
+    assistantMessages: number;
+  }>;
+  topics: Array<{ term: string; count: number }>;
+  aiUsage: {
+    assistantMessages30d: number;
+    avgAssistantChars30d: number;
+  };
+}
+
+export type RelationshipKind = "episodic" | "semantic" | "knowledge" | "policy";
+
+export type RelationshipType =
+  | "EVIDENCE_FOR"
+  | "INTERPRETS"
+  | "REFINES"
+  | "CONFLICTS_WITH"
+  | "SUPERSEDES";
+
+export interface RelationshipRecord {
+  id: string;
+  createdAt: number;
+  createdBy: "user" | "system";
+  type: RelationshipType;
+  fromKind: RelationshipKind;
+  fromId: string;
+  toKind: RelationshipKind;
+  toId: string;
+  rationale: string;
+  confidence?: number | null;
+  evidence?: string[];
+  fromContent?: string | null;
+  toContent?: string | null;
+}
+
+export type InsightsSummaryResponse =
+  | {
+      success: true;
+      status: "completed";
+      summary: string;
+      sources: Array<
+        | { type: "semantic"; id: string; score?: number }
+        | { type: "episodic"; id: string }
+      >;
+    }
+  | {
+      success: true;
+      status: "queued";
+      jobId: string;
+      sources: Array<
+        | { type: "semantic"; id: string; score?: number }
+        | { type: "episodic"; id: string }
+      >;
+    };
+
+export type EpisodicUpdatePatch = {
+  content?: string;
+  tags?: string[];
+  importance?: number;
+};
+
 async function fetchJson<T>(
   url: string,
   init?: RequestInit,
@@ -92,10 +191,93 @@ async function fetchJson<T>(
 }
 
 export const api = {
-  episodic: {
-    list: async (limit = 50): Promise<EpisodicRecord[]> => {
+  analytics: {
+    dashboard: async (
+      days: number = 30,
+    ): Promise<AnalyticsDashboardResponse> => {
       return fetchJson(
-        `${API_BASE_URL}/v1/episodic?limit=${limit}`,
+        `${API_BASE_URL}/v1/analytics?days=${encodeURIComponent(String(days))}`,
+        { headers },
+        { friendlyName: "Fetch analytics" },
+      );
+    },
+  },
+  preferences: {
+    get: async (key: string): Promise<PreferenceRecord> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/preferences/${encodeURIComponent(key)}`,
+        { headers },
+        { friendlyName: `Get preference ${key}` },
+      );
+    },
+    set: async (key: string, value: unknown): Promise<PreferenceRecord> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/preferences/${encodeURIComponent(key)}`,
+        {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ value }),
+        },
+        { friendlyName: `Set preference ${key}` },
+      );
+    },
+  },
+  conversations: {
+    list: async (limit = 50, since = 0): Promise<ConversationRecord[]> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/conversations?limit=${limit}&since=${since}`,
+        { headers },
+        { friendlyName: "Fetch conversations" },
+      );
+    },
+    create: async (title?: string): Promise<ConversationRecord> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/conversations`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ title }),
+        },
+        { friendlyName: "Create conversation" },
+      );
+    },
+    rename: async (
+      id: string,
+      title: string,
+    ): Promise<{ success: boolean; id: string; title: string }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/conversations/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ title }),
+        },
+        { friendlyName: "Rename conversation" },
+      );
+    },
+    delete: async (id: string): Promise<{ success: boolean; id: string }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/conversations/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers,
+        },
+        { friendlyName: "Delete conversation" },
+      );
+    },
+  },
+  episodic: {
+    list: async (
+      limit = 50,
+      opts?: { since?: number; conversationId?: string },
+    ): Promise<EpisodicRecord[]> => {
+      const since = opts?.since ?? 0;
+      const conversationId = opts?.conversationId;
+      const conversationQuery = conversationId
+        ? `&conversation_id=${encodeURIComponent(conversationId)}`
+        : "";
+      return fetchJson(
+        `${API_BASE_URL}/v1/episodic?limit=${limit}&since=${since}${conversationQuery}`,
         { headers },
         {
           friendlyName: "Fetch episodic",
@@ -105,15 +287,35 @@ export const api = {
     create: async (
       content: string,
       provenance: Record<string, unknown>,
+      extras?: { conversation_id?: string },
     ): Promise<{ success: boolean; id: string; receipt: unknown }> => {
       return fetchJson(
         `${API_BASE_URL}/v1/episodic`,
         {
           method: "POST",
           headers,
-          body: JSON.stringify({ content, provenance }),
+          body: JSON.stringify({ content, provenance, ...extras }),
         },
         { friendlyName: "Create episodic" },
+      );
+    },
+    update: async (
+      id: string,
+      contentOrPatch: string | EpisodicUpdatePatch,
+    ): Promise<{ success: boolean; id: string; status: string }> => {
+      const body: EpisodicUpdatePatch =
+        typeof contentOrPatch === "string"
+          ? { content: contentOrPatch }
+          : contentOrPatch;
+
+      return fetchJson(
+        `${API_BASE_URL}/v1/episodic/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+          headers,
+          body: JSON.stringify(body),
+        },
+        { friendlyName: "Update episodic" },
       );
     },
   },
@@ -177,13 +379,18 @@ export const api = {
     send: async (
       message: string,
       history?: Array<{ role: "user" | "assistant"; content: string }>,
+      conversationId?: string,
     ): Promise<{ id: string; response: string; timestamp: number }> => {
       return fetchJson(
         `${API_BASE_URL}/v1/chat`,
         {
           method: "POST",
           headers,
-          body: JSON.stringify({ message, history }),
+          body: JSON.stringify({
+            message,
+            history,
+            conversation_id: conversationId,
+          }),
         },
         { friendlyName: "Chat completion" },
       );
@@ -215,13 +422,19 @@ export const api = {
     stream: async (
       message: string,
       history: Array<{ role: "user" | "assistant"; content: string }> = [],
+      conversationId: string | undefined,
       onToken: (token: string) => void,
+      onMeta?: (meta: { derived_from?: string[] }) => void,
       onDone?: () => void,
     ): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/v1/chat/stream`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({
+          message,
+          history,
+          conversation_id: conversationId,
+        }),
       });
 
       if (!response.ok) {
@@ -259,9 +472,15 @@ export const api = {
               return;
             }
             try {
-              const parsed = JSON.parse(data) as { token?: string };
+              const parsed = JSON.parse(data) as {
+                token?: string;
+                meta?: { derived_from?: string[] };
+              };
               if (parsed.token) {
                 onToken(parsed.token);
+              }
+              if (parsed.meta) {
+                onMeta?.(parsed.meta);
               }
             } catch {
               // Ignore parse errors for malformed lines
@@ -415,6 +634,93 @@ export const api = {
         `${API_BASE_URL}/v1/logs`,
         { method: "DELETE", headers },
         { friendlyName: "Clear logs" },
+      );
+    },
+  },
+  knowledge: {
+    list: async (
+      limit = 50,
+      since = 0,
+      q?: string,
+    ): Promise<KnowledgeRecord[]> => {
+      const qs = new URLSearchParams({
+        limit: String(limit),
+        since: String(since),
+      });
+      if (q) qs.set("q", q);
+
+      return fetchJson(
+        `${API_BASE_URL}/v1/knowledge?${qs.toString()}`,
+        { headers },
+        { friendlyName: "Fetch knowledge" },
+      );
+    },
+    promote: async (
+      semanticId: string,
+    ): Promise<{ success: boolean; record: KnowledgeRecord }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/knowledge/promote`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ semantic_id: semanticId }),
+        },
+        { friendlyName: "Promote knowledge" },
+      );
+    },
+  },
+  insights: {
+    summarize: async (query?: string): Promise<InsightsSummaryResponse> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/insights/summary`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ query }),
+        },
+        { friendlyName: "Generate insights" },
+      );
+    },
+  },
+  relationships: {
+    list: async (opts: {
+      kind: RelationshipKind;
+      id: string;
+      limit?: number;
+      since?: number;
+    }): Promise<RelationshipRecord[]> => {
+      const qs = new URLSearchParams({
+        kind: opts.kind,
+        id: opts.id,
+        limit: String(opts.limit ?? 50),
+        since: String(opts.since ?? 0),
+      });
+
+      return fetchJson(
+        `${API_BASE_URL}/v1/relationships?${qs.toString()}`,
+        { headers },
+        { friendlyName: "Fetch relationships" },
+      );
+    },
+    create: async (body: {
+      type: RelationshipType;
+      from_kind: RelationshipKind;
+      from_id: string;
+      to_kind: RelationshipKind;
+      to_id: string;
+      rationale: string;
+      created_by?: "user" | "system";
+      confidence?: number;
+      evidence?: string[];
+    }): Promise<{ success: true; relationship: RelationshipRecord }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/relationships`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+        },
+        { friendlyName: "Create relationship" },
       );
     },
   },

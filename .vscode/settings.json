@@ -21,5 +21,11 @@
     ".wrangler/": true
   },
   "terminal.integrated.defaultProfile.linux": "bash",
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "chat.agent.maxRequests": 500,
+  "chat.allowAnonymousAccess": false,
+  "chat.editing.autoAcceptDelay": 30,
+  "chat.exitAfterDelegation": false,
+  "chat.tools.terminal.autoReplyToPrompts": true,
+  "inlineChat.holdToSpeech": false
 }

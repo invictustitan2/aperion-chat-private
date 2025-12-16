@@ -22,6 +22,9 @@ export interface EpisodicRecord extends BaseMemoryRecord {
   type: "episodic";
   content: string; // Raw text or JSON string
   metadata?: Record<string, unknown>;
+  conversation_id?: UUID;
+  tags?: string[];
+  importance?: number;
 }
 
 export interface SemanticRecord extends BaseMemoryRecord {
@@ -29,6 +32,8 @@ export interface SemanticRecord extends BaseMemoryRecord {
   content: string; // Summarized or extracted knowledge
   embedding?: number[]; // Vector representation
   references: UUID[]; // Must reference at least one episodic record
+  tags?: string[];
+  importance?: number;
 }
 
 export interface IdentityRecord extends BaseMemoryRecord {

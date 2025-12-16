@@ -2,6 +2,7 @@ import { clsx } from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
+  BarChart3,
   Brain,
   FileText,
   Menu,
@@ -15,6 +16,8 @@ import {
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { api } from "../lib/api";
+import { getTheme, onThemeChange, setTheme, Theme } from "../lib/theme";
 
 export function Layout() {
   const location = useLocation();
@@ -22,6 +25,48 @@ export function Layout() {
 
   // Enable global keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Load theme from server preferences (fallback to localStorage), and keep server in sync.
+  useEffect(() => {
+    let cancelled = false;
+
+    const isTheme = (v: unknown): v is Theme => v === "dark" || v === "light";
+
+    (async () => {
+      try {
+        const pref = await api.preferences.get("theme");
+        if (cancelled) return;
+        if (isTheme(pref.value)) {
+          setTheme(pref.value, { emit: false });
+          return;
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // If missing, backfill server from local.
+        if (/not found/i.test(msg)) {
+          try {
+            await api.preferences.set("theme", getTheme());
+          } catch {
+            // ignore
+          }
+        }
+      }
+    })();
+
+    let timer: number | undefined;
+    const unsubscribe = onThemeChange((theme) => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        api.preferences.set("theme", theme).catch(() => {});
+      }, 150);
+    });
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, []);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -31,6 +76,9 @@ export function Layout() {
   const navItems = [
     { path: "/chat", label: "Chat", icon: MessageSquare },
     { path: "/memory", label: "Memory", icon: Brain },
+    { path: "/analytics", label: "Analytics", icon: BarChart3 },
+    { path: "/knowledge", label: "Knowledge", icon: FileText },
+    { path: "/insights", label: "Insights", icon: BarChart3 },
     { path: "/identity", label: "Identity", icon: User },
     { path: "/receipts", label: "Receipts", icon: FileText },
     { path: "/status", label: "System Status", icon: AlertTriangle },

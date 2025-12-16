@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
+    "test": "vitest run -c ../../vitest.config.ts",
     "dev:api": "wrangler dev",
+    "types:generate": "wrangler types",
     "db:migrate": "wrangler d1 migrations apply aperion-memory",
     "db:migrate:local": "wrangler d1 migrations apply aperion-memory --local",
     "docs:generate": "tsx scripts/generate-openapi.ts"
@@ -20,10 +21,9 @@
   },
   "devDependencies": {
     "@asteasolutions/zod-to-openapi": "^8.2.0",
-    "@cloudflare/workers-types": "^4.20251213.0",
     "tsx": "^4.21.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
-    "wrangler": "^4.54.0"
+    "wrangler": "^4.55.0"
   }
 }

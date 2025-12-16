@@ -27,6 +27,15 @@ const SystemStatus = lazy(() =>
 const Logs = lazy(() =>
   import("./pages/Logs").then((m) => ({ default: m.Logs })),
 );
+const Analytics = lazy(() =>
+  import("./pages/Analytics").then((m) => ({ default: m.Analytics })),
+);
+const Knowledge = lazy(() =>
+  import("./pages/Knowledge").then((m) => ({ default: m.Knowledge })),
+);
+const Insights = lazy(() =>
+  import("./pages/Insights").then((m) => ({ default: m.Insights })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -132,6 +141,30 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <Logs />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="analytics"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Analytics />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="knowledge"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Knowledge />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="insights"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Insights />
                   </Suspense>
                 }
               />

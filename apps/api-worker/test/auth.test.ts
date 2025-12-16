@@ -1,6 +1,35 @@
 import path from "path";
+import { execFileSync } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { unstable_dev, Unstable_DevWorker } from "wrangler";
+
+function applyLocalMigrations(workerDir: string) {
+  // Ensure the local D1 schema exists so auth tests don't depend on persisted state.
+  // Use the env.test database config from wrangler.toml.
+  execFileSync(
+    "pnpm",
+    [
+      "exec",
+      "wrangler",
+      "d1",
+      "migrations",
+      "apply",
+      "aperion-memory-test",
+      "--local",
+      "--env",
+      "test",
+    ],
+    {
+      cwd: workerDir,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        // Wrangler's confirmation prompt is skipped in non-interactive/CI mode.
+        CI: "true",
+      },
+    },
+  );
+}
 
 /**
  * Helper to wait for worker to be ready by polling until it responds
@@ -72,9 +101,12 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
       const scriptPath = path.join(workerDir, "src", "index.ts");
       const configPath = path.join(workerDir, "wrangler.toml");
 
+      applyLocalMigrations(workerDir);
+
       console.log("Starting worker...");
       worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
+        env: "test",
         vars: {
           API_TOKEN: TEST_TOKEN,
         },

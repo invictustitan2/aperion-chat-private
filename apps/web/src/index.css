@@ -47,4 +47,50 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Prism token styling (monochrome, Tailwind-based) */
+  .aperion-prism {
+    @apply font-mono text-gray-100;
+  }
+
+  .aperion-prism .token.comment,
+  .aperion-prism .token.prolog,
+  .aperion-prism .token.doctype,
+  .aperion-prism .token.cdata {
+    @apply text-gray-400 italic;
+  }
+
+  .aperion-prism .token.punctuation {
+    @apply text-gray-300;
+  }
+
+  .aperion-prism .token.property,
+  .aperion-prism .token.tag,
+  .aperion-prism .token.constant,
+  .aperion-prism .token.symbol,
+  .aperion-prism .token.deleted,
+  .aperion-prism .token.boolean,
+  .aperion-prism .token.number,
+  .aperion-prism .token.operator,
+  .aperion-prism .token.entity,
+  .aperion-prism .token.url,
+  .aperion-prism .token.variable {
+    @apply text-gray-200;
+  }
+
+  .aperion-prism .token.selector,
+  .aperion-prism .token.attr-name,
+  .aperion-prism .token.string,
+  .aperion-prism .token.char,
+  .aperion-prism .token.builtin,
+  .aperion-prism .token.inserted,
+  .aperion-prism .token.atrule,
+  .aperion-prism .token.attr-value,
+  .aperion-prism .token.function,
+  .aperion-prism .token.class-name,
+  .aperion-prism .token.keyword,
+  .aperion-prism .token.regex,
+  .aperion-prism .token.important {
+    @apply text-gray-100 font-semibold;
+  }
 }

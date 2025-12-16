@@ -2,13 +2,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatController } from "../../src/controllers/ChatController";
 import { ChatService } from "../../src/services/ChatService";
-import { Env } from "../../src/types";
+import { EpisodicService } from "../../src/services/EpisodicService";
+import type { Env } from "../../src/types";
+import { createMockEnv } from "../bindings/mockBindings";
 
 // Mock ChatService
 vi.mock("../../src/services/ChatService", () => {
   return {
     ChatService: vi.fn().mockImplementation(() => ({
       processMessage: vi.fn(),
+    })),
+  };
+});
+
+vi.mock("../../src/services/EpisodicService", () => {
+  return {
+    EpisodicService: vi.fn().mockImplementation(() => ({
+      create: vi.fn().mockResolvedValue({ success: true, id: "e1" }),
     })),
   };
 });
@@ -27,7 +37,7 @@ describe("ChatController", () => {
     mockRequest = {
       json: vi.fn(),
     };
-    mockEnv = {} as Env;
+    mockEnv = createMockEnv();
     // mockService = new ChatService(mockEnv);
     (ChatService as any).mockClear();
     // Re-instantiate mock to capture the instance that Controller will create?
@@ -75,7 +85,12 @@ describe("ChatController", () => {
       response: "Hi there",
       timestamp: 123456,
     });
-    expect(mockProcessMessage).toHaveBeenCalledWith("Hello", [], "workers-ai");
+    expect(mockProcessMessage).toHaveBeenCalledWith(
+      "Hello",
+      [],
+      "workers-ai",
+      undefined,
+    );
   });
 
   it("should handle service errors", async () => {
@@ -107,6 +122,49 @@ describe("ChatController", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Content-Type")).toBe("application/pdf");
+    });
+  });
+
+  describe("stream", () => {
+    it("should stream SSE tokens and persist assistant response", async () => {
+      mockRequest.json.mockResolvedValue({
+        message: "Hello",
+        history: [],
+      });
+
+      const encoder = new TextEncoder();
+      const aiStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode('{"response":"Hi"}\n'));
+          controller.enqueue(encoder.encode('{"response":" there"}\n'));
+          controller.enqueue(encoder.encode("data: [DONE]\n"));
+          controller.close();
+        },
+      });
+
+      const env = createMockEnv({
+        AI: {
+          run: vi.fn().mockResolvedValue(aiStream),
+        } as any,
+      });
+
+      const response = await ChatController.stream(mockRequest, env);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+
+      const bodyText = await response.text();
+      expect(bodyText).toContain('data: {"token":"Hi"}');
+      expect(bodyText).toContain('data: {"token":" there"}');
+      expect(bodyText).toContain("data: [DONE]");
+
+      const episodicCtor = EpisodicService as unknown as ReturnType<
+        typeof vi.fn
+      >;
+      const episodicInstance = episodicCtor.mock.results[0]?.value;
+      expect(episodicInstance.create).toHaveBeenCalled();
+      const callArg = episodicInstance.create.mock.calls[0][0];
+      expect(callArg.content).toBe("Hi there");
+      expect(callArg.provenance.source_type).toBe("model");
     });
   });
 });

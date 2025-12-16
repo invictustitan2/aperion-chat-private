@@ -29,23 +29,23 @@ The following items require external infrastructure or manual processes:
 
 ### 1.1 Memory Relationships & Graph
 
-- [ ] Add `relationships` table for memory-to-memory links.
-- [ ] Implement "related memories" feature in Memory page.
+- [x] Add `relationships` table for memory-to-memory links.
+- [x] Implement "related memories" feature in Memory page.
 - [ ] Create visual memory graph (D3.js or similar).
 - [ ] Add automatic relationship detection via AI.
 
 ### 1.2 Memory Importance Scoring
 
-- [ ] Add `importance` column to episodic/semantic tables.
+- [x] Add `importance` column to episodic/semantic tables.
 - [ ] Implement decay algorithm for old memories.
 - [ ] Add "pin" functionality for important memories.
 - [ ] Surface high-importance memories in Chat context.
 
 ### 1.3 Memory Categories & Tags
 
-- [ ] Add `tags` column (JSON array) to memory tables.
-- [ ] Create tag management UI in Memory page.
-- [ ] Implement tag-based filtering and search.
+- [x] Add `tags` column (JSON array) to memory tables.
+- [x] Create tag management UI in Memory page.
+- [x] Implement tag-based filtering and search.
 - [ ] Auto-suggest tags based on content analysis.
 
 ### 1.4 Memory Timeline View
@@ -62,16 +62,16 @@ The following items require external infrastructure or manual processes:
 
 ### 2.1 Conversation Threads
 
-- [ ] Create `conversations` table (id, title, created_at, updated_at).
-- [ ] Add `conversation_id` FK to episodic table.
-- [ ] Implement conversation list UI in sidebar.
-- [ ] Add conversation renaming and deletion.
+- [x] Create `conversations` table (id, title, created_at, updated_at).
+- [x] Add `conversation_id` FK to episodic table.
+- [x] Implement conversation list UI in sidebar.
+- [x] Add conversation renaming and deletion.
 
 ### 2.2 User Preferences Table
 
-- [ ] Create `preferences` table for user settings.
-- [ ] Migrate theme preference from localStorage.
-- [ ] Add AI personality/tone preferences.
+- [x] Create `preferences` table for user settings.
+- [x] Migrate theme preference from localStorage.
+- [x] Add AI personality/tone preferences.
 - [ ] Store notification and privacy settings.
 
 ### 2.3 Media Attachments
@@ -96,17 +96,17 @@ The following items require external infrastructure or manual processes:
 ### 3.1 Chat Experience Upgrades
 
 - [x] Add message reactions (thumbs up/down for AI responses).
-- [ ] Implement message editing (user messages).
+- [x] Implement message editing (user messages).
 - [x] Add copy-to-clipboard for AI responses.
-- [ ] Create expandable code blocks with syntax highlighting.
-- [ ] Add share message/conversation feature.
+- [x] Create expandable code blocks with syntax highlighting.
+- [x] Add share message/conversation feature.
 
 ### 3.2 Rich Message Rendering
 
-- [ ] Full Markdown support with GFM extensions.
-- [ ] LaTeX/KaTeX for mathematical expressions.
-- [ ] Mermaid diagram rendering in chat.
-- [ ] Collapsible sections for long responses.
+- [x] Full Markdown support with GFM extensions.
+- [x] LaTeX/KaTeX for mathematical expressions.
+- [x] Mermaid diagram rendering in chat.
+- [x] Collapsible sections for long responses.
 
 ### 3.3 Voice & Audio Enhancements
 
@@ -130,24 +130,24 @@ The following items require external infrastructure or manual processes:
 
 ### 4.1 Analytics Dashboard (New Tab)
 
-- [ ] Create `/analytics` route and page.
-- [ ] Display memory growth charts over time.
-- [ ] Show AI usage statistics (tokens, requests).
-- [ ] Visualize topic distribution in memories.
-- [ ] Add daily/weekly/monthly activity summary.
+- [x] Create `/analytics` route and page.
+- [x] Display memory growth charts over time.
+- [x] Show AI usage statistics (approx via assistant message metrics).
+- [x] Visualize topic distribution in memories.
+- [x] Add daily/weekly/monthly activity summary.
 
 ### 4.2 Knowledge Base (New Tab)
 
-- [ ] Create `/knowledge` route for curated knowledge.
-- [ ] Allow promoting semantic memories to knowledge.
-- [ ] Implement knowledge categorization.
-- [ ] Add knowledge search and browse interface.
+- [x] Create `/knowledge` route for curated knowledge.
+- [x] Allow promoting semantic memories to knowledge.
+- [x] Implement knowledge categorization.
+- [x] Add knowledge search and browse interface.
 - [ ] Create knowledge export (JSON/Markdown).
 
 ### 4.3 Insights & Patterns (New Tab)
 
-- [ ] Create `/insights` route for AI-generated insights.
-- [ ] Generate periodic memory summaries.
+- [x] Create `/insights` route for AI-generated insights.
+- [x] Generate periodic memory summaries.
 - [ ] Identify recurring topics and themes.
 - [ ] Surface connections between memories.
 - [ ] Create "memory digest" feature.
@@ -156,8 +156,8 @@ The following items require external infrastructure or manual processes:
 
 - [x] Implement Cmd+K command palette.
 - [x] Add quick navigation actions.
-- [ ] Include quick memory search.
-- [ ] Add quick settings toggles.
+- [x] Include quick memory search.
+- [x] Add quick settings toggles.
 - [ ] Support custom shortcuts.
 
 ---
@@ -168,11 +168,11 @@ The following items require external infrastructure or manual processes:
 
 ### 5.1 Chat Tab Additions
 
-- [ ] Add conversation history sidebar.
-- [ ] Implement "New Conversation" button.
-- [ ] Add context indicator showing memory usage.
-- [ ] Create AI personality selector.
-- [ ] Add response regeneration button.
+- [x] Add conversation history sidebar.
+- [x] Implement "New Conversation" button.
+- [x] Add context indicator showing memory usage.
+- [x] Create AI personality selector.
+- [x] Add response regeneration button.
 
 ### 5.2 Memory Tab Additions
 
