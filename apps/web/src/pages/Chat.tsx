@@ -11,11 +11,16 @@ import {
   Send,
   ToggleLeft,
   ToggleRight,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
 
 export function Chat() {
+  // WebSocket integration for real-time features
+  const { isConnected, typingUsers, sendTyping } = useWebSocket();
   const [input, setInput] = useState("");
   const [isMemoryWriteEnabled, setIsMemoryWriteEnabled] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -280,14 +285,28 @@ export function Chat() {
     <div className="flex flex-col h-full relative" ref={chatContainerRef}>
       {/* Header */}
       <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
             Operator Chat
           </h1>
-          <p className="text-gray-400 text-xs md:text-sm">
-            Secure channel • Episodic logging active
-          </p>
+          {/* Connection Status */}
+          <span
+            className={clsx(
+              "p-1 rounded-full",
+              isConnected ? "text-emerald-400" : "text-red-400",
+            )}
+            title={isConnected ? "Connected" : "Disconnected"}
+          >
+            {isConnected ? (
+              <Wifi className="w-4 h-4" />
+            ) : (
+              <WifiOff className="w-4 h-4" />
+            )}
+          </span>
         </div>
+        <p className="text-gray-400 text-xs md:text-sm">
+          Secure channel • Episodic logging active
+        </p>
 
         <div className="flex items-center gap-2 self-end md:self-auto">
           {/* Export Button */}
@@ -430,6 +449,27 @@ export function Chat() {
             </div>
           </div>
         )}
+
+        {/* Typing Indicator */}
+        {typingUsers.length > 0 && (
+          <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
+            <div className="flex gap-1">
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
+            </div>
+            <span>{typingUsers.join(", ")} is typing...</span>
+          </div>
+        )}
       </div>
 
       {/* Input Area */}
@@ -492,7 +532,13 @@ export function Chat() {
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Broadcast typing event to other clients
+                if (e.target.value) {
+                  sendTyping();
+                }
+              }}
               placeholder="Type a message..."
               className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
               disabled={sendMessage.isPending}
