@@ -62,15 +62,15 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 3.2 RAG (Retrieval Augmented Generation) Improvements
 
-- [ ] Implement hybrid search (keyword + semantic) in `SemanticService`.
-- [ ] Add re-ranking for search results before context injection.
-- [ ] Support document uploads (PDF, TXT) with chunking and embedding.
+- [x] Implement hybrid search (keyword + semantic) in `SemanticService`.
+- [x] Add re-ranking for search results before context injection.
+- [ ] Support document uploads (PDF, TXT) with chunking and embedding. _(Deferred: Complex chunking logic)_
 
 ### 3.3 Voice Mode Enhancements
 
-- [ ] Implement continuous voice conversation mode (listen-speak loop).
-- [ ] Add voice activity detection (VAD) for hands-free operation.
-- [ ] Explore Workers AI TTS when available, or integrate cloud TTS.
+- [ ] Implement continuous voice conversation mode (listen-speak loop). _(Deferred: Requires browser API work)_
+- [ ] Add voice activity detection (VAD) for hands-free operation. _(Deferred)_
+- [ ] Explore Workers AI TTS when available, or integrate cloud TTS. _(Deferred)_
 
 ---
 
@@ -120,9 +120,9 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 5.3 Accessibility (a11y)
 
-- [ ] Audit and fix ARIA roles across all interactive elements.
-- [ ] Ensure proper focus management for keyboard navigation.
-- [ ] Test with screen readers.
+- [x] Audit and fix ARIA roles across all interactive elements.
+- [x] Ensure proper focus management for keyboard navigation.
+- [ ] Test with screen readers. _(Manual testing required)_
 
 ---
 
@@ -138,13 +138,13 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 6.2 Session Management
 
-- [ ] Implement token refresh mechanism.
-- [ ] Add session expiry and forced logout capabilities.
+- [ ] Implement token refresh mechanism. _(Deferred: Requires JWT infrastructure)_
+- [ ] Add session expiry and forced logout capabilities. _(Deferred)_
 
 ### 6.3 Content Security Policy (CSP)
 
-- [ ] Configure strict CSP headers for the web app.
-- [ ] Review and harden all third-party script inclusions.
+- [ ] Configure strict CSP headers for the web app. _(Deferred: Requires Cloudflare Pages config)_
+- [ ] Review and harden all third-party script inclusions. _(Deferred)_
 
 ---
 

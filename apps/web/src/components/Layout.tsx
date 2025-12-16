@@ -69,6 +69,7 @@ export function Layout() {
               key={item.path}
               to={item.path}
               onClick={handleVibrate}
+              aria-current={isActive ? "page" : undefined}
               className={clsx(
                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                 isActive
@@ -76,7 +77,7 @@ export function Layout() {
                   : "text-gray-400 hover:bg-white/5 hover:text-gray-200",
               )}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5" aria-hidden="true" />
               <span className="font-medium">{item.label}</span>
             </Link>
           );
@@ -93,7 +94,11 @@ export function Layout() {
   return (
     <div className="flex h-screen overflow-hidden bg-transparent">
       {/* Desktop Sidebar (Hidden on Mobile) */}
-      <aside className="hidden md:flex w-64 glass-dark border-r border-white/5 flex-col z-20">
+      <aside
+        className="hidden md:flex w-64 glass-dark border-r border-white/5 flex-col z-20"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <SidebarContent />
       </aside>
 

@@ -78,6 +78,7 @@ router.delete("/v1/episodic", withAuth, EpisodicController.delete);
 // Semantic
 router.post("/v1/semantic", withAuth, SemanticController.create);
 router.get("/v1/semantic/search", withAuth, SemanticController.search);
+router.get("/v1/semantic/hybrid", withAuth, SemanticController.hybridSearch);
 router.post("/v1/semantic/summarize", withAuth, SemanticController.summarize);
 
 // Identity

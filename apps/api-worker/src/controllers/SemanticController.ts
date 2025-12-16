@@ -74,4 +74,28 @@ export class SemanticController {
       return error(500, `Summarization failed: ${msg}`);
     }
   }
+
+  /**
+   * Hybrid search combining keyword and semantic search
+   * GET /v1/semantic/hybrid?query=...&limit=10
+   */
+  static async hybridSearch(request: IRequest, env: Env) {
+    const { query, limit } = request.query;
+
+    if (!query) {
+      return error(400, "Missing query parameter");
+    }
+
+    try {
+      const service = new SemanticService(env);
+      const result = await service.hybridSearch(
+        query as string,
+        parseInt((limit as string) || "10"),
+      );
+      return json(result);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, msg);
+    }
+  }
 }
