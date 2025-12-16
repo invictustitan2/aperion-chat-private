@@ -3,12 +3,15 @@ import { clsx } from "clsx";
 import {
   AlertCircle,
   CheckCircle,
+  Copy,
   Download,
   ImageIcon,
   Loader2,
   Mic,
   MicOff,
   Send,
+  ThumbsDown,
+  ThumbsUp,
   ToggleLeft,
   ToggleRight,
   Wifi,
@@ -23,6 +26,10 @@ export function Chat() {
   const { isConnected, typingUsers, sendTyping } = useWebSocket();
   const [input, setInput] = useState("");
   const [isMemoryWriteEnabled, setIsMemoryWriteEnabled] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [ratedMessages, setRatedMessages] = useState<
+    Record<string, "up" | "down">
+  >({});
   const [isUploading, setIsUploading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
@@ -281,6 +288,29 @@ export function Chat() {
     sendMessage.mutate(input);
   };
 
+  const handleCopy = async (id: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      console.error("Failed to copy to clipboard");
+    }
+  };
+
+  const handleRate = (id: string, rating: "up" | "down") => {
+    setRatedMessages((prev) => {
+      if (prev[id] === rating) {
+        // Toggle off if same rating
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      }
+      return { ...prev, [id]: rating };
+    });
+    // TODO: Send rating to backend for AI improvement
+  };
+
   return (
     <div className="flex flex-col h-full relative" ref={chatContainerRef}>
       {/* Header */}
@@ -389,7 +419,7 @@ export function Chat() {
               <div
                 key={msg.id}
                 className={clsx(
-                  "flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
+                  "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
                   isUser ? "self-end items-end" : "self-start items-start",
                 )}
               >
@@ -413,6 +443,58 @@ export function Chat() {
                   )}
                 >
                   {msg.content}
+                </div>
+
+                {/* Message Actions */}
+                <div
+                  className={clsx(
+                    "flex items-center gap-1 px-1 transition-opacity duration-200",
+                    "opacity-0 group-hover:opacity-100",
+                    isUser ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
+                  {/* Copy Button */}
+                  <button
+                    onClick={() => handleCopy(msg.id, msg.content)}
+                    className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                    title="Copy to clipboard"
+                  >
+                    {copiedId === msg.id ? (
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+
+                  {/* Rating Buttons (AI messages only) */}
+                  {!isUser && (
+                    <>
+                      <button
+                        onClick={() => handleRate(msg.id, "up")}
+                        className={clsx(
+                          "p-1.5 rounded-md transition-all",
+                          ratedMessages[msg.id] === "up"
+                            ? "text-emerald-400 bg-emerald-500/20"
+                            : "text-gray-500 hover:text-white hover:bg-white/10",
+                        )}
+                        title="Good response"
+                      >
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleRate(msg.id, "down")}
+                        className={clsx(
+                          "p-1.5 rounded-md transition-all",
+                          ratedMessages[msg.id] === "down"
+                            ? "text-red-400 bg-red-500/20"
+                            : "text-gray-500 hover:text-white hover:bg-white/10",
+                        )}
+                        title="Poor response"
+                      >
+                        <ThumbsDown className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
