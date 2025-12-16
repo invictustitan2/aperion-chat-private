@@ -46,13 +46,13 @@ export async function executeTool(
   switch (name) {
     case "search_memory": {
       const semanticService = new SemanticService(env);
-      const results = await semanticService.search(args.query);
+      const results = await semanticService.search(args.query as string);
       return JSON.stringify(results.map((r) => r.content));
     }
     case "update_identity": {
       const identityService = new IdentityService(env);
       await identityService.upsert({
-        key: args.key,
+        key: args.key as string,
         value: args.value,
         provenance: {
           source_type: "model", // It's the assistant updating it based on user interaction
