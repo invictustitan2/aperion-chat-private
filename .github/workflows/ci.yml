@@ -32,6 +32,11 @@ jobs:
 
       - name: Verify (Lint, Typecheck, Unit Tests)
         run: pnpm verify
+        env:
+          # Increase Node memory for worker bundling and tests
+          NODE_OPTIONS: --max-old-space-size=4096
+          # Reduce wrangler log noise
+          WRANGLER_LOG: none
 
       - name: Get installed Playwright version
         id: playwright-version

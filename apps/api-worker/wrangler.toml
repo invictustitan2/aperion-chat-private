@@ -53,3 +53,16 @@ enabled = true
 head_sampling_rate = 1
 invocation_logs = true
 persist = true
+
+# Test environment configuration
+# Minimal bindings for faster startup in tests
+[env.test]
+# Only include essential bindings for auth tests
+# D1 database for basic functionality
+[[env.test.d1_databases]]
+binding = "MEMORY_DB"
+database_name = "aperion-memory-test"
+database_id = "test-db-local"
+
+# Optional bindings are undefined in tests - code handles gracefully
+# AI, VECTORIZE, R2, BROWSER, QUEUES are not needed for auth tests

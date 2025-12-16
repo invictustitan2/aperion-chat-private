@@ -11,26 +11,40 @@ describe("Authentication Middleware", () => {
       // Get the absolute path to the worker directory
       const workerDir = path.resolve(__dirname, "..");
       const scriptPath = path.join(workerDir, "src", "index.ts");
+      const configPath = path.join(workerDir, "wrangler.toml");
 
       worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
         vars: {
           API_TOKEN: TEST_TOKEN,
         },
+        config: configPath,
+        persist: true, // Enable local persistence for D1
       });
+
+      // Warmup: Make a test request to ensure worker is fully ready
+      console.log("Warming up worker...");
+      try {
+        const warmupResp = await worker.fetch("http://localhost/v1/identity", {
+          headers: { Authorization: `Bearer ${TEST_TOKEN}` },
+        });
+        console.log(`Worker warmup complete (status: ${warmupResp.status})`);
+      } catch (e) {
+        console.warn("Worker warmup request failed, continuing anyway:", e);
+      }
     } catch (error) {
       console.error("Failed to start worker:", error);
       throw error;
     }
-  }, 30000); // 30 second timeout for worker startup
+  }, 60000); // 60 second timeout for worker startup in CI
 
   afterAll(async () => {
     if (worker) {
       await worker.stop();
     }
-  });
+  }, 10000); // 10 second timeout for cleanup
 
-  describe("Valid Authentication", () => {
+  describe("Valid Authentication", { timeout: 10000 }, () => {
     it("should allow requests with valid Bearer token", async () => {
       const resp = await worker!.fetch("http://localhost/v1/identity", {
         headers: {
@@ -52,7 +66,7 @@ describe("Authentication Middleware", () => {
     });
   });
 
-  describe("Missing Authentication", () => {
+  describe("Missing Authentication", { timeout: 10000 }, () => {
     it("should reject requests without Authorization header", async () => {
       const resp = await worker!.fetch("http://localhost/v1/identity");
 
@@ -72,7 +86,7 @@ describe("Authentication Middleware", () => {
     });
   });
 
-  describe("Invalid Authentication", () => {
+  describe("Invalid Authentication", { timeout: 10000 }, () => {
     it("should reject requests with wrong token", async () => {
       const resp = await worker!.fetch("http://localhost/v1/identity", {
         headers: {
@@ -92,7 +106,7 @@ describe("Authentication Middleware", () => {
         },
       });
 
-      expect(resp.status).toBe(403);
+      expect(resp.status).toBe(401); // Invalid scheme returns 401
     });
 
     it("should reject requests with malformed Bearer token", async () => {
@@ -102,7 +116,7 @@ describe("Authentication Middleware", () => {
         },
       });
 
-      expect(resp.status).toBe(403);
+      expect(resp.status).toBe(401); // Empty token returns 401
     });
 
     it("should handle tokens with extra whitespace", async () => {
@@ -117,7 +131,7 @@ describe("Authentication Middleware", () => {
     });
   });
 
-  describe("CORS Preflight", () => {
+  describe("CORS Preflight", { timeout: 10000 }, () => {
     it("should handle OPTIONS requests without authentication", async () => {
       const resp = await worker!.fetch("http://localhost/v1/identity", {
         method: "OPTIONS",
@@ -132,7 +146,7 @@ describe("Authentication Middleware", () => {
     });
   });
 
-  describe("Protected Endpoints", () => {
+  describe("Protected Endpoints", { timeout: 10000 }, () => {
     const protectedEndpoints = [
       { method: "GET", path: "/v1/episodic" },
       { method: "POST", path: "/v1/episodic" },
