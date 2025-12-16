@@ -14,6 +14,9 @@ async function waitForWorkerReady(
   intervalMs = 2000,
 ): Promise<void> {
   console.log("Waiting for worker to be ready...");
+  console.log(
+    `Will poll every ${intervalMs}ms for up to ${maxAttempts} attempts (${(maxAttempts * intervalMs) / 1000}s total)`,
+  );
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -21,8 +24,17 @@ async function waitForWorkerReady(
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (resp.status === 200 || resp.status === 401 || resp.status === 403) {
-        // Worker is responding (even if auth fails, it's alive)
+      console.log(
+        `Attempt ${attempt}: Got response with status ${resp.status}`,
+      );
+
+      if (
+        resp.status === 200 ||
+        resp.status === 401 ||
+        resp.status === 403 ||
+        resp.status === 500
+      ) {
+        // Worker is responding (even if there's an error, it's alive)
         console.log(
           `✓ Worker ready after ${attempt} attempts (~${(attempt * intervalMs) / 1000}s)`,
         );
@@ -30,8 +42,10 @@ async function waitForWorkerReady(
       }
     } catch (error) {
       // Worker not ready yet, continue polling
-      if (attempt % 5 === 0) {
-        console.log(`  Still waiting... (attempt ${attempt}/${maxAttempts})`);
+      if (attempt % 5 === 0 || attempt === 1) {
+        console.log(
+          `  Attempt ${attempt}/${maxAttempts}: Worker not responding yet (${error instanceof Error ? error.message : String(error)})`,
+        );
       }
     }
 
@@ -39,7 +53,7 @@ async function waitForWorkerReady(
   }
 
   throw new Error(
-    `Worker failed to become ready after ${maxAttempts} attempts`,
+    `Worker failed to become ready after ${maxAttempts} attempts (${(maxAttempts * intervalMs) / 1000}s)`,
   );
 }
 
