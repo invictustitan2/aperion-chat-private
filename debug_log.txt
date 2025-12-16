@@ -1,0 +1,351 @@
+Deploy	Set up job	﻿2025-12-16T03:55:34.4455229Z Current runner version: '2.329.0'
+Deploy	Set up job	2025-12-16T03:55:34.4516942Z ##[group]Runner Image Provisioner
+Deploy	Set up job	2025-12-16T03:55:34.4518316Z Hosted Compute Agent
+Deploy	Set up job	2025-12-16T03:55:34.4519392Z Version: 20251202.455
+Deploy	Set up job	2025-12-16T03:55:34.4520487Z Commit: 6c10caca4910e198df60de23adf20ad317c474e3
+Deploy	Set up job	2025-12-16T03:55:34.4521847Z Build Date: 2025-12-02T15:56:59Z
+Deploy	Set up job	2025-12-16T03:55:34.4523031Z Worker ID: {e81cbd28-2b17-4c32-b88f-0bde2db7eec2}
+Deploy	Set up job	2025-12-16T03:55:34.4524271Z ##[endgroup]
+Deploy	Set up job	2025-12-16T03:55:34.4525077Z ##[group]Operating System
+Deploy	Set up job	2025-12-16T03:55:34.4526016Z Ubuntu
+Deploy	Set up job	2025-12-16T03:55:34.4526747Z 24.04.3
+Deploy	Set up job	2025-12-16T03:55:34.4527404Z LTS
+Deploy	Set up job	2025-12-16T03:55:34.4528279Z ##[endgroup]
+Deploy	Set up job	2025-12-16T03:55:34.4529232Z ##[group]Runner Image
+Deploy	Set up job	2025-12-16T03:55:34.4530000Z Image: ubuntu-24.04
+Deploy	Set up job	2025-12-16T03:55:34.4530826Z Version: 20251208.163.1
+Deploy	Set up job	2025-12-16T03:55:34.4534150Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251208.163/images/ubuntu/Ubuntu2404-Readme.md
+Deploy	Set up job	2025-12-16T03:55:34.4536515Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251208.163
+Deploy	Set up job	2025-12-16T03:55:34.4538509Z ##[endgroup]
+Deploy	Set up job	2025-12-16T03:55:34.4543218Z ##[group]GITHUB_TOKEN Permissions
+Deploy	Set up job	2025-12-16T03:55:34.4546148Z Actions: write
+Deploy	Set up job	2025-12-16T03:55:34.4547200Z ArtifactMetadata: write
+Deploy	Set up job	2025-12-16T03:55:34.4548384Z Attestations: write
+Deploy	Set up job	2025-12-16T03:55:34.4549258Z Checks: write
+Deploy	Set up job	2025-12-16T03:55:34.4550078Z Contents: write
+Deploy	Set up job	2025-12-16T03:55:34.4551490Z Deployments: write
+Deploy	Set up job	2025-12-16T03:55:34.4552415Z Discussions: write
+Deploy	Set up job	2025-12-16T03:55:34.4553305Z Issues: write
+Deploy	Set up job	2025-12-16T03:55:34.4554210Z Metadata: read
+Deploy	Set up job	2025-12-16T03:55:34.4554951Z Models: read
+Deploy	Set up job	2025-12-16T03:55:34.4555857Z Packages: write
+Deploy	Set up job	2025-12-16T03:55:34.4556884Z Pages: write
+Deploy	Set up job	2025-12-16T03:55:34.4557760Z PullRequests: write
+Deploy	Set up job	2025-12-16T03:55:34.4558921Z RepositoryProjects: write
+Deploy	Set up job	2025-12-16T03:55:34.4560063Z SecurityEvents: write
+Deploy	Set up job	2025-12-16T03:55:34.4561208Z Statuses: write
+Deploy	Set up job	2025-12-16T03:55:34.4562141Z ##[endgroup]
+Deploy	Set up job	2025-12-16T03:55:34.4566172Z Secret source: Actions
+Deploy	Set up job	2025-12-16T03:55:34.4567540Z Prepare workflow directory
+Deploy	Set up job	2025-12-16T03:55:34.5476763Z Prepare all required actions
+Deploy	Set up job	2025-12-16T03:55:34.5535404Z Getting action download info
+Deploy	Set up job	2025-12-16T03:55:34.9635562Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+Deploy	Set up job	2025-12-16T03:55:36.5848290Z Download action repository 'pnpm/action-setup@v3' (SHA:a3252b78c470c02df07e9d59298aecedc3ccdd6d)
+Deploy	Set up job	2025-12-16T03:55:37.4701802Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Deploy	Set up job	2025-12-16T03:55:37.5703060Z Download action repository 'cloudflare/wrangler-action@v3' (SHA:da0e0dfe58b7a431659754fdf3f186c529afbe65)
+Deploy	Set up job	2025-12-16T03:55:38.0629379Z Complete job name: Deploy
+Deploy	Run actions/checkout@v4	﻿2025-12-16T03:55:38.1283827Z ##[group]Run actions/checkout@v4
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1284500Z with:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1284842Z   repository: invictustitan2/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1285425Z   token: ***
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1285658Z   ssh-strict: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1285893Z   ssh-user: git
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1286154Z   persist-credentials: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1286456Z   clean: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1286701Z   sparse-checkout-cone-mode: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1286987Z   fetch-depth: 1
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1287223Z   fetch-tags: false
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1287478Z   show-progress: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1287724Z   lfs: false
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1287950Z   submodules: false
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1288199Z   set-safe-directory: true
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.1288686Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2453772Z Syncing repository: invictustitan2/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2456727Z ##[group]Getting Git version info
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2459400Z Working directory is '/home/runner/work/aperion-chat-private/aperion-chat-private'
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2460846Z [command]/usr/bin/git version
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2527369Z git version 2.52.0
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2559860Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2574009Z Temporarily overriding HOME='/home/runner/work/_temp/22b98f29-2d73-4917-a71b-e10ae43dc518' before making global git config changes
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2577553Z Adding repository directory to the temporary git global config as a safe directory
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2593341Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2639680Z Deleting the contents of '/home/runner/work/aperion-chat-private/aperion-chat-private'
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2644538Z ##[group]Initializing the repository
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2649854Z [command]/usr/bin/git init /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2776432Z hint: Using 'master' as the name for the initial branch. This default branch name
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2779397Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2780436Z hint: to use in all of your new repositories, which will suppress this warning,
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2781487Z hint: call:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2781989Z hint:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2782610Z hint: 	git config --global init.defaultBranch <name>
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2783230Z hint:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2783827Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2785027Z hint: 'development'. The just-created branch can be renamed via this command:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2785845Z hint:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2786268Z hint: 	git branch -m <name>
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2786711Z hint:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2787317Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2788432Z Initialized empty Git repository in /home/runner/work/aperion-chat-private/aperion-chat-private/.git/
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2794967Z [command]/usr/bin/git remote add origin https://github.com/invictustitan2/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2838102Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2840280Z ##[group]Disabling automatic garbage collection
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2842784Z [command]/usr/bin/git config --local gc.auto 0
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2884806Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2885539Z ##[group]Setting up auth
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2886288Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.2920261Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3269627Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3305110Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3545987Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3580191Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3970857Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3974432Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3975483Z ##[group]Fetching the repository
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.3976311Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c739cdebcffd7d579abfa09be92d789ec30bfb8e:refs/remotes/origin/main
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8101682Z From https://github.com/invictustitan2/aperion-chat-private
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8102573Z  * [new ref]         c739cdebcffd7d579abfa09be92d789ec30bfb8e -> origin/main
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8153991Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8154878Z ##[group]Determining the checkout info
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8155841Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8156570Z [command]/usr/bin/git sparse-checkout disable
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8252238Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8311811Z ##[group]Checking out the ref
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8319050Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8573696Z Switched to a new branch 'main'
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8583118Z branch 'main' set up to track 'origin/main'.
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8609951Z ##[endgroup]
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8681225Z [command]/usr/bin/git log -1 --format=%H
+Deploy	Run actions/checkout@v4	2025-12-16T03:55:38.8719685Z c739cdebcffd7d579abfa09be92d789ec30bfb8e
+Deploy	Install pnpm	﻿2025-12-16T03:55:38.9009191Z ##[group]Run pnpm/action-setup@v3
+Deploy	Install pnpm	2025-12-16T03:55:38.9009511Z with:
+Deploy	Install pnpm	2025-12-16T03:55:38.9009683Z   version: 9.15.0
+Deploy	Install pnpm	2025-12-16T03:55:38.9009883Z   dest: ~/setup-pnpm
+Deploy	Install pnpm	2025-12-16T03:55:38.9010085Z   run_install: null
+Deploy	Install pnpm	2025-12-16T03:55:38.9010286Z   package_json_file: package.json
+Deploy	Install pnpm	2025-12-16T03:55:38.9010510Z   standalone: false
+Deploy	Install pnpm	2025-12-16T03:55:38.9010693Z ##[endgroup]
+Deploy	Install pnpm	2025-12-16T03:55:38.9952089Z ##[group]Running self-installer...
+Deploy	Install pnpm	2025-12-16T03:55:39.6802750Z Progress: resolved 1, reused 0, downloaded 0, added 0
+Deploy	Install pnpm	2025-12-16T03:55:39.7139357Z Packages: +1
+Deploy	Install pnpm	2025-12-16T03:55:39.7140236Z +
+Deploy	Install pnpm	2025-12-16T03:55:40.2614133Z Progress: resolved 1, reused 0, downloaded 1, added 1, done
+Deploy	Install pnpm	2025-12-16T03:55:40.2897658Z 
+Deploy	Install pnpm	2025-12-16T03:55:40.2900465Z dependencies:
+Deploy	Install pnpm	2025-12-16T03:55:40.2901122Z + pnpm 9.15.0 (10.26.0 is available)
+Deploy	Install pnpm	2025-12-16T03:55:40.2903346Z 
+Deploy	Install pnpm	2025-12-16T03:55:40.2934920Z Done in 1.1s
+Deploy	Install pnpm	2025-12-16T03:55:40.3084177Z ##[endgroup]
+Deploy	Install pnpm	2025-12-16T03:55:40.3089951Z Installation Completed!
+Deploy	Use Node.js	﻿2025-12-16T03:55:40.3315505Z ##[group]Run actions/setup-node@v4
+Deploy	Use Node.js	2025-12-16T03:55:40.3316146Z with:
+Deploy	Use Node.js	2025-12-16T03:55:40.3316326Z   node-version: 20
+Deploy	Use Node.js	2025-12-16T03:55:40.3316512Z   cache: pnpm
+Deploy	Use Node.js	2025-12-16T03:55:40.3316727Z   always-auth: false
+Deploy	Use Node.js	2025-12-16T03:55:40.3316930Z   check-latest: false
+Deploy	Use Node.js	2025-12-16T03:55:40.3317251Z   token: ***
+Deploy	Use Node.js	2025-12-16T03:55:40.3317430Z env:
+Deploy	Use Node.js	2025-12-16T03:55:40.3317670Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Deploy	Use Node.js	2025-12-16T03:55:40.3317952Z ##[endgroup]
+Deploy	Use Node.js	2025-12-16T03:55:40.5159367Z Found in cache @ /opt/hostedtoolcache/node/20.19.6/x64
+Deploy	Use Node.js	2025-12-16T03:55:40.5165689Z ##[group]Environment details
+Deploy	Use Node.js	2025-12-16T03:55:42.4997565Z node: v20.19.6
+Deploy	Use Node.js	2025-12-16T03:55:42.4998657Z npm: 10.8.2
+Deploy	Use Node.js	2025-12-16T03:55:42.5003099Z yarn: 1.22.22
+Deploy	Use Node.js	2025-12-16T03:55:42.5004457Z ##[endgroup]
+Deploy	Use Node.js	2025-12-16T03:55:42.5045906Z [command]/home/runner/setup-pnpm/node_modules/.bin/pnpm store path --silent
+Deploy	Use Node.js	2025-12-16T03:55:43.0219390Z /home/runner/setup-pnpm/node_modules/.bin/store/v3
+Deploy	Use Node.js	2025-12-16T03:55:43.2032675Z Cache hit for: node-cache-Linux-x64-pnpm-371f32a4e0773d851f9789ae01c89c043b100346e1105e8c95f6818c613c248e
+Deploy	Use Node.js	2025-12-16T03:55:44.3283096Z Received 121925983 of 126120287 (96.7%), 116.3 MBs/sec
+Deploy	Use Node.js	2025-12-16T03:55:44.4178998Z Received 126120287 of 126120287 (100.0%), 110.3 MBs/sec
+Deploy	Use Node.js	2025-12-16T03:55:44.4184587Z Cache Size: ~120 MB (126120287 B)
+Deploy	Use Node.js	2025-12-16T03:55:44.4242825Z [command]/usr/bin/tar -xf /home/runner/work/_temp/9ee88349-11b6-4318-b9e3-6cdb6aff4f0f/cache.tzst -P -C /home/runner/work/aperion-chat-private/aperion-chat-private --use-compress-program unzstd
+Deploy	Use Node.js	2025-12-16T03:55:46.4784924Z Cache restored successfully
+Deploy	Use Node.js	2025-12-16T03:55:46.5162615Z Cache restored from key: node-cache-Linux-x64-pnpm-371f32a4e0773d851f9789ae01c89c043b100346e1105e8c95f6818c613c248e
+Deploy	Install dependencies	﻿2025-12-16T03:55:46.5357763Z ##[group]Run pnpm install
+Deploy	Install dependencies	2025-12-16T03:55:46.5358115Z [36;1mpnpm install[0m
+Deploy	Install dependencies	2025-12-16T03:55:46.5398866Z shell: /usr/bin/bash -e {0}
+Deploy	Install dependencies	2025-12-16T03:55:46.5399264Z env:
+Deploy	Install dependencies	2025-12-16T03:55:46.5399542Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Deploy	Install dependencies	2025-12-16T03:55:46.5399846Z ##[endgroup]
+Deploy	Install dependencies	2025-12-16T03:55:47.0009879Z Scope: all 7 workspace projects
+Deploy	Install dependencies	2025-12-16T03:55:47.1093927Z Lockfile is up to date, resolution step is skipped
+Deploy	Install dependencies	2025-12-16T03:55:47.2007151Z Progress: resolved 1, reused 0, downloaded 0, added 0
+Deploy	Install dependencies	2025-12-16T03:55:47.4253685Z Packages: +583
+Deploy	Install dependencies	2025-12-16T03:55:47.4254437Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Deploy	Install dependencies	2025-12-16T03:55:48.1986144Z Progress: resolved 583, reused 432, downloaded 0, added 0
+Deploy	Install dependencies	2025-12-16T03:55:49.1976392Z Progress: resolved 583, reused 583, downloaded 0, added 479
+Deploy	Install dependencies	2025-12-16T03:55:49.3469459Z Progress: resolved 583, reused 583, downloaded 0, added 583, done
+Deploy	Install dependencies	2025-12-16T03:55:54.2807404Z 
+Deploy	Install dependencies	2025-12-16T03:55:54.2822188Z devDependencies:
+Deploy	Install dependencies	2025-12-16T03:55:54.2828180Z + @playwright/test 1.57.0
+Deploy	Install dependencies	2025-12-16T03:55:54.2828710Z + @types/node 20.19.26
+Deploy	Install dependencies	2025-12-16T03:55:54.2829251Z + @typescript-eslint/eslint-plugin 7.18.0
+Deploy	Install dependencies	2025-12-16T03:55:54.2829858Z + @typescript-eslint/parser 7.18.0
+Deploy	Install dependencies	2025-12-16T03:55:54.2830364Z + eslint 8.57.1
+Deploy	Install dependencies	2025-12-16T03:55:54.2839377Z + husky 9.1.7
+Deploy	Install dependencies	2025-12-16T03:55:54.2839780Z + lint-staged 16.2.7
+Deploy	Install dependencies	2025-12-16T03:55:54.2840126Z + prettier 3.7.4
+Deploy	Install dependencies	2025-12-16T03:55:54.2840477Z + typescript 5.9.3
+Deploy	Install dependencies	2025-12-16T03:55:54.2840799Z + vitest 1.6.1
+Deploy	Install dependencies	2025-12-16T03:55:54.2841283Z + wrangler 4.54.0
+Deploy	Install dependencies	2025-12-16T03:55:54.2841484Z 
+Deploy	Install dependencies	2025-12-16T03:55:54.3015397Z . prepare$ husky
+Deploy	Install dependencies	2025-12-16T03:55:54.3679582Z . prepare: Done
+Deploy	Install dependencies	2025-12-16T03:55:54.4003089Z Done in 7.8s
+Deploy	Verify (Lint, Test)	﻿2025-12-16T03:55:54.4420490Z ##[group]Run pnpm verify
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:54.4421385Z [36;1mpnpm verify[0m
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:54.4463874Z shell: /usr/bin/bash -e {0}
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:54.4464230Z env:
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:54.4464587Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:54.4465093Z ##[endgroup]
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.0481894Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.0486855Z > aperion-chat-private@0.0.0 verify /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.0493144Z > pnpm typecheck && pnpm lint && pnpm test
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.0495119Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.6322390Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.6353232Z > aperion-chat-private@0.0.0 typecheck /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.6379893Z > tsc -b
+Deploy	Verify (Lint, Test)	2025-12-16T03:55:55.6380104Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:03.9627949Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:03.9629801Z > aperion-chat-private@0.0.0 lint /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:03.9631044Z > eslint .
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:03.9633384Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:06.6535050Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:06.6537815Z > aperion-chat-private@0.0.0 test /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:06.6543426Z > vitest run
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:06.6543659Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:07.0656812Z [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:07.0938839Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:07.0944726Z [7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/home/runner/work/aperion-chat-private/aperion-chat-private[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:07.0947905Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.0782670Z  [2m[90m↓[39m[22m apps/api-worker/test/index.test.ts [2m ([22m[2m8 tests[22m [2m|[22m [33m8 skipped[39m[2m)[22m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.3921837Z  [32m✓[39m packages/memory-core/test/store.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6717239Z [90mstderr[2m | apps/api-worker/test/queue.test.ts[2m > [22m[2mQueue Processor[2m > [22m[2mshould retry if processing fails[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6719487Z [90mstdout[2m | apps/api-worker/test/queue.test.ts[2m > [22m[2mQueue Processor[2m > [22m[2mshould process semantic messages and generate embeddings[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6722369Z Failed to process message msg-3: Error: DB Error
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6723412Z     at /home/runner/work/aperion-chat-private/aperion-chat-private/apps/api-worker/test/queue.test.ts:102:38
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6725111Z     at file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:135:14
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6727093Z     at file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:60:26
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6729271Z     at runTest (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:781:17)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6731687Z     at runSuite (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:909:15)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6734225Z     at runSuite (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:909:15)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6735657Z     at runFiles (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:958:5)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6736874Z     at startTests (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/@vitest+runner@1.6.1/node_modules/@vitest/runner/dist/index.js:967:3)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6738287Z     at file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/vitest@1.6.1_@types+node@20.19.26_jsdom@27.3.0_postcss@8.5.6__lightningcss@1.30.2/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6740297Z     at withEnv (file:///home/runner/work/aperion-chat-private/aperion-chat-private/node_modules/.pnpm/vitest@1.6.1_@types+node@20.19.26_jsdom@27.3.0_postcss@8.5.6__lightningcss@1.30.2/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:83:5)
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6741638Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6742081Z Generated embedding for semantic record rec-2 in 0.06ms
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6742510Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.6743453Z  [32m✓[39m apps/api-worker/test/queue.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:14.9390316Z  [32m✓[39m packages/policy/test/policy.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.2007571Z  [32m✓[39m apps/api-worker/test/queue-job.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.2010800Z [90mstdout[2m | apps/api-worker/test/queue-job.test.ts[2m > [22m[2mQueue Processor Jobs[2m > [22m[2mshould process embed job[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.2012391Z Generated embedding for job job-456 in 0.01ms
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.2012749Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.5684081Z  [32m✓[39m tools/cli/test/cli.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:15.8184803Z  [32m✓[39m apps/api-worker/src/lib/workersAiStt.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:16.0688848Z  [32m✓[39m packages/memory-core/test/hash.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:16.3116594Z  [32m✓[39m apps/api-worker/test/identity-preferences.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 2[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:16.5626583Z  [32m✓[39m apps/api-worker/test/ai.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:16.8162754Z  [32m✓[39m apps/api-worker/src/lib/textToSpeech.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 12[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:17.0624789Z  [32m✓[39m apps/api-worker/src/lib/gemini.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:17.3135127Z  [32m✓[39m apps/api-worker/src/lib/speechToText.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 11[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:18.5863657Z  [32m✓[39m apps/web/src/pages/SystemStatus.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 77[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:19.3888083Z  [32m✓[39m apps/web/src/lib/errorLog.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5704737Z  [32m✓[39m apps/web/src/components/Layout.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 57[2mms[22m[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5891857Z 
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5902365Z [2m Test Files [22m [1m[32m15 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (16)[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5908108Z [2m      Tests [22m [1m[32m44 passed[39m[22m[2m | [22m[33m8 skipped[39m[90m (52)[39m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5913408Z [2m   Start at [22m 03:56:07
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5919495Z [2m   Duration [22m 13.49s[2m (transform 5.99s, setup 1ms, collect 7.89s, tests 228ms, environment 1.58s, prepare 1.61s)[22m
+Deploy	Verify (Lint, Test)	2025-12-16T03:56:20.5931116Z 
+Deploy	Apply Database Migrations	﻿2025-12-16T03:56:20.7708064Z ##[group]Run cloudflare/wrangler-action@v3
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7708365Z with:
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7708699Z   apiToken: ***
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7708928Z   accountId: ***
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7709130Z   workingDirectory: apps/api-worker
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7709442Z   command: d1 migrations apply aperion-memory --remote
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7709732Z   quiet: false
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7709907Z env:
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7710131Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.7710414Z ##[endgroup]
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.8668118Z ##[group]🔍 Checking for existing Wrangler installation
+Deploy	Apply Database Migrations	2025-12-16T03:56:20.8718220Z [command]/opt/hostedtoolcache/node/20.19.6/x64/bin/npx --no-install wrangler --version
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.1125133Z 4.54.0
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.3354945Z ✅ No wrangler version specified, using pre-installed wrangler version 4.54.0
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.3357402Z ##[endgroup]
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.3358001Z ##[endgroup]
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.3361380Z ##[group]🚀 Running Wrangler Commands
+Deploy	Apply Database Migrations	2025-12-16T03:56:23.3393823Z [command]/opt/hostedtoolcache/node/20.19.6/x64/bin/npx wrangler d1 migrations apply aperion-memory --remote
+Deploy	Apply Database Migrations	2025-12-16T03:56:24.8011994Z 
+Deploy	Apply Database Migrations	2025-12-16T03:56:24.8012832Z  ⛅️ wrangler 4.54.0
+Deploy	Apply Database Migrations	2025-12-16T03:56:24.8013342Z ───────────────────
+Deploy	Apply Database Migrations	2025-12-16T03:56:24.8014103Z Resource location: remote 
+Deploy	Apply Database Migrations	2025-12-16T03:56:24.8014399Z 
+Deploy	Apply Database Migrations	2025-12-16T03:56:25.7178775Z ✅ No migrations to apply!
+Deploy	Apply Database Migrations	2025-12-16T03:56:25.7868063Z ##[endgroup]
+Deploy	Apply Database Migrations	2025-12-16T03:56:25.7870777Z 🏁 Wrangler Action completed
+Deploy	Deploy to Cloudflare Workers	﻿2025-12-16T03:56:25.7962249Z ##[group]Run cloudflare/wrangler-action@v3
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7962556Z with:
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7963080Z   apiToken: ***
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7963328Z   accountId: ***
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7963536Z   workingDirectory: apps/api-worker
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7963796Z   quiet: false
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7964018Z env:
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7964240Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.7964522Z ##[endgroup]
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.8931249Z ##[group]🔍 Checking for existing Wrangler installation
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:25.8980804Z [command]/opt/hostedtoolcache/node/20.19.6/x64/bin/npx --no-install wrangler --version
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:26.9654335Z 4.54.0
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:27.1765004Z ✅ No wrangler version specified, using pre-installed wrangler version 4.54.0
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:27.1768822Z ##[endgroup]
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:27.1772773Z ##[endgroup]
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:27.1773567Z ##[group]🚀 Running Wrangler Commands
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:27.1812756Z [command]/opt/hostedtoolcache/node/20.19.6/x64/bin/npx wrangler deploy
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.2056491Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.2062076Z Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.2567814Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.2572794Z  ⛅️ wrangler 4.54.0
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.2577566Z ───────────────────
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:28.8654258Z Total Upload: 728.11 KiB / gzip: 144.62 KiB
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2957690Z Worker Startup Time: 25 ms
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2966447Z Your Worker has access to the following bindings:
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2979208Z Binding                                                    Resource             
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2980191Z env.CACHE_KV (212d43171f574b06b22f6fa4f24ca8a1)            KV Namespace         
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2981495Z env.MEMORY_QUEUE (aperion-memory-queue)                    Queue                
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2982553Z env.MEMORY_DB (aperion-memory)                             D1 Database          
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2983590Z env.MEMORY_VECTORS (aperion-vectors)                       Vectorize Index      
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2984599Z env.MEDIA_BUCKET (aperion-media)                           R2 Bucket            
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2985443Z env.BROWSER                                                Browser              
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2986665Z env.AI                                                     AI                   
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2987057Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:32.2995518Z Uploaded aperion-api-worker (3.77 sec)
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:33.9990751Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0402469Z [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mA request to the Cloudflare API (/accounts/***/workers/scripts/aperion-api-worker/domains/records) failed.[0m
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0406845Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0409538Z   Hostname 'api.aperion.cc' already has externally managed DNS records (A, CNAME, etc). Either delete them, try a different hostname, or use the option 'override_existing_dns_record' to override. [code: 100117]
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0412706Z   
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0413838Z   If you think this is a bug, please open an issue at: [4mhttps://github.com/cloudflare/workers-sdk/issues/new/choose[0m
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0414541Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.0414555Z 
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.1146501Z 🪵  Logs were written to "/home/runner/.config/.wrangler/logs/wrangler-2025-12-16_03-56-27_978.log"
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.1421411Z ##[endgroup]
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.1454970Z ##[error]The process '/opt/hostedtoolcache/node/20.19.6/x64/bin/npx' failed with exit code 1
+Deploy	Deploy to Cloudflare Workers	2025-12-16T03:56:34.1465335Z ##[error]🚨 Action failed
+Deploy	Post Install pnpm	﻿2025-12-16T03:56:34.1531907Z Post job cleanup.
+Deploy	Post Install pnpm	2025-12-16T03:56:34.2406004Z Pruning is unnecessary.
+Deploy	Post Run actions/checkout@v4	﻿2025-12-16T03:56:34.2517193Z Post job cleanup.
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3550193Z [command]/usr/bin/git version
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3632142Z git version 2.52.0
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3721660Z Temporarily overriding HOME='/home/runner/work/_temp/10d07afb-736a-4e8c-a21c-4191300a4238' before making global git config changes
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3724588Z Adding repository directory to the temporary git global config as a safe directory
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3731592Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aperion-chat-private/aperion-chat-private
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3819362Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.3883476Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4216878Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4250509Z http.https://github.com/.extraheader
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4266670Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4303266Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4555548Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Deploy	Post Run actions/checkout@v4	2025-12-16T03:56:34.4593809Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Deploy	Complete job	﻿2025-12-16T03:56:34.4951724Z Cleaning up orphan processes
