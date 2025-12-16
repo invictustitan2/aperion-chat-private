@@ -28,7 +28,7 @@ describe("ChatController", () => {
       json: vi.fn(),
     };
     mockEnv = {} as Env;
-    mockService = new ChatService(mockEnv);
+    // mockService = new ChatService(mockEnv);
     (ChatService as any).mockClear();
     // Re-instantiate mock to capture the instance that Controller will create?
     // Actually vi.mock factory returns the class constructor.
