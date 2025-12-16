@@ -1,3 +1,4 @@
+import path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { unstable_dev, Unstable_DevWorker } from "wrangler";
 
@@ -7,7 +8,11 @@ describe("Authentication Middleware", () => {
 
   beforeAll(async () => {
     try {
-      worker = await unstable_dev("src/index.ts", {
+      // Get the absolute path to the worker directory
+      const workerDir = path.resolve(__dirname, "..");
+      const scriptPath = path.join(workerDir, "src", "index.ts");
+
+      worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
         vars: {
           API_TOKEN: TEST_TOKEN,
