@@ -66,3 +66,4 @@ database_id = "test-db-local"
 
 # Optional bindings are undefined in tests - code handles gracefully
 # AI, VECTORIZE, R2, BROWSER, QUEUES are not needed for auth tests
+# Trigger deployment for permission check
