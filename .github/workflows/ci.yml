@@ -30,8 +30,8 @@ jobs:
       - name: Apply D1 Migrations (Local)
         run: cd apps/api-worker && npx wrangler d1 migrations apply aperion-memory --local
 
-      - name: Build Worker (Pre-compile for tests)
-        run: pnpm --filter @aperion/api-worker build
+      - name: Build All Packages (Pre-compile for tests)
+        run: pnpm -r build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
