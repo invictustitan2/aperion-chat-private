@@ -90,7 +90,7 @@ export function Memory() {
       const contents = searchResults.map((r) => r.content);
       return api.semantic.summarize(contents, searchQuery);
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { jobId?: string; summary?: string }) => {
       if (data.jobId) {
         setActiveJobId(data.jobId);
         setSummary("Generating summary...");
@@ -293,7 +293,10 @@ export function Memory() {
                 <AlertCircle className="w-5 h-5" />
                 {searchMutation.error instanceof Error
                   ? searchMutation.error.message
-                  : "Search failed"}
+                  : String(
+                      (searchMutation.error as { message?: unknown }).message ||
+                        searchMutation.error,
+                    )}
               </div>
             )}
 

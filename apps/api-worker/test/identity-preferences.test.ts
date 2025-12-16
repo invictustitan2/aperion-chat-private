@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock environment and dependencies
-const mockDB = {
-  prepare: vi.fn(),
+const _mockDB = {
+  prepare: vi.fn().mockReturnThis(),
+  bind: vi.fn().mockReturnThis(),
+  first: vi.fn(),
+  run: vi.fn(),
 };
 
-const mockAi = {
+// Mock dependencies
+const _mockAi = {
   run: vi.fn(),
 };
 
