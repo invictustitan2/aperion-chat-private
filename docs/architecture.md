@@ -9,7 +9,7 @@ Aperion Chat Private is a single-user, memory-backed chat system designed for pr
 ### Apps
 
 - **Web UI (`apps/web`)**: The interface for the user.
-- **API Worker (`apps/api-worker`)**: The backend logic running on Cloudflare Workers. Handles request processing and orchestration.
+- **API Worker (`apps/api-worker`)**: The backend logic running on Cloudflare Workers. Handles request processing, orchestration, and AI inference (Workers AI).
 
 ### Packages
 
@@ -23,6 +23,6 @@ Aperion Chat Private is a single-user, memory-backed chat system designed for pr
 
 ## Invariants
 
-1.  **Memory Immutability**: Once an episodic memory is finalized, it cannot be altered, only appended to or referenced.
-2.  **Policy Enforcement**: All memory writes must pass through the Policy layer.
-3.  **Headless Operation**: The memory engine and policy layer must function independently of the UI.
+1. **Memory Immutability**: Once an episodic memory is finalized, it cannot be altered, only appended to or referenced.
+2. **Policy Enforcement**: All memory writes must pass through the Policy layer.
+3. **Headless Operation**: The memory engine and policy layer must function independently of the UI.

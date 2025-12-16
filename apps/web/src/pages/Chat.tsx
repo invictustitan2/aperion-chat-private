@@ -2,8 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
 import {
   AlertCircle,
+  CheckCircle,
+  Download,
   ImageIcon,
   Loader2,
+  Mic,
+  MicOff,
   Send,
   ToggleLeft,
   ToggleRight,
@@ -15,8 +19,17 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [isMemoryWriteEnabled, setIsMemoryWriteEnabled] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const queryClient = useQueryClient();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +104,150 @@ export function Chat() {
     }
   }, [history]);
 
+  const handleExport = async () => {
+    if (!history || history.length === 0) {
+      setExportError("No messages to export");
+      return;
+    }
+
+    setIsExporting(true);
+    setExportError(null);
+    setExportSuccess(false);
+
+    try {
+      // Generate HTML from chat history
+      const messagesHtml = history
+        .map(
+          (msg) => `
+          <div class="message ${String(msg.provenance?.source_type) === "assistant" ? "assistant" : "user"}">
+            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">
+              ${new Date(msg.createdAt).toLocaleString()}
+            </div>
+            <div>${msg.content}</div>
+          </div>
+        `,
+        )
+        .join("\n");
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Chat Export - ${new Date().toLocaleDateString()}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; background: #fff; }
+            h1 { color: #1a1a1a; border-bottom: 2px solid #10b981; padding-bottom: 10px; }
+            .message { margin-bottom: 15px; padding: 12px; border-radius: 8px; }
+            .user { background: #f3f4f6; border-left: 3px solid #6b7280; }
+            .assistant { background: #ecfdf5; border-left: 3px solid #10b981; }
+          </style>
+        </head>
+        <body>
+          <h1>Aperion Chat Export</h1>
+          <p style="color: #666;">Exported on ${new Date().toLocaleString()}</p>
+          ${messagesHtml}
+        </body>
+        </html>
+      `;
+
+      const blob = await api.chat.export(html);
+
+      // Download the PDF
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chat-export-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Voice Recording Functions
+  const startRecording = async () => {
+    try {
+      setVoiceError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm",
+      });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        await processVoiceInput(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+      setVoiceError("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const processVoiceInput = async (audioBlob: Blob) => {
+    setIsProcessingVoice(true);
+    setVoiceError(null);
+
+    try {
+      const result = await api.chat.voice(audioBlob);
+
+      // Play audio response
+      if (result.audio && !result.useFrontendTts) {
+        // Server provided audio (base64)
+        const audioData = atob(result.audio);
+        const audioArray = new Uint8Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          audioArray[i] = audioData.charCodeAt(i);
+        }
+        const blob = new Blob([audioArray], { type: "audio/mp3" });
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      } else if (result.useFrontendTts && "speechSynthesis" in window) {
+        // Use Web Speech API for TTS
+        const utterance = new SpeechSynthesisUtterance(result.assistantText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      // Refresh chat history
+      queryClient.invalidateQueries({ queryKey: ["episodic"] });
+    } catch (err) {
+      console.error("Voice processing failed:", err);
+      setVoiceError(err instanceof Error ? err.message : "Voice chat failed");
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || sendMessage.isPending) return;
@@ -98,7 +255,7 @@ export function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" ref={chatContainerRef}>
       {/* Header */}
       <header className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur">
         <div>
@@ -108,25 +265,65 @@ export function Chat() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
-          className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
-            isMemoryWriteEnabled
-              ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-              : "bg-gray-800 border-gray-700 text-gray-400",
-          )}
-        >
-          {isMemoryWriteEnabled ? (
-            <ToggleRight className="w-5 h-5" />
-          ) : (
-            <ToggleLeft className="w-5 h-5" />
-          )}
-          <span className="text-sm font-medium">
-            Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
-          </span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Export Button */}
+          <button
+            onClick={handleExport}
+            disabled={isExporting || !history?.length}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
+              isExporting
+                ? "bg-gray-800 border-gray-700 text-gray-500"
+                : exportSuccess
+                  ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
+                  : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200",
+            )}
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : exportSuccess ? (
+              <CheckCircle className="w-4 h-4" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span className="text-sm font-medium">
+              {isExporting
+                ? "Exporting..."
+                : exportSuccess
+                  ? "Exported!"
+                  : "Export PDF"}
+            </span>
+          </button>
+
+          {/* Semantic Write Toggle */}
+          <button
+            onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
+              isMemoryWriteEnabled
+                ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
+                : "bg-gray-800 border-gray-700 text-gray-400",
+            )}
+          >
+            {isMemoryWriteEnabled ? (
+              <ToggleRight className="w-5 h-5" />
+            ) : (
+              <ToggleLeft className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">
+              Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+        </div>
       </header>
+
+      {/* Export Error Message */}
+      {exportError && (
+        <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 flex items-center gap-2 text-sm">
+          <AlertCircle className="w-4 h-4" />
+          {exportError}
+        </div>
+      )}
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef}>
@@ -205,6 +402,30 @@ export function Chat() {
             )}
           </button>
 
+          {/* Voice Recording */}
+          <button
+            type="button"
+            className={clsx(
+              "p-2 transition-colors rounded-full",
+              isRecording
+                ? "bg-red-500 text-white animate-pulse"
+                : isProcessingVoice
+                  ? "bg-purple-500/20 text-purple-400"
+                  : "text-gray-400 hover:text-purple-400",
+            )}
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isProcessingVoice}
+            title={isRecording ? "Stop Recording" : "Voice Chat"}
+          >
+            {isProcessingVoice ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
+          </button>
+
           <input
             type="text"
             value={input}
@@ -222,6 +443,14 @@ export function Chat() {
             Send
           </button>
         </form>
+
+        {/* Voice Error */}
+        {voiceError && (
+          <div className="mt-2 text-red-400 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {voiceError}
+          </div>
+        )}
       </div>
     </div>
   );

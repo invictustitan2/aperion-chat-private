@@ -4,7 +4,9 @@ import {
   Brain,
   FileText,
   MessageSquare,
+  Settings,
   Shield,
+  User,
 } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
@@ -14,8 +16,10 @@ export function Layout() {
   const navItems = [
     { path: "/chat", label: "Chat", icon: MessageSquare },
     { path: "/memory", label: "Memory", icon: Brain },
+    { path: "/identity", label: "Identity", icon: User },
     { path: "/receipts", label: "Receipts", icon: FileText },
     { path: "/status", label: "System Status", icon: AlertTriangle },
+    { path: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (

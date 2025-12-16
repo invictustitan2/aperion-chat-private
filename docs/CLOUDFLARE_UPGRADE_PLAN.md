@@ -21,9 +21,10 @@ Your token includes **Edit** access to:
 **Goal**: Move AI workloads to the edge for privacy and speed.
 
 1.  **Semantic Memory Upgrade (Vectorize)**
-    - _Current_: JSON-based embedding storage (slow, hard to scale).
+    - _Current_: **(COMPLETED)** JSON-based embedding storage replaced with Cloudflare Vectorize.
     - _Upgrade_: Implement **Cloudflare Vectorize** to store and query embeddings.
     - _Benefit_: scalable, lightning-fast RAG (Retrieval-Augmented Generation) for long-term memory.
+    - _Model_: Using `@cf/baai/bge-base-en-v1.5` for cost-effective, high-quality embeddings.
 2.  **Edge Inference (Workers AI)**
     - _Current_: External Google Gemini API.
     - _Upgrade_: Use **Workers AI** to run models like `@cf/meta/llama-3-8b-instruct` or `@cf/google/gemma-7b-it-lora`.
