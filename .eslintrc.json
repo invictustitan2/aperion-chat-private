@@ -9,5 +9,5 @@
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
     ]
   },
-  "ignorePatterns": ["dist", "node_modules", ".turbo", ".wrangler"]
+  "ignorePatterns": ["dist", "dist-test", "node_modules", ".turbo", ".wrangler"]
 }
