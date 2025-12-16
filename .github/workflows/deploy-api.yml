@@ -48,4 +48,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: "apps/api-worker"
-          command: deploy --override-existing-dns-records
+          command: deploy --override-existing-dns-record
