@@ -8,14 +8,22 @@ Aperion Chat Private is a single-user, memory-backed chat system designed for pr
 
 ### Apps
 
-- **Web UI (`apps/web`)**: The interface for the user.
-- **API Worker (`apps/api-worker`)**: The backend logic running on Cloudflare Workers. Handles request processing, orchestration, and AI inference (Workers AI).
+- **Web UI (`apps/web`)**: The interface for the user. Mobile-first design (Glassmorphism).
+- **API Worker (`apps/api-worker`)**: The backend logic running on Cloudflare Workers.
+  - **Clean Architecture**: Organized into `Controllers` (HTTP handling), `Services` (Business Logic), and `Middleware` (Auth, Logging).
+  - **Integrations**:
+    - **Workers AI**: On-edge inference (Llama, Whisper, Embeddings).
+    - **Durable Objects**: `ChatState` for WebSocket real-time state.
+    - **R2**: `aperion-media` bucket for storing voice/image assets.
+    - **Queues**: `aperion-memory-queue` for async memory processing.
+    - **D1**: `aperion-memory` for structured data (Episodic, Identity).
+    - **Vectorize**: `aperion-vectors` for semantic search.
 
 ### Packages
 
-- **Memory Core (`packages/memory-core`)**: The heart of the system. Manages episodic, semantic, and identity memory. Enforces provenance.
-- **Policy (`packages/policy`)**: The brain's superego. Defines rules for what can be written to memory and what actions can be taken.
-- **Shared (`packages/shared`)**: Common types and utilities.
+- **Memory Core (`packages/memory-core`)**: The heart of the system. Manages episodic, semantic, and identity memory types.
+- **Policy (`packages/policy`)**: The brain's superego. Defines strictly enforcing security gates (`MemoryWriteGate`) for all memory operations.
+- **Shared (`packages/shared`)**: Common types, utilities, and z-schema definitions.
 
 ### Tools
 
@@ -23,6 +31,7 @@ Aperion Chat Private is a single-user, memory-backed chat system designed for pr
 
 ## Invariants
 
-1. **Memory Immutability**: Once an episodic memory is finalized, it cannot be altered, only appended to or referenced.
-2. **Policy Enforcement**: All memory writes must pass through the Policy layer.
-3. **Headless Operation**: The memory engine and policy layer must function independently of the UI.
+1.  **Memory Immutability**: Once an episodic memory is finalized, it cannot be altered.
+2.  **Policy Enforcement**: All memory writes pass through the `Policy` layer and generate `Receipts`.
+3.  **Type Safety**: Strict Zod schemas validate all API inputs.
+4.  **Observability**: Every request is traced (`traceId`) and logged with structured context.

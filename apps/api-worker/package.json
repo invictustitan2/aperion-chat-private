@@ -7,17 +7,21 @@
     "test": "vitest run",
     "dev:api": "wrangler dev",
     "db:migrate": "wrangler d1 migrations apply aperion-memory",
-    "db:migrate:local": "wrangler d1 migrations apply aperion-memory --local"
+    "db:migrate:local": "wrangler d1 migrations apply aperion-memory --local",
+    "docs:generate": "tsx scripts/generate-openapi.ts"
   },
   "dependencies": {
     "@aperion/memory-core": "workspace:*",
     "@aperion/policy": "workspace:*",
     "@aperion/shared": "workspace:*",
     "@cloudflare/puppeteer": "^1.0.4",
-    "itty-router": "^5.0.22"
+    "itty-router": "^5.0.22",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.2.0",
     "@cloudflare/workers-types": "^4.20251213.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
     "wrangler": "^4.54.0"

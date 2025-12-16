@@ -1,0 +1,518 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Aperion Chat Private API",
+    "description": "API Reference for Aperion Chat Private"
+  },
+  "servers": [
+    {
+      "url": "https://api.aperion.cc"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ChatRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": ["system", "user", "assistant"]
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": ["role", "content"]
+            }
+          },
+          "model": {
+            "type": "string",
+            "enum": ["workers-ai", "gemini"]
+          }
+        },
+        "required": ["message"]
+      },
+      "EpisodicRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "source_type": {
+                "type": "string",
+                "enum": ["user", "system", "model", "external"]
+              },
+              "source_id": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "explicit_confirm": {
+                "type": "boolean"
+              }
+            },
+            "required": ["source_type", "source_id", "timestamp"]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          }
+        },
+        "required": ["content", "provenance"]
+      },
+      "SemanticRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "source_type": {
+                "type": "string",
+                "enum": ["user", "system", "model", "external"]
+              },
+              "source_id": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "explicit_confirm": {
+                "type": "boolean"
+              }
+            },
+            "required": ["source_type", "source_id", "timestamp"]
+          },
+          "policyContext": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          },
+          "embedding": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": ["content", "references", "provenance"]
+      },
+      "IdentityUpsert": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "nullable": true
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "source_type": {
+                "type": "string",
+                "enum": ["user", "system", "model", "external"]
+              },
+              "source_id": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "number"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": ["source_type", "source_id", "timestamp"]
+          },
+          "explicit_confirm": {
+            "type": "boolean"
+          },
+          "preferred_tone": {
+            "type": "string"
+          },
+          "memory_retention_days": {
+            "type": "number"
+          },
+          "interface_theme": {
+            "type": "string"
+          }
+        },
+        "required": ["key", "provenance"]
+      },
+      "SemanticSummarize": {
+        "type": "object",
+        "properties": {
+          "contents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": ["contents"]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/chat": {
+      "post": {
+        "summary": "Chat Completion",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["system", "user", "assistant"]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["role", "content"]
+                    }
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": ["workers-ai", "gemini"]
+                  }
+                },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "response": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["id", "response", "timestamp"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/episodic": {
+      "post": {
+        "summary": "Create Episodic Memory",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "properties": {
+                      "source_type": {
+                        "type": "string",
+                        "enum": ["user", "system", "model", "external"]
+                      },
+                      "source_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "number"
+                      },
+                      "confidence": {
+                        "type": "number"
+                      },
+                      "explicit_confirm": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["source_type", "source_id", "timestamp"]
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  }
+                },
+                "required": ["content", "provenance"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Memory created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/semantic": {
+      "post": {
+        "summary": "Create Semantic Memory",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "references": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "properties": {
+                      "source_type": {
+                        "type": "string",
+                        "enum": ["user", "system", "model", "external"]
+                      },
+                      "source_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "number"
+                      },
+                      "confidence": {
+                        "type": "number"
+                      },
+                      "explicit_confirm": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["source_type", "source_id", "timestamp"]
+                  },
+                  "policyContext": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  },
+                  "embedding": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": ["content", "references", "provenance"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Memory created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/identity": {
+      "post": {
+        "summary": "Upsert Identity",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "value": {
+                    "nullable": true
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "properties": {
+                      "source_type": {
+                        "type": "string",
+                        "enum": ["user", "system", "model", "external"]
+                      },
+                      "source_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "number"
+                      },
+                      "confidence": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["source_type", "source_id", "timestamp"]
+                  },
+                  "explicit_confirm": {
+                    "type": "boolean"
+                  },
+                  "preferred_tone": {
+                    "type": "string"
+                  },
+                  "memory_retention_days": {
+                    "type": "number"
+                  },
+                  "interface_theme": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "provenance"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Identity updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

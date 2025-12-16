@@ -18,6 +18,12 @@
 
   body {
     @apply h-full w-full overflow-hidden;
+    background-image: linear-gradient(
+      to bottom right,
+      #1e293b,
+      #374151,
+      #000000
+    ); /* from-slate-900 via-gray-900 to-black */
     /* Use safe area padding variables if needed globally,
        but usually better applied to specific containers */
   }
