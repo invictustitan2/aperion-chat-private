@@ -67,15 +67,17 @@ jobs:
           echo "Testing API authentication..."
 
           # Test without auth (should return 401)
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/v1/identity)
+          # Use /v1/episodic which supports GET requests
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/v1/episodic)
           if [ "$STATUS" != "401" ]; then
             echo "❌ API should require authentication but returned: $STATUS"
+            echo "Note: If 404, check if route supports GET method"
             exit 1
           fi
           echo "✓ API requires authentication"
 
           # Test with auth (should return 200)
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $API_TOKEN" $API_URL/v1/identity)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $API_TOKEN" $API_URL/v1/episodic)
           if [ "$STATUS" != "200" ]; then
             echo "❌ Authentication failed with status: $STATUS"
             exit 1
