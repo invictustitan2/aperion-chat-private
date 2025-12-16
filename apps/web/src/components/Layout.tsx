@@ -6,6 +6,7 @@ import {
   FileText,
   Menu,
   MessageSquare,
+  ScrollText,
   Settings,
   Shield,
   User,
@@ -33,6 +34,7 @@ export function Layout() {
     { path: "/identity", label: "Identity", icon: User },
     { path: "/receipts", label: "Receipts", icon: FileText },
     { path: "/status", label: "System Status", icon: AlertTriangle },
+    { path: "/logs", label: "Logs", icon: ScrollText },
     { path: "/settings", label: "Settings", icon: Settings },
   ];
 

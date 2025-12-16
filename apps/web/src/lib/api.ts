@@ -402,4 +402,20 @@ export const api = {
     },
     getUrl: (key: string) => `${API_BASE_URL}/v1/media/${key}`,
   },
+  logs: {
+    list: async (limit = 100): Promise<DevLog[]> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/logs?limit=${limit}`,
+        { headers },
+        { friendlyName: "Fetch logs" },
+      );
+    },
+    clear: async (): Promise<{ success: boolean; deleted: number }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/logs`,
+        { method: "DELETE", headers },
+        { friendlyName: "Clear logs" },
+      );
+    },
+  },
 };

@@ -3,6 +3,7 @@ import { ChatController } from "./controllers/ChatController";
 import { EpisodicController } from "./controllers/EpisodicController";
 import { IdentityController } from "./controllers/IdentityController";
 import { JobsController } from "./controllers/JobsController";
+import { LogsController } from "./controllers/LogsController";
 import { MediaController } from "./controllers/MediaController";
 import { ReceiptsController } from "./controllers/ReceiptsController";
 import { RunbooksController } from "./controllers/RunbooksController";
@@ -107,6 +108,11 @@ router.get("/v1/media/:key", withAuth, MediaController.download);
 router.post("/v1/runbooks/hash", withAuth, RunbooksController.hash);
 router.get("/v1/receipts", withAuth, ReceiptsController.list);
 router.get("/v1/jobs/:id", withAuth, JobsController.get);
+
+// Logs
+router.get("/v1/logs", withAuth, LogsController.list);
+router.post("/v1/logs", withAuth, LogsController.create);
+router.delete("/v1/logs", withAuth, LogsController.clear);
 
 export default {
   fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {

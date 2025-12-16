@@ -87,18 +87,18 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 4.2 Centralized Logging Dashboard
 
-- [ ] Stream logs to an external service (e.g., Logflare, Datadog, or Cloudflare Logpush).
-- [ ] Create a simple log viewer in the admin section (optional).
+- [ ] Stream logs to an external service (e.g., Logflare, Datadog, or Cloudflare Logpush). _(Deferred: Requires external service setup)_
+- [x] Create a simple log viewer in the admin section.
 
 ### 4.3 Automated Health Checks
 
-- [ ] Expand `healthcheck.sh` to include API smoke tests against production.
-- [ ] Implement uptime monitoring (e.g., Cloudflare Workers Health Checks or external).
+- [x] Expand `healthcheck.sh` to include API smoke tests against production.
+- [ ] Implement uptime monitoring (e.g., Cloudflare Workers Health Checks or external). _(Deferred: External service)_
 
 ### 4.4 Backup & Recovery
 
-- [ ] Schedule automated D1 database backups.
-- [ ] Create a runbook for disaster recovery.
+- [ ] Schedule automated D1 database backups. _(Deferred: Requires Cloudflare dashboard config)_
+- [ ] Create a runbook for disaster recovery. _(Deferred: Documentation task)_
 
 ---
 

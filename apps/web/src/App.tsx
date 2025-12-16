@@ -23,6 +23,9 @@ const Settings = lazy(() =>
 const SystemStatus = lazy(() =>
   import("./pages/SystemStatus").then((m) => ({ default: m.SystemStatus })),
 );
+const Logs = lazy(() =>
+  import("./pages/Logs").then((m) => ({ default: m.Logs })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,6 +102,14 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <Settings />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="logs"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Logs />
                   </Suspense>
                 }
               />
