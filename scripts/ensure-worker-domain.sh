@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! command -v jq >/dev/null 2>&1; then
+if ! command -v jq > /dev/null 2>&1; then
   echo "jq is required for this script" >&2
   exit 1
 fi
@@ -13,41 +13,54 @@ WORKER_NAME=${WORKER_NAME:-aperion-api-worker}
 WORKER_HOSTNAME=${WORKER_HOSTNAME:-api.aperion.cc}
 WORKER_ENVIRONMENT=${WORKER_ENVIRONMENT:-production}
 WORKER_ZONE_NAME=${WORKER_ZONE_NAME:-aperion.cc}
-OVERRIDE_EXISTING_DNS_RECORD=${OVERRIDE_EXISTING_DNS_RECORD:-true}
 
-normalize_bool() {
-  case "${1,,}" in
-    true|1|yes|y) echo true ;;
-    *) echo false ;;
-  esac
-}
+echo "Preparing custom domain ${WORKER_HOSTNAME} for ${WORKER_NAME}..."
 
-OVERRIDE_FLAG=$(normalize_bool "$OVERRIDE_EXISTING_DNS_RECORD")
+# 1. Get Zone ID for the domain
+echo "Resolving Zone ID for ${WORKER_ZONE_NAME}..."
+ZONE_RESPONSE=$(curl -sS -X GET "https://api.cloudflare.com/client/v4/zones?name=${WORKER_ZONE_NAME}" \
+  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
 
-echo "Ensuring custom domain ${WORKER_HOSTNAME} (env=${WORKER_ENVIRONMENT}) for ${WORKER_NAME}..."
-
-REQUEST_BODY=$(jq -n \
-  --arg hostname "$WORKER_HOSTNAME" \
-  --arg service "$WORKER_NAME" \
-  --arg environment "$WORKER_ENVIRONMENT" \
-  --arg zone_name "$WORKER_ZONE_NAME" \
-  --argjson override_existing_dns_record "$OVERRIDE_FLAG" \
-  '{hostname: $hostname, service: $service, environment: $environment, zone_name: $zone_name, override_existing_dns_record: $override_existing_dns_record}')
-
-API_URL="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/domains"
-
-HTTP_RESPONSE=$(curl -sS -X POST "$API_URL" \
-  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "$REQUEST_BODY")
-
-if [[ "$(echo "$HTTP_RESPONSE" | jq -r '.success')" != "true" ]]; then
-  echo "Cloudflare custom domain provisioning failed. Response:" >&2
-  echo "$HTTP_RESPONSE" | jq '.' >&2 || echo "$HTTP_RESPONSE" >&2
+if [[ "$(echo "$ZONE_RESPONSE" | jq -r '.success')" != "true" ]]; then
+  echo "❌ Failed to resolve Zone ID. Response:" >&2
+  echo "$ZONE_RESPONSE" | jq '.' >&2 || echo "$ZONE_RESPONSE" >&2
   exit 1
 fi
 
-HOSTNAME_RESULT=$(echo "$HTTP_RESPONSE" | jq -r '.result.hostname // .result.name // "unknown"')
-STATUS_RESULT=$(echo "$HTTP_RESPONSE" | jq -r '.result.status // "unknown"')
+ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
+echo "✓ Found Zone ID: ${ZONE_ID}"
 
-echo "Custom domain ensured: ${HOSTNAME_RESULT} (status=${STATUS_RESULT})."
+# 2. Check for existing DNS records for the hostname
+echo "Checking for existing DNS records for ${WORKER_HOSTNAME}..."
+DNS_RESPONSE=$(curl -sS -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${WORKER_HOSTNAME}" \
+  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+
+if [[ "$(echo "$DNS_RESPONSE" | jq -r '.success')" != "true" ]]; then
+  echo "❌ Failed to list DNS records. Response:" >&2
+  echo "$DNS_RESPONSE" | jq '.' >&2 || echo "$DNS_RESPONSE" >&2
+  exit 1
+fi
+
+RECORD_COUNT=$(echo "$DNS_RESPONSE" | jq -r '.result | length')
+
+if [[ "$RECORD_COUNT" -gt 0 ]]; then
+  echo "⚠️ Found ${RECORD_COUNT} existing DNS record(s) for ${WORKER_HOSTNAME}. Deleting to prevent conflicts..."
+
+  # Delete each conflicting record
+  echo "$DNS_RESPONSE" | jq -r '.result[].id' | while read -r RECORD_ID; do
+    echo "Deleting DNS record ${RECORD_ID}..."
+    DELETE_RESPONSE=$(curl -sS -X DELETE "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+
+    if [[ "$(echo "$DELETE_RESPONSE" | jq -r '.success')" != "true" ]]; then
+      echo "❌ Failed to delete DNS record. Response:" >&2
+      echo "$DELETE_RESPONSE" | jq '.' >&2 || echo "$DELETE_RESPONSE" >&2
+      exit 1
+    fi
+    echo "✓ Deleted DNS record ${RECORD_ID}"
+  done
+else
+  echo "✓ No conflicting DNS records found."
+fi
+
+echo "✅ Domain preparation complete. Wrangler will now be able to configure the route."
