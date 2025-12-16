@@ -460,6 +460,7 @@ export function Chat() {
 
           <button
             type="submit"
+            aria-label="Send"
             disabled={!input.trim() || sendMessage.isPending}
             className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
           >

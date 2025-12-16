@@ -115,3 +115,48 @@ test("voice chat ui elements are visible", async ({ page }) => {
   // We just verify it exists and is clickable for now to satisfy "Voice Chat" coverage requirement
   await expect(page.getByRole("button", { name: "Voice Chat" })).toBeEnabled();
 });
+
+test("mobile layout with glassmorphism", async ({ page }) => {
+  // Simulate iPhone 15 Pro viewport
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.goto("/chat");
+
+  // Verify Safe Area wrapper exists (checking for padding/margins typical of safe area)
+  // This is a loose check, but we can check for main container class
+  const main = page.locator("main");
+  await expect(main).toBeVisible();
+
+  // Verify Glassmorphism classes on messages
+  // We expect at least one message bubble to have backdrop-blur
+  // Mock a message first to ensure one exists
+  await page.route("**/v1/episodic*", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" },
+        json: [
+          {
+            id: "1",
+            content: "Glass message",
+            createdAt: Date.now(),
+            role: "user",
+          },
+        ],
+      });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.goto("/chat");
+
+  const bubble = page.getByText("Glass message");
+  await expect(bubble).toBeVisible();
+
+  // Check for glassmorphism utility class 'backdrop-blur-md' or 'bg-white/10' (depending on exact implementation)
+  // We check for the presence of the class on the message container
+  // The message container is the parent of the text content "Glass message"
+  // But strictly, we can just check if *any* element with backdrop-blur is visible in the bubble
+  const bubbleElement = page
+    .locator(".backdrop-blur-sm")
+    .filter({ hasText: "Glass message" });
+  await expect(bubbleElement).toBeVisible();
+});
