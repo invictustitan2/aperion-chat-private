@@ -35,6 +35,22 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
+      - name: Validate Worker Configuration
+        run: |
+          cd apps/api-worker
+          echo "=== Validating wrangler.toml configuration ==="
+          npx wrangler deploy --dry-run --outdir=./dist-test
+
+          echo ""
+          echo "=== Checking for configuration errors ==="
+          npx wrangler deploy --dry-run 2>&1 | grep -i "error\|warning" || echo "No errors found"
+
+          echo ""
+          echo "=== Verifying worker can be bundled ==="
+          npx wrangler deploy --dry-run --minify=false
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
       - name: Verify (Lint, Typecheck, Unit Tests)
         run: pnpm verify
         env:
