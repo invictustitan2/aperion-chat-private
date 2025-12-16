@@ -41,3 +41,6 @@ bucket_name = "aperion-media"
 
 [triggers]
 crons = ["0 0 * * *"]
+
+[browser]
+binding = "BROWSER"

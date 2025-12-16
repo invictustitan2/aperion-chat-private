@@ -7,10 +7,15 @@ import {
 import { MemoryWriteGate } from "@aperion/policy";
 import { computeHash, hashRunbookTask } from "@aperion/shared";
 import { AutoRouter, IRequest, error, json } from "itty-router";
-import { generateEmbedding } from "./lib/ai";
+import {
+  ChatMessage,
+  generateChatCompletion,
+  generateEmbedding,
+} from "./lib/ai";
 import { bytesToBase64 } from "./lib/base64";
 import { cleanupLogs } from "./lib/janitor";
 
+import { BrowserWorker } from "@cloudflare/puppeteer";
 import { MemoryQueueMessage, processMemoryBatch } from "./lib/queue-processor";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -20,6 +25,7 @@ export interface Env {
   AI: Ai;
   MEMORY_QUEUE: Queue<MemoryQueueMessage>;
   MEDIA_BUCKET: R2Bucket;
+  BROWSER: BrowserWorker;
   CACHE_KV: KVNamespace;
   API_TOKEN: string;
   GOOGLE_CLOUD_PROJECT_ID?: string;
@@ -42,7 +48,91 @@ const withAuth = (request: IRequest, env: Env) => {
   }
 };
 
-const router = AutoRouter<IRequest, [Env, ExecutionContext]>();
+// --- CORS Middleware ---
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+const router = AutoRouter<IRequest, [Env, ExecutionContext]>({
+  // Add CORS headers to all responses
+  finally: [
+    (response: Response) => {
+      const newHeaders = new Headers(response.headers);
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        newHeaders.set(key, value);
+      });
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
+    },
+  ],
+});
+
+// Handle preflight OPTIONS requests
+router.options("*", () => {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+});
+
+// --- Chat Completion (AI Response) ---
+const SYSTEM_PROMPT = `You are Aperion, a helpful and intelligent AI assistant. You are part of a memory-augmented chat system that remembers conversations. Be concise, friendly, and helpful. If you don't know something, say so.`;
+
+router.post("/v1/chat", withAuth, async (request, env) => {
+  const body = (await request.json()) as {
+    message: string;
+    history?: ChatMessage[];
+  };
+
+  if (!body.message) {
+    return error(400, "Missing message");
+  }
+
+  try {
+    // Build conversation context from history (if provided) + current message
+    const messages: ChatMessage[] = [
+      ...(body.history || []).slice(-10), // Last 10 messages for context
+      { role: "user" as const, content: body.message },
+    ];
+
+    // Generate AI response using Workers AI
+    const response = await generateChatCompletion(
+      env.AI,
+      messages,
+      SYSTEM_PROMPT,
+    );
+
+    // Store the AI response in episodic memory
+    const id = crypto.randomUUID();
+    const timestamp = Date.now();
+    const provenance = JSON.stringify({
+      source_type: "assistant",
+      source_id: "aperion",
+      timestamp,
+      confidence: 1.0,
+    });
+
+    await env.MEMORY_DB.prepare(
+      "INSERT INTO episodic (id, created_at, content, provenance, hash) VALUES (?, ?, ?, ?, ?)",
+    )
+      .bind(id, timestamp, response, provenance, computeHash(response))
+      .run();
+
+    return json({
+      id,
+      response,
+      timestamp,
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return error(500, `Chat completion failed: ${msg}`);
+  }
+});
 
 // ... (Episodic and Voice Chat remain same) ...
 // --- Episodic ---
@@ -133,9 +223,12 @@ router.get("/v1/episodic", withAuth, async (request, env) => {
     .bind(sinceVal, limitVal)
     .all();
 
-  // Parse JSON fields
+  // Parse JSON fields and transform snake_case to camelCase for frontend
   const parsed = results.map((r: Record<string, unknown>) => ({
-    ...r,
+    id: r.id,
+    createdAt: r.created_at, // Transform to camelCase for frontend
+    content: r.content,
+    hash: r.hash,
     provenance: JSON.parse(r.provenance as string),
   }));
 
@@ -271,10 +364,14 @@ router.post("/v1/semantic", withAuth, async (request, env) => {
     return error(400, "Missing content, references, or provenance");
   }
 
-  const receipt = MemoryWriteGate.shouldWriteSemantic(
-    body,
-    body.policyContext || {},
-  );
+  // Extract policy flags from provenance (e.g., explicit_confirm from frontend)
+  const prov = body.provenance as unknown as Record<string, unknown>;
+  const policyContext = {
+    ...body.policyContext,
+    explicit_confirm: prov?.explicit_confirm ?? false,
+  };
+
+  const receipt = MemoryWriteGate.shouldWriteSemantic(body, policyContext);
 
   await env.MEMORY_DB.prepare(
     "INSERT INTO receipts (id, timestamp, decision, reason_codes, inputs_hash) VALUES (?, ?, ?, ?, ?)",
@@ -396,12 +493,16 @@ router.get("/v1/semantic/search", withAuth, async (request, env) => {
     .bind(...ids)
     .all();
 
-  // Merge scores
+  // Merge scores and transform to camelCase
   const hydrated = results
     .map((r: Record<string, unknown>) => {
       const match = matches.matches.find((m) => m.id === r.id);
       return {
-        ...r,
+        id: r.id,
+        createdAt: r.created_at, // Transform to camelCase
+        content: r.content,
+        embedding: r.embedding,
+        hash: r.hash,
         score: match?.score || 0,
         provenance: JSON.parse(r.provenance as string),
         references: JSON.parse(r.references as string),
@@ -512,10 +613,15 @@ router.get("/v1/identity", withAuth, async (request, env) => {
     "SELECT * FROM identity",
   ).all();
 
+  // Transform snake_case to camelCase for frontend
   const parsed = results.map((r: Record<string, unknown>) => ({
-    ...r,
+    key: r.key,
+    id: r.id,
+    createdAt: r.created_at, // Transform to camelCase
     value: JSON.parse(r.value as string),
     provenance: JSON.parse(r.provenance as string),
+    hash: r.hash,
+    lastVerified: r.last_verified, // Transform to camelCase
   }));
 
   return json(parsed);
@@ -576,7 +682,35 @@ router.post("/api/dev/logs/clear", withAuth, async (request, env) => {
   return json({ success: true });
 });
 
-// ... existing imports ...
+// --- Chat Export ---
+import { renderChatToPdf } from "./lib/renderer";
+
+router.get("/v1/chat/export", withAuth, async (_request, _env) => {
+  // In a real app we'd fetch message history here.
+  // For now receive it via POST or just demo text if mostly checking browser binding.
+  // User wants "Export Chat".
+  // Let's make it a POST so we can send the current client-side chat history to render.
+  return error(405, "Use POST with HTML content");
+});
+
+router.post("/v1/chat/export", withAuth, async (request, env) => {
+  const { html } = (await request.json()) as { html: string };
+  if (!html) return error(400, "Missing html content");
+
+  try {
+    const pdf = await renderChatToPdf(html, env);
+
+    return new Response(pdf.buffer as ArrayBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="chat-export-${Date.now()}.pdf"`,
+      },
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return error(500, `PDF Generation failed: ${msg}`);
+  }
+});
 
 export default {
   fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
