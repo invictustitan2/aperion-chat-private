@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    /* iOS Safe Area Insets defaults */
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+  }
+
+  html {
+    @apply h-full w-full bg-black text-white antialiased;
+    /* Prevent bouncy scrolling on iOS for a native app feel */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply h-full w-full overflow-hidden;
+    /* Use safe area padding variables if needed globally,
+       but usually better applied to specific containers */
+  }
+}
+
+@layer utilities {
+  /* High-performance Glassmorphism */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/10;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  /* Hide scrollbar for clean UI */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
