@@ -1,7 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { clsx } from "clsx";
-import { Activity, CheckCircle, Info, Moon, Sun, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Activity,
+  CheckCircle,
+  Info,
+  Moon,
+  ShieldAlert,
+  ShieldCheck,
+  Sun,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 
 export function Settings() {
@@ -26,6 +35,40 @@ export function Settings() {
     },
     refetchInterval: 30000, // Check every 30 seconds
   });
+
+  const authToken = import.meta.env.VITE_AUTH_TOKEN as string | undefined;
+  const apiBaseUrl = useMemo(
+    () => import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787",
+    [],
+  );
+  const authPreview = useMemo(() => {
+    if (!authToken) return "Not configured";
+    if (authToken.length <= 12) return authToken;
+    return `${authToken.slice(0, 6)}…${authToken.slice(-4)}`;
+  }, [authToken]);
+
+  const [authCheck, setAuthCheck] = useState<
+    | { status: "idle" }
+    | { status: "running" }
+    | { status: "ok"; latency: number; detail: string }
+    | { status: "error"; detail: string }
+  >({ status: "idle" });
+
+  const runAuthCheck = async () => {
+    setAuthCheck({ status: "running" });
+    const start = performance.now();
+    try {
+      const identities = await api.identity.list();
+      setAuthCheck({
+        status: "ok",
+        latency: Math.round(performance.now() - start),
+        detail: `Received ${identities.length} identity record(s)`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setAuthCheck({ status: "error", detail: message });
+    }
+  };
 
   useEffect(() => {
     if (isDark) {
@@ -116,6 +159,92 @@ export function Settings() {
               </span>
             </button>
           </div>
+        </section>
+
+        {/* Auth Debugging */}
+        <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            {authCheck.status === "ok" ? (
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            ) : authCheck.status === "error" ? (
+              <ShieldAlert className="w-5 h-5 text-red-500" />
+            ) : (
+              <ShieldAlert className="w-5 h-5 text-yellow-500" />
+            )}
+            Authentication Debug
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">API Base URL</span>
+              <span className="font-mono text-xs truncate max-w-[200px] text-gray-200">
+                {apiBaseUrl}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Auth Token</span>
+              <span className="font-mono text-xs truncate max-w-[200px] text-gray-200">
+                {authPreview}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <button
+              onClick={runAuthCheck}
+              disabled={authCheck.status === "running"}
+              className={clsx(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                authCheck.status === "ok"
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white",
+                authCheck.status === "running" &&
+                  "opacity-70 cursor-not-allowed",
+              )}
+            >
+              {authCheck.status === "running"
+                ? "Running check..."
+                : "Run auth self-test"}
+            </button>
+            <div className="text-sm text-gray-400">
+              {authCheck.status === "ok" && (
+                <span>
+                  Authentication succeeded in {authCheck.latency}ms.{" "}
+                  {authCheck.detail}
+                </span>
+              )}
+              {authCheck.status === "error" && (
+                <span>
+                  Auth failed: {authCheck.detail}. Confirm CORS for {apiBaseUrl}{" "}
+                  and that VITE_AUTH_TOKEN matches the Worker configuration.
+                </span>
+              )}
+              {authCheck.status === "idle" && (
+                <span>
+                  Run the self-test to validate your token and CORS
+                  configuration.
+                </span>
+              )}
+              {authCheck.status === "running" && (
+                <span>Checking /v1/identity...</span>
+              )}
+            </div>
+          </div>
+
+          <ul className="text-xs text-gray-400 list-disc pl-5 space-y-1">
+            <li>
+              Ensure VITE_AUTH_TOKEN is set in your .env or Cloudflare Pages
+              environment.
+            </li>
+            <li>
+              VITE_API_BASE_URL should point to the Worker domain that accepts
+              your origin to avoid CORS failures.
+            </li>
+            <li>
+              Restart the dev server after updating env vars so the UI can pick
+              up the new token.
+            </li>
+          </ul>
         </section>
 
         {/* Version Info */}

@@ -4,14 +4,23 @@ import { logApiError } from "./errorLog";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787";
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN;
+const authHeaders = AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {};
 
 if (!AUTH_TOKEN) {
-  console.warn("VITE_AUTH_TOKEN is missing. API calls will likely fail.");
+  console.warn(
+    "VITE_AUTH_TOKEN is missing. API calls will likely fail. Add it to your .env or Cloudflare Pages env vars.",
+  );
+}
+
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.info(
+    "VITE_API_BASE_URL is not set, defaulting to http://127.0.0.1:8787. Set it to your deployed Worker URL to avoid CORS.",
+  );
 }
 
 const headers = {
   "Content-Type": "application/json",
-  Authorization: `Bearer ${AUTH_TOKEN}`,
+  ...authHeaders,
 };
 
 // Define ReceiptRecord if missing from core
@@ -210,7 +219,7 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/v1/voice-chat`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          ...authHeaders,
         },
         body: formData,
       });
@@ -280,7 +289,7 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/v1/media/${key}`, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          ...authHeaders,
           // Content-Type might be set automatically or we set it
         },
         body: file,
