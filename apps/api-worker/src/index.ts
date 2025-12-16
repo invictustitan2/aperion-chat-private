@@ -1,4 +1,4 @@
-// Trigger deployment verify
+// Trigger deployment final verify
 import {
   EpisodicRecord,
   IdentityRecord,
