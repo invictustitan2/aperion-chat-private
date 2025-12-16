@@ -30,8 +30,34 @@ jobs:
       - name: Apply D1 Migrations (Local)
         run: cd apps/api-worker && npx wrangler d1 migrations apply aperion-memory --local
 
+      - name: Build All Packages (Pre-compile for tests)
+        run: pnpm -r build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Validate Worker Configuration
+        run: |
+          cd apps/api-worker
+          echo "=== Validating wrangler.toml configuration ==="
+          npx wrangler deploy --dry-run --env="" --outdir=./dist-test
+
+          echo ""
+          echo "=== Checking for configuration errors ==="
+          npx wrangler deploy --dry-run --env="" 2>&1 | grep -i "error\|warning" || echo "No errors found"
+
+          echo ""
+          echo "=== Verifying worker can be bundled ==="
+          npx wrangler deploy --dry-run --env="" --minify=false
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
       - name: Verify (Lint, Typecheck, Unit Tests)
         run: pnpm verify
+        env:
+          # Increase Node memory for worker bundling and tests
+          NODE_OPTIONS: --max-old-space-size=4096
+          # Reduce wrangler log noise
+          WRANGLER_LOG: none
 
       - name: Get installed Playwright version
         id: playwright-version

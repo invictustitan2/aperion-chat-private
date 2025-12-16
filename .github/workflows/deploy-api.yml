@@ -59,6 +59,31 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: "apps/api-worker"
 
+      - name: Verify Authentication Setup
+        env:
+          API_URL: https://api.aperion.cc
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          echo "Testing API authentication..."
+
+          # Test without auth (should return 401)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/v1/identity)
+          if [ "$STATUS" != "401" ]; then
+            echo "❌ API should require authentication but returned: $STATUS"
+            exit 1
+          fi
+          echo "✓ API requires authentication"
+
+          # Test with auth (should return 200)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $API_TOKEN" $API_URL/v1/identity)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Authentication failed with status: $STATUS"
+            exit 1
+          fi
+          echo "✓ Authentication successful"
+
+          echo "✅ API deployment verified successfully"
+
       - name: Upload Wrangler Logs (on failure)
         if: failure()
         uses: actions/upload-artifact@v4

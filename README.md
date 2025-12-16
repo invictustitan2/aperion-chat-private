@@ -17,6 +17,8 @@
 
 See `./scripts/bootstrap.sh` to get started.
 
+For authentication and CORS troubleshooting, see [`docs/auth-debugging.md`](./docs/auth-debugging.md).
+
 ## Voice (Speech-to-Text / Text-to-Speech)
 
 The API worker includes a `/v1/voice-chat` endpoint that accepts `multipart/form-data` with an `audio` file (16kHz LINEAR16 or WebM) and returns a JSON payload containing the transcription and an MP3 (base64) or triggers client-side TTS.

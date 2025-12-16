@@ -40,6 +40,27 @@ jobs:
         run: pnpm --filter @aperion/web build
         env:
           VITE_API_BASE_URL: https://api.aperion.cc
+          VITE_AUTH_TOKEN: ${{ secrets.API_TOKEN }}
+
+      - name: Verify Build Configuration
+        run: |
+          echo "Verifying build output..."
+
+          # Check that dist directory was created
+          if [ ! -d "apps/web/dist" ]; then
+            echo "❌ Build output directory not found"
+            exit 1
+          fi
+          echo "✓ Build output directory exists"
+
+          # Check that index.html exists
+          if [ ! -f "apps/web/dist/index.html" ]; then
+            echo "❌ index.html not found in build output"
+            exit 1
+          fi
+          echo "✓ index.html found"
+
+          echo "✅ Build verification successful"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
