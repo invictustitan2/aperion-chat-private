@@ -13,10 +13,11 @@
     "@aperion/memory-core": "workspace:*",
     "@aperion/policy": "workspace:*",
     "@aperion/shared": "workspace:*",
+    "@cloudflare/puppeteer": "^1.0.4",
     "itty-router": "^5.0.22"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240222.0",
+    "@cloudflare/workers-types": "^4.20251213.0",
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
     "wrangler": "^4.54.0"

@@ -11,6 +11,7 @@ import { generateEmbedding } from "./lib/ai";
 import { bytesToBase64 } from "./lib/base64";
 import { cleanupLogs } from "./lib/janitor";
 
+import { BrowserWorker } from "@cloudflare/puppeteer";
 import { MemoryQueueMessage, processMemoryBatch } from "./lib/queue-processor";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -20,6 +21,7 @@ export interface Env {
   AI: Ai;
   MEMORY_QUEUE: Queue<MemoryQueueMessage>;
   MEDIA_BUCKET: R2Bucket;
+  BROWSER: BrowserWorker;
   CACHE_KV: KVNamespace;
   API_TOKEN: string;
   GOOGLE_CLOUD_PROJECT_ID?: string;
@@ -576,7 +578,35 @@ router.post("/api/dev/logs/clear", withAuth, async (request, env) => {
   return json({ success: true });
 });
 
-// ... existing imports ...
+// --- Chat Export ---
+import { renderChatToPdf } from "./lib/renderer";
+
+router.get("/v1/chat/export", withAuth, async (_request, _env) => {
+  // In a real app we'd fetch message history here.
+  // For now receive it via POST or just demo text if mostly checking browser binding.
+  // User wants "Export Chat".
+  // Let's make it a POST so we can send the current client-side chat history to render.
+  return error(405, "Use POST with HTML content");
+});
+
+router.post("/v1/chat/export", withAuth, async (request, env) => {
+  const { html } = (await request.json()) as { html: string };
+  if (!html) return error(400, "Missing html content");
+
+  try {
+    const pdf = await renderChatToPdf(html, env);
+
+    return new Response(pdf.buffer as ArrayBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="chat-export-${Date.now()}.pdf"`,
+      },
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return error(500, `PDF Generation failed: ${msg}`);
+  }
+});
 
 export default {
   fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
