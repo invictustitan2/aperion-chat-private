@@ -98,4 +98,40 @@ export class ChatController {
       return error(500, `PDF Generation failed: ${msg}`);
     }
   }
+
+  /**
+   * Analyze an image using vision AI
+   * Accepts multipart/form-data with 'image' file and optional 'prompt' field
+   */
+  static async analyze(request: IRequest, env: Env) {
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return error(400, "Expected multipart/form-data");
+    }
+
+    try {
+      const formData = await request.formData();
+      const imageFile = formData.get("image");
+      const prompt = formData.get("prompt")?.toString();
+
+      if (!imageFile || !(imageFile instanceof File)) {
+        return error(400, "Missing image file");
+      }
+
+      const imageBuffer = await imageFile.arrayBuffer();
+      const imageData = new Uint8Array(imageBuffer);
+
+      const { analyzeImage } = await import("../lib/ai");
+      const analysis = await analyzeImage(env.AI, imageData, prompt);
+
+      return json({
+        success: true,
+        analysis,
+        timestamp: Date.now(),
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return error(500, `Image analysis failed: ${msg}`);
+    }
+  }
 }

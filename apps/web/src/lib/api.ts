@@ -272,6 +272,37 @@ export const api = {
 
       onDone?.();
     },
+    /**
+     * Analyze an image using vision AI
+     * @param imageBlob - Image file blob
+     * @param prompt - Optional prompt for specific analysis
+     * @returns Analysis result
+     */
+    analyze: async (
+      imageBlob: Blob,
+      prompt?: string,
+    ): Promise<{ success: boolean; analysis: string; timestamp: number }> => {
+      const formData = new FormData();
+      formData.append("image", imageBlob);
+      if (prompt) {
+        formData.append("prompt", prompt);
+      }
+
+      const res = await fetch(`${API_BASE_URL}/v1/chat/analyze`, {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Image analysis failed");
+      }
+
+      return res.json();
+    },
     voice: async (
       audioBlob: Blob,
     ): Promise<{

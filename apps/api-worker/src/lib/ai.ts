@@ -47,6 +47,9 @@ export const AI_MODELS = {
 
   // Embeddings: Vector generation for semantic search
   embedding: "@cf/baai/bge-base-en-v1.5",
+
+  // Vision: Image analysis and understanding
+  vision: "@cf/llava-hf/llava-1.5-7b-hf",
 } as const;
 
 // Cost limits per task type
@@ -222,4 +225,42 @@ export async function generateChatCompletionStream(
   });
 
   return stream.pipeThrough(transformStream);
+}
+
+/**
+ * Analyze an image using Workers AI vision model
+ * @param ai - Cloudflare AI binding
+ * @param image - Image data as Uint8Array or base64 string
+ * @param prompt - Optional prompt for specific analysis (default: describe the image)
+ * @returns Analysis text
+ */
+export async function analyzeImage(
+  ai: Ai,
+  image: Uint8Array | string,
+  prompt?: string,
+): Promise<string> {
+  const imageData =
+    typeof image === "string"
+      ? Uint8Array.from(atob(image), (c) => c.charCodeAt(0))
+      : image;
+
+  // Convert to base64 array format expected by LLaVA
+  const base64Image = btoa(String.fromCharCode(...imageData));
+
+  const defaultPrompt = "Describe what you see in this image in detail.";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await ai.run(AI_MODELS.vision as any, {
+    image: [base64Image],
+    prompt: prompt || defaultPrompt,
+    max_tokens: 512,
+  });
+
+  const result = response as { description?: string; text?: string };
+
+  if (!result.description && !result.text) {
+    throw new Error("Failed to analyze image");
+  }
+
+  return result.description || result.text || "";
 }

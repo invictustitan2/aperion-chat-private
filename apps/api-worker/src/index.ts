@@ -68,6 +68,7 @@ router.options("*", (request) => {
 router.post("/v1/chat", withAuth, ChatController.chat);
 router.post("/v1/chat/stream", withAuth, ChatController.stream);
 router.post("/v1/chat/export", withAuth, ChatController.export);
+router.post("/v1/chat/analyze", withAuth, ChatController.analyze);
 
 // Episodic
 router.post("/v1/episodic", withAuth, EpisodicController.create);

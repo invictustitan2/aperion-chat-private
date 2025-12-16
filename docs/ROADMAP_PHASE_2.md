@@ -44,21 +44,21 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 
 ### 2.2 Push Notifications
 
-- [ ] Implement Web Push API for background notifications.
-- [ ] Create notification preferences in `Settings.tsx`.
-- [ ] Backend: Add notification triggers for important events (e.g., AI response ready).
+- [ ] Implement Web Push API for background notifications. _(Deferred: Requires VAPID key setup)_
+- [ ] Create notification preferences in `Settings.tsx`. _(Deferred)_
+- [ ] Backend: Add notification triggers for important events. _(Deferred)_
 
 ---
 
 ## 3. Advanced AI Features
 
 **Objective**: Expand AI capabilities for richer, more contextual interactions.
-**Status**: 🔜 Planned
+**Status**: � In Progress
 
 ### 3.1 Multi-Modal Inputs
 
-- [ ] Support image analysis (vision models) via Workers AI or external API.
-- [ ] Integrate uploaded images into chat context for AI processing.
+- [x] Support image analysis (vision models) via Workers AI or external API.
+- [x] Integrate uploaded images into chat context for AI processing.
 
 ### 3.2 RAG (Retrieval Augmented Generation) Improvements
 
