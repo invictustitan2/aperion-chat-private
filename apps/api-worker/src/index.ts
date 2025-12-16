@@ -120,9 +120,19 @@ export default {
     await processMemoryBatch(batch.messages, env);
   },
   scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    // Cleanup old logs
     ctx.waitUntil(
       cleanupLogs(env).then((res) =>
         console.log(`Deleted ${res.deleted} logs`),
+      ),
+    );
+
+    // Cleanup old rate limit entries
+    ctx.waitUntil(
+      import("./middleware/rateLimit").then(({ cleanupRateLimits }) =>
+        cleanupRateLimits(env).then((res) =>
+          console.log(`Deleted ${res.deleted} rate limit entries`),
+        ),
       ),
     );
   },

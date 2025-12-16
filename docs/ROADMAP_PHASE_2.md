@@ -129,12 +129,12 @@ With the core platform stabilized (Transformational Roadmap v1 complete), Phase 
 ## 6. Security Hardening (Phase 2)
 
 **Objective**: Further strengthen the security posture.
-**Status**: 🔜 Planned
+**Status**: 🔄 In Progress
 
 ### 6.1 Rate Limiting
 
-- [ ] Implement per-IP rate limiting on chat endpoints using Cloudflare Rate Limiting.
-- [ ] Add rate limiting at the application level for authenticated users.
+- [x] Implement per-IP rate limiting on chat endpoints using Cloudflare Rate Limiting.
+- [x] Add rate limiting at the application level for authenticated users.
 
 ### 6.2 Session Management
 
