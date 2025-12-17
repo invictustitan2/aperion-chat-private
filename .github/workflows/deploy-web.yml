@@ -92,7 +92,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Syncing Worker secret API_TOKEN..."
-          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker
+          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker --env=""
 
       - name: Verify API Fingerprint
         env:

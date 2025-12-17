@@ -102,7 +102,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Syncing Worker secret API_TOKEN..."
-          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker
+          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker --env=""
 
       # Custom domain is now managed by Wrangler (Worker Custom Domain).
       # The ensure-worker-domain.sh script successfully cleared the initial conflict.
@@ -123,7 +123,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: "apps/api-worker"
-          command: d1 migrations apply aperion-memory --remote
+          command: 'd1 migrations apply aperion-memory --remote --env=""'
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -131,6 +131,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: "apps/api-worker"
+          command: 'deploy --env=""'
 
       - name: Verify Authentication Setup
         env:
