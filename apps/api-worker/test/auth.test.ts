@@ -107,12 +107,13 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
       worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
         env: "test",
-        bundle: false,
         vars: {
           API_TOKEN: TEST_TOKEN,
         },
         config: configPath,
         persist: true, // Enable local persistence for D1
+        ip: "127.0.0.1",
+        inspectorPort: 0,
       });
 
       // Wait for worker to be ready (polls until responsive)
