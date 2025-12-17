@@ -62,12 +62,6 @@ The workflows use GitHub Environments for better organization and protection:
 
 Configure at: **Repository → Settings → Environments → New environment**
 
-### Preview Environment
-
-- **Name:** `preview`
-- **Used for:** Pull request preview deployments
-- **No protection rules needed** (deploys automatically on PR)
-
 ## Domain Configuration
 
 ### API Worker Domain (api.aperion.cc)
@@ -199,15 +193,6 @@ Deployments are triggered automatically by GitHub Actions:
 - **Environment:** `production`
 - **URL:** https://chat.aperion.cc
 
-#### Preview Deployments (PR)
-
-- **Trigger:** Pull request opened/updated
-- **Workflow:** `.github/workflows/preview.yml`
-- **Environment:** `preview`
-- **URLs:** Posted as PR comment
-  - Web: `*.pages.dev` subdomain
-  - API: Uses production API (dry-run deployment)
-
 ### Manual Deployments
 
 All production workflows support manual triggering via `workflow_dispatch`.
@@ -244,10 +229,9 @@ npx wrangler pages deploy dist --project-name aperion-chat-web
 
 ### Concurrency Control
 
-All workflows include concurrency controls:
+Workflows include concurrency controls:
 
 - **Production:** Queued (no cancellation of in-progress deployments)
-- **Preview:** Per-PR (new commits cancel old preview deployments)
 - **CI:** Per-ref (new commits cancel old CI runs)
 
 ### Caching Strategy
@@ -264,7 +248,6 @@ Each workflow specifies minimal required permissions:
 
 - `contents: read` - Read repository code
 - `deployments: write` - Create deployment records
-- `pull-requests: write` - Comment on PRs (preview workflow)
 
 ### Authentication Verification
 
@@ -291,12 +274,12 @@ CLOUDFLARE_ACCOUNT_ID=<your-account-id>
 
 ### GitHub Actions (Secrets)
 
-| Secret                  | Used In             | Description                     |
-| ----------------------- | ------------------- | ------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | All workflows       | Cloudflare API authentication   |
-| `CLOUDFLARE_ACCOUNT_ID` | All workflows       | Cloudflare account identifier   |
-| `API_TOKEN`             | deploy-web, preview | Shared API authentication token |
-| `GITHUB_TOKEN`          | preview             | Automatic (for PR comments)     |
+| Secret                  | Used In       | Description                     |
+| ----------------------- | ------------- | ------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | All workflows | Cloudflare API authentication   |
+| `CLOUDFLARE_ACCOUNT_ID` | All workflows | Cloudflare account identifier   |
+| `API_TOKEN`             | deploy-web    | Shared API authentication token |
+| `GITHUB_TOKEN`          | Automatic     | GitHub Actions automatic token  |
 
 ### Cloudflare Worker (Secrets)
 
@@ -468,7 +451,6 @@ The API restricts CORS to:
 - `http://localhost:5173` (local dev)
 - `http://127.0.0.1:5173` (local dev)
 - `https://chat.aperion.cc` (production)
-- `*.pages.dev` (preview deployments)
 
 To add origins, edit `apps/api-worker/src/middleware/cors.ts`.
 
