@@ -54,6 +54,19 @@ describe("API Worker Integration", () => {
       ip: "127.0.0.1",
       inspectorPort: 0,
     });
+
+    // Warm up the worker so bundling/startup latency doesn't cause per-test timeouts in CI.
+    const controller = new AbortController();
+    const warmupTimeout = setTimeout(() => controller.abort(), 55_000);
+    try {
+      const resp = await worker.fetch("/v1/identity", {
+        signal: controller.signal,
+      });
+      // Drain body to ensure the request fully completes.
+      await resp.text();
+    } finally {
+      clearTimeout(warmupTimeout);
+    }
   }, 60000);
 
   afterAll(async () => {
