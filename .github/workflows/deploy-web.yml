@@ -92,7 +92,32 @@ jobs:
         run: |
           set -euo pipefail
           echo "Syncing Worker secret API_TOKEN..."
-          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker --env=""
+          for attempt in 1 2 3 4 5; do
+            echo "Secret sync attempt $attempt/5..."
+
+            OUTPUT=$( (echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker --env="") 2>&1 )
+            rc=$?
+
+            if [ "$rc" -eq 0 ]; then
+              echo "$OUTPUT"
+              echo "✓ Worker secret API_TOKEN synced"
+              exit 0
+            fi
+
+            echo "$OUTPUT"
+
+            if echo "$OUTPUT" | grep -q "latest version of your Worker isn't currently deployed"; then
+              echo "Worker deployment likely in progress; retrying in 15s..."
+              sleep 15
+              continue
+            fi
+
+            echo "❌ Worker secret sync failed"
+            exit "$rc"
+          done
+
+          echo "❌ Worker secret sync failed after 5 attempts"
+          exit 1
 
       - name: Verify API Fingerprint
         env:
