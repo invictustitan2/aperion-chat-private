@@ -1,19 +1,59 @@
 name: Deploy API Worker
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches:
       - main
-    paths:
-      - "apps/api-worker/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch: # Allow manual deployment
+
+concurrency:
+  group: deploy-api-production
+  cancel-in-progress: false # Don't cancel production deployments
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    # Only run if CI succeeded (or manual trigger)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      should-deploy: ${{ steps.changes.outputs.should-deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for relevant changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "Manual deployment triggered"
+          else
+            # Check if API-related files changed
+            git diff --name-only HEAD^ HEAD > changed_files.txt
+            if grep -qE '^(apps/api-worker/|packages/|pnpm-lock\.yaml|\.github/workflows/deploy-api\.yml)' changed_files.txt; then
+              echo "should-deploy=true" >> $GITHUB_OUTPUT
+              echo "API-related changes detected"
+            else
+              echo "should-deploy=false" >> $GITHUB_OUTPUT
+              echo "No API-related changes detected"
+            fi
+          fi
+
   deploy:
+    needs: check-changes
+    if: needs.check-changes.outputs.should-deploy == 'true'
     runs-on: ubuntu-latest
     name: Deploy
+    environment:
+      name: production
+      url: https://api.aperion.cc
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +68,28 @@ jobs:
           node-version: "20"
           cache: "pnpm"
 
+      - name: Cache Wrangler
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/.wrangler
+            node_modules/.cache
+          key: ${{ runner.os }}-wrangler-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-wrangler-
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r --filter !@aperion/web build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Verify (Lint, Test)
-        run: pnpm verify
+        run: pnpm --filter @aperion/api-worker verify
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       # Custom domain is now managed by Wrangler (Worker Custom Domain).
       # The ensure-worker-domain.sh script successfully cleared the initial conflict.

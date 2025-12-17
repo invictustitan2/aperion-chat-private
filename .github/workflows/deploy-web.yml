@@ -1,18 +1,56 @@
 name: Deploy Web App
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches:
       - main
-    paths:
-      - "apps/web/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
+  workflow_dispatch: # Allow manual deployment
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false # Don't cancel production deployments
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    # Only run if CI succeeded (or manual trigger)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      should-deploy: ${{ steps.changes.outputs.should-deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for relevant changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "Manual deployment triggered"
+          else
+            # Check if web-related files changed
+            git diff --name-only HEAD^ HEAD > changed_files.txt
+            if grep -qE '^(apps/web/|packages/|pnpm-lock\.yaml|\.github/workflows/deploy-web\.yml)' changed_files.txt; then
+              echo "should-deploy=true" >> $GITHUB_OUTPUT
+              echo "Web-related changes detected"
+            else
+              echo "should-deploy=false" >> $GITHUB_OUTPUT
+              echo "No web-related changes detected"
+            fi
+          fi
+
   deploy:
+    needs: check-changes
+    if: needs.check-changes.outputs.should-deploy == 'true'
     runs-on: ubuntu-latest
     name: Deploy
+    environment:
+      name: production
+      url: https://chat.aperion.cc
     permissions:
       contents: read
       deployments: write
@@ -31,14 +69,22 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Verify (Lint, Test)
-        run: pnpm verify
+        run: pnpm --filter @aperion/web verify
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build Web App
         run: pnpm --filter @aperion/web build
         env:
+          NODE_OPTIONS: --max-old-space-size=4096
           VITE_API_BASE_URL: https://api.aperion.cc
           VITE_AUTH_TOKEN: ${{ secrets.API_TOKEN }}
 

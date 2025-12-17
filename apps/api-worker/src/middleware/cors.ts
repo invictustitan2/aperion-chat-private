@@ -9,8 +9,7 @@ export function getCorsHeaders(request: IRequest): Record<string, string> {
     "https://chat.aperion.cc",
   ];
 
-  const isPreviewDeploy = origin.endsWith(".pages.dev");
-  const isAllowed = allowedOrigins.includes(origin) || isPreviewDeploy;
+  const isAllowed = allowedOrigins.includes(origin);
 
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[2],

@@ -25,17 +25,6 @@ describe("CORS Middleware", () => {
     );
   });
 
-  it("should allow preview deployments", () => {
-    const req = {
-      headers: new Map([["Origin", "https://pr-123.pages.dev"]]),
-    } as unknown as IRequest;
-
-    const headers = getCorsHeaders(req);
-    expect(headers["Access-Control-Allow-Origin"]).toBe(
-      "https://pr-123.pages.dev",
-    );
-  });
-
   it("should default to production origin for unknown origins", () => {
     const req = {
       headers: new Map([["Origin", "https://evil.com"]]),
