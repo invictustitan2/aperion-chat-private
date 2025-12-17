@@ -9,7 +9,6 @@
  * The token should be set in:
  * - GitHub Secrets: API_TOKEN
  * - Cloudflare Worker: wrangler secret put API_TOKEN
- * - Cloudflare Pages: VITE_AUTH_TOKEN (in project settings)
  * - Local .env: VITE_AUTH_TOKEN
  */
 
@@ -47,10 +46,12 @@ function main() {
   console.log(`   - Run: echo "${token}" | wrangler secret put API_TOKEN\n`);
 
   console.log("3. Cloudflare Pages (Frontend Build):");
-  console.log("   - Go to: Pages project → Settings → Environment variables");
-  console.log("   - Add variable: VITE_AUTH_TOKEN");
-  console.log(`   - Value: ${token}`);
-  console.log("   - Environment: Production (and Preview if needed)\n");
+  console.log(
+    "   - Recommended: deploy via GitHub Actions so the build injects VITE_AUTH_TOKEN from the GitHub secret API_TOKEN.",
+  );
+  console.log(
+    "   - Avoid also setting VITE_AUTH_TOKEN in the Pages dashboard unless you do manual dashboard deployments.\n",
+  );
 
   console.log("4. Local Development:");
   console.log("   - Add to .env file:");

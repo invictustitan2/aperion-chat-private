@@ -39,8 +39,8 @@ function applyLocalMigrations(workerDir: string) {
 async function waitForWorkerReady(
   worker: Unstable_DevWorker,
   token: string,
-  maxAttempts = 60,
-  intervalMs = 2000,
+  maxAttempts = 12,
+  intervalMs = 500,
 ): Promise<void> {
   console.log("Waiting for worker to be ready...");
   console.log(
@@ -49,26 +49,26 @@ async function waitForWorkerReady(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const resp = await worker.fetch("http://localhost/v1/identity", {
-        headers: { Authorization: `Bearer ${token}` },
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+      // Use a route that short-circuits in auth middleware (no DB access)
+      // so "ready" doesn't depend on D1 initialization.
+      const resp = await worker.fetch("/v1/conversations?limit=1", {
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       console.log(
         `Attempt ${attempt}: Got response with status ${resp.status}`,
       );
 
-      if (
-        resp.status === 200 ||
-        resp.status === 401 ||
-        resp.status === 403 ||
-        resp.status === 500
-      ) {
-        // Worker is responding (even if there's an error, it's alive)
-        console.log(
-          `✓ Worker ready after ${attempt} attempts (~${(attempt * intervalMs) / 1000}s)`,
-        );
-        return;
-      }
+      // Any HTTP response means the worker is up and routing.
+      console.log(
+        `✓ Worker ready after ${attempt} attempts (~${(attempt * intervalMs) / 1000}s)`,
+      );
+      return;
     } catch (error) {
       // Worker not ready yet, continue polling
       if (attempt % 5 === 0 || attempt === 1) {
@@ -107,6 +107,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
       worker = await unstable_dev(scriptPath, {
         experimental: { disableExperimentalWarning: true },
         env: "test",
+        bundle: false,
         vars: {
           API_TOKEN: TEST_TOKEN,
         },
@@ -130,7 +131,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
 
   describe("Valid Authentication", { timeout: 10000 }, () => {
     it("should allow requests with valid Bearer token", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: `Bearer ${TEST_TOKEN}`,
         },
@@ -140,7 +141,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
     });
 
     it("should allow requests with valid token (case-sensitive Bearer)", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: `Bearer ${TEST_TOKEN}`,
         },
@@ -155,7 +156,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
 
   describe("Missing Authentication", { timeout: 10000 }, () => {
     it("should reject requests without Authorization header", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity");
+      const resp = await worker!.fetch("/v1/identity");
 
       expect(resp.status).toBe(401);
       const body = (await resp.json()) as { error?: string };
@@ -163,7 +164,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
     });
 
     it("should reject requests with empty Authorization header", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: "",
         },
@@ -175,7 +176,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
 
   describe("Invalid Authentication", { timeout: 10000 }, () => {
     it("should reject requests with wrong token", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: "Bearer wrong-token",
         },
@@ -187,7 +188,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
     });
 
     it("should reject requests without Bearer prefix", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: TEST_TOKEN,
         },
@@ -197,7 +198,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
     });
 
     it("should reject requests with malformed Bearer token", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: "Bearer",
         },
@@ -207,7 +208,7 @@ describe.skipIf(isCI)("Authentication Middleware", () => {
     });
 
     it("should handle tokens with extra whitespace", async () => {
-      const resp = await worker!.fetch("http://localhost/v1/identity", {
+      const resp = await worker!.fetch("/v1/identity", {
         headers: {
           Authorization: `Bearer  ${TEST_TOKEN}  `,
         },

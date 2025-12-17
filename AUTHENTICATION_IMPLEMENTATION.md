@@ -318,10 +318,9 @@ Generated: 256-bit secure token
    wrangler secret put API_TOKEN
    ```
 
-5. **Set Pages Environment Variables:**
-   - Cloudflare Dashboard → Pages → aperion-chat-web → Settings
-   - Add: `VITE_AUTH_TOKEN` = (same token)
-   - Add: `VITE_API_BASE_URL` = `https://api.aperion.cc`
+5. **Web build configuration (recommended: CI):**
+   - Deploy via GitHub Actions so the build injects `VITE_AUTH_TOKEN` from the GitHub secret `API_TOKEN`.
+   - Only set Pages dashboard env vars if you do manual dashboard deployments.
 
 6. **Deploy to production:**
 

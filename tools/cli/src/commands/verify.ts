@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
+import { computeHash } from "@aperion/shared";
 
 export async function verify() {
   console.log(chalk.blue("Verifying environment..."));
@@ -16,6 +17,9 @@ export async function verify() {
   } else {
     console.log(chalk.green("✓ VITE_AUTH_TOKEN found"));
   }
+
+  const clientFingerprint = computeHash(AUTH_TOKEN).slice(0, 12);
+  console.log(chalk.gray(`Client auth fingerprint: ${clientFingerprint}`));
 
   // AWS Check
   console.log(chalk.blue("Checking AWS credentials..."));
@@ -42,6 +46,32 @@ export async function verify() {
         Authorization: `Bearer ${AUTH_TOKEN}`,
       },
     });
+
+    const serverFingerprint = res.headers.get("x-aperion-auth-fingerprint");
+    const traceId = res.headers.get("x-aperion-trace-id");
+    if (traceId) {
+      console.log(chalk.gray(`Server trace id: ${traceId}`));
+    }
+    if (serverFingerprint) {
+      console.log(chalk.gray(`Server auth fingerprint: ${serverFingerprint}`));
+      if (
+        serverFingerprint !== "missing" &&
+        serverFingerprint !== clientFingerprint
+      ) {
+        console.warn(
+          chalk.yellow(
+            `⚠️  Token mismatch: client(${clientFingerprint}) != server(${serverFingerprint}).\n` +
+              `   Fix by updating the Worker secret API_TOKEN and redeploying the web build from the same token source.`,
+          ),
+        );
+      }
+    } else {
+      console.warn(
+        chalk.yellow(
+          "⚠️  Server did not return X-Aperion-Auth-Fingerprint. The API worker may be on an older version.",
+        ),
+      );
+    }
 
     if (res.ok) {
       console.log(chalk.green("✓ API is reachable and auth is valid"));

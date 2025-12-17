@@ -41,32 +41,30 @@ if [ -n "$cf_token" ]; then
     echo "✅ CLOUDFLARE_API_TOKEN updated in .env"
 fi
 
-# 2. Application Secrets (AUTH_TOKEN)
+# 2. Application Token (VITE_AUTH_TOKEN / Worker API_TOKEN)
 echo ""
 echo "--- 2. Application Secrets ---"
-echo "We use a shared AUTH_TOKEN for service-to-service communication."
-read -s -p "Enter AUTH_TOKEN (leave blank to generate random or use existing): " auth_token
+echo "We use a single shared bearer token for API authentication."
+echo "- Local/CLI/Web build: VITE_AUTH_TOKEN"
+echo "- Cloudflare Worker secret: API_TOKEN"
+read -s -p "Enter VITE_AUTH_TOKEN (leave blank to generate random or use existing): " auth_token
 echo ""
 
 if [ -z "$auth_token" ]; then
-    if grep -q "^AUTH_TOKEN=" .env; then
-        auth_token=$(grep "^AUTH_TOKEN=" .env | cut -d '=' -f2)
-        echo "Using existing AUTH_TOKEN from .env"
+    if grep -q "^VITE_AUTH_TOKEN=" .env; then
+        auth_token=$(grep "^VITE_AUTH_TOKEN=" .env | cut -d '=' -f2)
+        echo "Using existing VITE_AUTH_TOKEN from .env"
     else
         auth_token=$(openssl rand -hex 32)
-        echo "🔑 Generated random AUTH_TOKEN"
+        echo "🔑 Generated random VITE_AUTH_TOKEN"
     fi
 fi
 
 if [ -n "$auth_token" ]; then
-    # Update .env
-    if grep -q "^AUTH_TOKEN=" .env; then
-        sed -i "s|^AUTH_TOKEN=.*|AUTH_TOKEN=$auth_token|" .env
-    else
-        echo "AUTH_TOKEN=$auth_token" >> .env
-    fi
+    # Remove legacy AUTH_TOKEN if present to avoid ambiguity
+    sed -i '/^AUTH_TOKEN=/d' .env
 
-    # Also set VITE_AUTH_TOKEN for web app and CLI
+    # Set VITE_AUTH_TOKEN for web app and CLI
     if grep -q "^VITE_AUTH_TOKEN=" .env; then
         sed -i "s|^VITE_AUTH_TOKEN=.*|VITE_AUTH_TOKEN=$auth_token|" .env
     else
@@ -78,15 +76,15 @@ if [ -n "$auth_token" ]; then
         echo "VITE_API_BASE_URL=http://127.0.0.1:8787" >> .env
     fi
 
-    echo "✅ AUTH_TOKEN and VITE_AUTH_TOKEN updated in .env"
+    echo "✅ VITE_AUTH_TOKEN updated in .env"
 
     # Offer to push to Cloudflare
     echo ""
-    read -p "Do you want to push AUTH_TOKEN to Cloudflare Workers now? (y/N) " push_cf
+    read -p "Do you want to push API_TOKEN to Cloudflare Workers now? (y/N) " push_cf
     if [[ "$push_cf" =~ ^[Yy]$ ]]; then
         if [ -d "apps/api-worker" ]; then
             echo "🚀 Pushing secret to api-worker..."
-            (cd apps/api-worker && echo "$auth_token" | npx wrangler secret put AUTH_TOKEN)
+            (cd apps/api-worker && echo "$auth_token" | npx wrangler secret put API_TOKEN)
         else
             echo "⚠️  apps/api-worker directory not found, skipping upload."
         fi

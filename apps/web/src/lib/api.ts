@@ -10,7 +10,7 @@ const authHeaders: Record<string, string> = AUTH_TOKEN
 
 if (!AUTH_TOKEN) {
   console.warn(
-    "VITE_AUTH_TOKEN is missing. API calls will likely fail. Add it to your .env or Cloudflare Pages env vars.",
+    "VITE_AUTH_TOKEN is missing. API calls will likely fail. Add it to your .env (local) or inject it at build time via CI.",
   );
 }
 

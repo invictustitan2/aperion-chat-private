@@ -229,8 +229,8 @@ export function Settings() {
 
           <ul className="text-xs text-gray-400 list-disc pl-5 space-y-1">
             <li>
-              Ensure VITE_AUTH_TOKEN is set in your .env or Cloudflare Pages
-              environment.
+              Ensure VITE_AUTH_TOKEN is set in your .env (local) or injected at
+              build time via CI.
             </li>
             <li>
               VITE_API_BASE_URL should point to the Worker domain that accepts

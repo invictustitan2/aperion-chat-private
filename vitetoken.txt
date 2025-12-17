@@ -1,3 +1,4 @@
-VITE_AUTH_TOKEN=652f775cd3897284fb32303a275c5f4b2e7b04c1b1ab5f5ad40e8d6cabc69e0c
-CLOUDFLARE_ACCOUNT_ID=21ec8cd9b9edec29288dceeaca6d7374
-CLOUDFLARE_API_TOKEN=ZOup9pRrs8xМAVМr_1eMUvowlGUeYnL8mhrUEK49
+REMOVED: This file previously contained secrets and should not be used.
+
+# If you need local configuration, use `.env` (see `.env.example`).
+# Ensure any tokens that were ever committed are rotated.

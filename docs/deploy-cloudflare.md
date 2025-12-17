@@ -39,7 +39,7 @@ Set the required secrets in Cloudflare.
 cd apps/api-worker
 
 # The shared authentication token
-npx wrangler secret put AUTH_TOKEN
+npx wrangler secret put API_TOKEN
 
 # AWS Credentials (if using S3/Bedrock)
 npx wrangler secret put AWS_ACCESS_KEY_ID
@@ -69,17 +69,12 @@ custom_domain = true
 
 The web frontend is a Vite React app.
 
-### Setup via Dashboard (Recommended)
+### Setup via GitHub Actions (Recommended)
 
-1.  Go to Cloudflare Dashboard > Workers & Pages > Create Application > Pages > Connect to Git.
-2.  Select the repository.
-3.  **Build Settings**:
-    - **Framework**: Vite / React
-    - **Build Command**: `pnpm up && cd apps/web && pnpm build` (or just `pnpm build` if root is configured)
-    - **Build Output Directory**: `apps/web/dist`
-4.  **Environment Variables**:
-    - `VITE_API_BASE_URL`: `https://api.aperion.cc` (or your worker URL)
-    - `VITE_AUTH_TOKEN`: (Optional) If you want to bake it in, though see "Security" below.
+This repo deploys the web app from GitHub Actions and uploads the built `apps/web/dist` to Pages.
+
+- `VITE_API_BASE_URL` and `VITE_AUTH_TOKEN` are injected at build time by the workflow.
+- If you deploy via GitHub Actions, Pages dashboard environment variables are not used for the build.
 
 ### Custom Domain
 
@@ -109,10 +104,10 @@ If you add endpoints like `/admin/wipe-memory` or `/debug/dump`, ensure they are
 
 ### 🔄 Token Rotation
 
-If `AUTH_TOKEN` is compromised:
+If your API bearer token is compromised:
 
 1.  Generate a new token: `openssl rand -hex 32`
-2.  Update Worker secret: `npx wrangler secret put AUTH_TOKEN`
+2.  Update Worker secret: `npx wrangler secret put API_TOKEN`
 3.  Update Client (Frontend env var or local storage).
 4.  Redeploy API Worker (secrets update usually triggers reload, but safe to redeploy).
 

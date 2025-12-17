@@ -18,3 +18,9 @@ coverage_report.txt
 .dev.vars
 *.csv
 *.tsbuildinfo
+
+# Never commit ad-hoc token dumps
+vitetoken.txt
+
+# Wrangler may generate a repo-root wrangler.toml for Pages; this repo tracks app-specific configs instead
+/wrangler.toml

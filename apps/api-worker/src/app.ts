@@ -31,8 +31,16 @@ export function createApp() {
           newHeaders.set(key, value);
         });
 
-        // Log completion
         const ctxReq = request as ContextRequest;
+        if (ctxReq.ctx) {
+          newHeaders.set("X-Aperion-Trace-Id", ctxReq.ctx.traceId);
+          newHeaders.set(
+            "X-Aperion-Auth-Fingerprint",
+            ctxReq.ctx.authFingerprint,
+          );
+        }
+
+        // Log completion
         if (ctxReq.ctx) {
           const duration = performance.now() - ctxReq.ctx.startTime;
           ctxReq.ctx.logger.info(`Request completed`, {

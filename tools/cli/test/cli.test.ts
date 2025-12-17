@@ -60,7 +60,7 @@ Do something else.
   });
 
   describe("verify", () => {
-    it("should fail if AUTH_TOKEN is missing", async () => {
+    it("should fail if VITE_AUTH_TOKEN is missing", async () => {
       const originalEnv = process.env;
       process.env = { ...originalEnv, VITE_AUTH_TOKEN: "" };
 

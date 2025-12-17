@@ -72,12 +72,47 @@ dataset = "aperion_metrics"
 [env.test.vars]
 API_TOKEN = "test-token"
 
+[env.test.ai]
+binding = "AI"
+
+[env.test.browser]
+binding = "BROWSER"
+
 # Only include essential bindings for auth tests
 # D1 database for basic functionality
 [[env.test.d1_databases]]
 binding = "MEMORY_DB"
 database_name = "aperion-memory-test"
 database_id = "test-db-local"
+
+# Preview environment (used by GitHub PR preview workflow)
+# - Separate Worker name
+# - workers.dev enabled
+# - No production custom-domain routes
+[env.preview]
+name = "aperion-api-worker-preview"
+workers_dev = true
+routes = []
+
+[env.preview.vars]
+# API_TOKEN will be set via secrets
+
+[[env.preview.d1_databases]]
+binding = "MEMORY_DB"
+database_name = "aperion-memory"
+database_id = "48f0940c-841b-452c-a54a-cb9f8c625df2"
+
+[[env.preview.kv_namespaces]]
+binding = "CACHE_KV"
+id = "212d43171f574b06b22f6fa4f24ca8a1"
+
+[[env.preview.durable_objects.bindings]]
+name = "CHAT_STATE"
+class_name = "ChatState"
+
+[[env.preview.migrations]]
+tag = "v1"
+new_classes = ["ChatState"]
 
 # Optional bindings are undefined in tests - code handles gracefully
 # AI, VECTORIZE, R2, BROWSER, QUEUES are not needed for auth tests

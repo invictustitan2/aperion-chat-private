@@ -12,7 +12,9 @@ These steps help diagnose the "VITE_AUTH_TOKEN is missing" and CORS failures see
    node scripts/generate-api-token.ts
    ```
 
-2. Ensure `.env` (local) or Cloudflare Pages project settings (prod) defines `VITE_AUTH_TOKEN` and `VITE_API_BASE_URL`.
+2. Ensure `VITE_AUTH_TOKEN` and `VITE_API_BASE_URL` are set:
+   - Local dev: in `.env`
+   - Production: injected at build time by your deploy pipeline (recommended: GitHub Actions). If you deploy via GitHub Actions, Pages dashboard env vars are not used for the build.
 
 3. The token must match the API worker configuration. If you rotated the key, redeploy the Pages site so the new token is baked into the client.
 
@@ -73,7 +75,7 @@ Use these results to align the client and Worker configuration before re-running
 **Fix:**
 
 - Local: Add to `.env` file
-- Production: Add to Cloudflare Pages environment variables
+- Production: Ensure your production deploy pipeline injects `VITE_AUTH_TOKEN` at build time (recommended: GitHub Actions)
 - Restart dev server or redeploy
 
 ### 401 Unauthorized
@@ -95,7 +97,8 @@ wrangler secret put API_TOKEN
 
 - `.env` → `VITE_AUTH_TOKEN`
 - Worker secret → `API_TOKEN`
-- Cloudflare Pages → `VITE_AUTH_TOKEN`
+
+**Fast diagnosis:** The API includes `X-Aperion-Auth-Fingerprint` (a non-secret SHA-256 prefix) and `X-Aperion-Trace-Id` on responses. If the client fingerprint (hash of your `VITE_AUTH_TOKEN`) differs from the server fingerprint, you’ve found the mismatch.
 
 ### CORS Errors
 

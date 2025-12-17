@@ -11,9 +11,9 @@ else
   echo "  Action: Run ./scripts/secrets-bootstrap.sh"
 fi
 
-# Check for AUTH_TOKEN
-echo -n "Checking for AUTH_TOKEN... "
-if grep -q "AUTH_TOKEN" .env || [ -n "$AUTH_TOKEN" ]; then
+# Check for VITE_AUTH_TOKEN
+echo -n "Checking for VITE_AUTH_TOKEN... "
+if grep -q "VITE_AUTH_TOKEN" .env || [ -n "$VITE_AUTH_TOKEN" ]; then
   echo "✅ Set."
 else
   echo "❌ Not set."

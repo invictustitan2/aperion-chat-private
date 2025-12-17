@@ -113,7 +113,9 @@ wrangler secret list --name aperion-api-worker
 
 The frontend needs the token baked into the build.
 
-**Navigate to:** Cloudflare Dashboard → Pages → aperion-chat-web → Settings → Environment variables
+**Recommended:** Deploy the web app via GitHub Actions so the build injects `VITE_AUTH_TOKEN` from the GitHub secret `API_TOKEN`. This avoids having multiple competing sources of truth (GitHub vs Pages dashboard).
+
+**Optional (only for manual dashboard deployments):** Cloudflare Dashboard → Pages → aperion-chat-private → Settings → Environment variables
 
 **Add variable:**
 
@@ -247,20 +249,14 @@ When rotating tokens (recommended every 90 days):
    echo "<new-token>" | wrangler secret put API_TOKEN
    ```
 
-   c. **Cloudflare Pages** (frontend)
-
-   ```
-   Pages → Settings → Environment variables → Edit VITE_AUTH_TOKEN
-   ```
-
-   d. **Redeploy Pages** to rebuild with new token
+   c. **Redeploy** to rebuild the frontend with the new token
 
    ```bash
    git commit --allow-empty -m "chore: trigger redeploy for token rotation"
    git push
    ```
 
-   e. **Update local `.env`**
+   d. **Update local `.env`**
 
    ```bash
    # Edit .env file
@@ -291,7 +287,7 @@ For production systems, implement a grace period:
 **Solutions:**
 
 - **Local:** Check `.env` file exists and has `VITE_AUTH_TOKEN` set
-- **Production:** Check Cloudflare Pages environment variables
+- **Production:** Ensure your CI deploy injected `VITE_AUTH_TOKEN` during the build, then redeploy
 - **After changes:** Restart dev server or redeploy
 
 ### 401 Unauthorized errors
