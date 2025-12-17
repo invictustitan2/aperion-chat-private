@@ -129,5 +129,12 @@ echo "ℹ️  Type 'help_dev' to see available commands."
 echo "🐚 Spawning shell..."
 echo ""
 
+
+# after: source .env
+export AZURE_FOUNDRY_API_KEY AZURE_FOUNDRY_API_VERSION
+export AZURE_FOUNDRY_COVERAGE_URL AZURE_FOUNDRY_DEV_FAST_URL AZURE_FOUNDRY_DEV_DEEP_URL
+export AZURE_OPENAI_API_KEY OPENAI_API_KEY
+
+
 # Spawn a new shell with the environment variables
 exec "${SHELL:-bash}"

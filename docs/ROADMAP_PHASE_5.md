@@ -38,7 +38,7 @@ Phase 5 focuses on completing the **remaining Phase 3 intelligence/product work*
 | AI Features (RAG/Multi-modal/Personas/Proactive) |           5 |       0 |          12 |                 3 |
 | Ops/Observability/Runbooks                       |           6 |       0 |           0 |                 4 |
 | Security                                         |           3 |       0 |           0 |                 5 |
-| Testing/Quality                                  |          10 |       0 |           1 |                 1 |
+| Testing/Quality                                  |          12 |       0 |           1 |                 1 |
 
 > Counts are “roadmap items” (not PRs). Some items span multiple subsystems.
 

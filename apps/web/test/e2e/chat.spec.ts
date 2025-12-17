@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 test("chat flow with dynamic mock", async ({ page }) => {
+  // Isolate from persisted client-side error log across tests.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.removeItem("aperion:errorLog:v1");
+    } catch {
+      // ignore
+    }
+  });
+
   const messages = [
     {
       id: "1",
@@ -9,6 +18,73 @@ test("chat flow with dynamic mock", async ({ page }) => {
       timestamp: Date.now() - 10000,
     },
   ];
+
+  // Chat page loads preferences on mount; keep it from logging API errors.
+  await page.route("**/v1/preferences/*", async (route) => {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 200, headers });
+      return;
+    }
+
+    if (route.request().method() === "GET") {
+      const key = route.request().url().split("/v1/preferences/")[1] || "";
+      await route.fulfill({
+        headers,
+        json: { key, value: "default", updatedAt: Date.now() },
+      });
+      return;
+    }
+
+    if (route.request().method() === "PUT") {
+      const key = route.request().url().split("/v1/preferences/")[1] || "";
+      const body = route.request().postDataJSON() as { value?: unknown };
+      await route.fulfill({
+        headers,
+        json: { key, value: body?.value, updatedAt: Date.now() },
+      });
+    }
+  });
+
+  // Chat page also polls conversations.
+  await page.route("**/v1/conversations*", async (route) => {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 200, headers });
+      return;
+    }
+
+    // Minimal: empty list and success-shaped responses.
+    if (route.request().method() === "GET") {
+      await route.fulfill({ headers, json: [] });
+      return;
+    }
+
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        headers,
+        json: {
+          id: "conv-1",
+          title: "New Conversation",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      });
+      return;
+    }
+
+    await route.fulfill({ headers, json: { success: true } });
+  });
 
   await page.route("**/v1/episodic*", async (route) => {
     const headers = {
@@ -32,8 +108,34 @@ test("chat flow with dynamic mock", async ({ page }) => {
         timestamp: Date.now(),
       };
       messages.push(newMessage);
-      await route.fulfill({ headers, json: newMessage });
+
+      // Match the backend response shape expected by api.episodic.create
+      await route.fulfill({
+        headers,
+        json: { success: true, id: newMessage.id, receipt: { allowed: true } },
+      });
     }
+  });
+
+  // Mock streaming chat response (SSE) so sendMessage completes quickly and
+  // triggers the episodic query invalidation.
+  await page.route("**/v1/chat/stream", async (route) => {
+    const headers = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Content-Type": "text/event-stream",
+    };
+
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 200, headers });
+      return;
+    }
+
+    // Send a small token then finish.
+    const body = 'data: {"token":"OK"}\n' + "data: [DONE]\n";
+
+    await route.fulfill({ status: 200, headers, body });
   });
 
   await page.goto("/");

@@ -2,7 +2,7 @@
 
 This roadmap is intentionally coverage-driven and philosophy-aligned: we only test proven behavior, we keep failures noisy/actionable, and we treat each test as a “reason receipt” for why a behavior is trusted.
 
-## Current Baseline (2025-12-16)
+## Current Baseline (2025-12-17)
 
 Command:
 
@@ -10,22 +10,23 @@ Command:
 
 Results:
 
-- Tests: 125 passed, 8 skipped
-- Test Files: 34 passed, 1 skipped
+- Tests: 137 passed
+- Test Files: 36 passed
 
 Coverage:
 
-- Statements: 27.24% (3280/12040)
-- Lines: 27.24% (3280/12040)
-- Functions: 45.45% (110/242)
-- Branches: 54.47% (268/492)
+- Statements: 31.74% (3825/12050)
+- Lines: 31.74% (3825/12050)
+- Functions: 42.33% (116/274)
+- Branches: 57.14% (288/504)
 
 Observed warnings / constraints (must be handled deterministically):
 
 - Scheduled Workers are not automatically triggered in local dev.
 - Workers AI bindings may hit remote resources (cost risk).
 - Vectorize index doesn’t support local dev (needs mocking or `remote: true` strategy).
-- `apps/api-worker/test/index.test.ts` is currently skipped.
+- `apps/api-worker/test/index.test.ts` is now active and passing (integration tests).
+- `apps/api-worker/test/app.wiring.test.ts` covers composition root wiring (in-process).
 
 Runtime types (this PR):
 
@@ -191,8 +192,8 @@ Stability requirements:
   - `node -e "const s=require('./coverage/vitest/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
 - [x] Create the binding seam module `apps/api-worker/test/bindings/mockBindings.ts` (Fake AI, Fake Vectorize, Fake Queues).
 - [x] Refactor worker integration tests to import bindings from the seam (no ad-hoc mocks).
-- [ ] Unskip + rewrite `apps/api-worker/test/index.test.ts` to verify wiring + middleware order + stable error shapes.
-- [ ] Add request-driven tests that execute `apps/api-worker/src/index.ts` composition (routing + middleware assembly) through real HTTP requests.
+- [x] Unskip + rewrite `apps/api-worker/test/index.test.ts` to verify wiring + middleware order + stable error shapes.
+- [x] Add request-driven tests that execute `apps/api-worker/src/index.ts` composition (routing + middleware assembly) through real HTTP requests.
 - [ ] Add React Testing Library tests for `Memory` page core flows (search → expand → empty/error states).
 - [ ] Add React Testing Library tests for `Chat` page core flows (render → send error handling; deterministic).
 - [ ] Add React Testing Library tests for Conversations page/list + key hooks/stores used by these pages.

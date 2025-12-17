@@ -1,16 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 test("system status page shows empty state", async ({ page }) => {
-  // Mock API to return empty logs
-  await page.route("**/api/dev/logs*", async (route) => {
-    const headers = {
-      "Access-Control-Allow-Origin": "*",
-    };
-    if (route.request().method() === "OPTIONS") {
-      await route.fulfill({ status: 200, headers });
-      return;
+  // The System Status page reads from a persisted client-side error log.
+  // Ensure this test is isolated from any prior test run state.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.removeItem("aperion:errorLog:v1");
+    } catch {
+      // ignore
     }
-    await route.fulfill({ headers, json: [] });
   });
 
   await page.goto("/status");

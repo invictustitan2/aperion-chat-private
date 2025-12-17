@@ -1,3 +1,5 @@
+import { execSync } from "child_process";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -6,27 +8,51 @@ import { unstable_dev } from "wrangler";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-describe.skip("API Worker", () => {
+describe("API Worker Integration", () => {
   let worker: UnstableDevWorker;
   const API_TOKEN = "test-token";
 
   beforeAll(async () => {
-    worker = await unstable_dev(path.resolve(__dirname, "../src/index.ts"), {
-      experimental: { disableExperimentalWarning: true },
-      vars: { API_TOKEN },
-      d1Databases: ["MEMORY_DB"],
-      // Mock AI and Vectorize for tests? Or integration test them?
-      // Since Vectorize is a remote resource basically, integration testing it locally with just unstable_dev
-      // requires binding mocks or actual local implementations which Miniflare supports but might be tricky to config here.
-      // For now, let's assume if we don't bind them in test config, they might be undefined in the worker env
-      // But we handle that gracefully in code (check if env.AI exists).
-    });
+    // Apply migrations to the test database
+    try {
+      // Parse wrangler.toml to find the database name for env.test
+      const wranglerConfig = fs.readFileSync(
+        path.resolve(__dirname, "../wrangler.toml"),
+        "utf-8",
+      );
+      // Look for the [env.test] section and the d1_databases definition within it
+      // This regex looks for [[env.test.d1_databases]] and captures the database_name
+      const dbNameMatch = wranglerConfig.match(
+        /\[\[env\.test\.d1_databases\]\][\s\S]*?database_name\s*=\s*"([^"]+)"/,
+      );
 
-    // Warm up the Worker bundle/boot so individual tests don't hit startup/compile latency.
-    await worker.fetch("/v1/runbooks/hash", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-      body: "warmup",
+      if (!dbNameMatch) {
+        throw new Error(
+          "Could not find database_name for env.test in wrangler.toml",
+        );
+      }
+
+      const dbName = dbNameMatch[1];
+
+      // Ensure the migrations are applied to the local D1 database used by the test environment
+      execSync(
+        `pnpm wrangler d1 migrations apply ${dbName} --local --env test`,
+        {
+          cwd: path.resolve(__dirname, ".."),
+          stdio: "inherit",
+        },
+      );
+    } catch (e) {
+      console.error("Failed to apply migrations:", e);
+      throw e;
+    }
+
+    worker = await unstable_dev(path.resolve(__dirname, "../src/index.ts"), {
+      env: "test",
+      vars: { API_TOKEN },
+      experimental: { disableExperimentalWarning: true },
+      ip: "127.0.0.1",
+      inspectorPort: 0,
     });
   }, 60000);
 
@@ -34,145 +60,90 @@ describe.skip("API Worker", () => {
     await worker.stop();
   });
 
-  it("should reject unauthorized requests", async () => {
-    const resp = await worker.fetch("/v1/episodic");
+  it("Missing Authorization -> 401 with exact error shape", async () => {
+    const resp = await worker.fetch("/v1/conversations");
     expect(resp.status).toBe(401);
+    const data = await resp.json();
+    expect(data).toEqual({
+      error: "Unauthorized: Missing authentication token",
+      status: 401,
+    });
   });
 
-  it("should reject invalid token", async () => {
-    const resp = await worker.fetch("/v1/episodic", {
+  it("Wrong scheme -> 401", async () => {
+    const resp = await worker.fetch("/v1/conversations", {
+      headers: { Authorization: "Basic 123" },
+    });
+    expect(resp.status).toBe(401);
+    const data = await resp.json();
+    expect(data).toEqual({
+      error:
+        "Unauthorized: Invalid authentication scheme. Use 'Bearer <token>'",
+      status: 401,
+    });
+  });
+
+  it("Wrong token -> 403", async () => {
+    const resp = await worker.fetch("/v1/conversations", {
       headers: { Authorization: "Bearer wrong-token" },
     });
     expect(resp.status).toBe(403);
-  });
-
-  it("should store episodic memory", async () => {
-    const resp = await worker.fetch("/v1/episodic", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: "Test content",
-        provenance: {
-          source_type: "user",
-          source_id: "test-user",
-          timestamp: Date.now(),
-          confidence: 1.0,
-        },
-      }),
+    const data = await resp.json();
+    expect(data).toEqual({
+      error: "Forbidden: Invalid credentials",
+      status: 403,
     });
-
-    if (resp.status !== 200) {
-      console.error("Store Episodic Error:", await resp.text());
-    }
-    expect(resp.status).toBe(200);
-    const data = (await resp.json()) as {
-      success: boolean;
-      id: string;
-      receipt: { decision: string };
-    };
-    expect(data.success).toBe(true);
-    expect(data.id).toBeDefined();
-    expect(data.receipt.decision).toBe("allow");
   });
 
-  it("should retrieve episodic memory", async () => {
-    const resp = await worker.fetch("/v1/episodic", {
+  it("Valid token GET to a stable route -> 200 + response JSON shape", async () => {
+    const resp = await worker.fetch("/v1/conversations", {
       headers: { Authorization: `Bearer ${API_TOKEN}` },
     });
-    if (resp.status !== 200) {
-      console.error("Retrieve Episodic Error:", await resp.text());
-    }
     expect(resp.status).toBe(200);
-    const data = (await resp.json()) as { content: string }[];
+    const data = (await resp.json()) as unknown[];
     expect(Array.isArray(data)).toBe(true);
-    expect(data.length).toBeGreaterThan(0);
-    expect(data[0].content).toBe("Test content");
+    expect(data.length).toBe(0);
   });
 
-  it("should deny identity write without confirmation", async () => {
-    const resp = await worker.fetch("/v1/identity", {
-      method: "POST",
+  it("OPTIONS preflight -> 204 + CORS headers", async () => {
+    const origin = "http://localhost:5173";
+    const resp = await worker.fetch("/v1/conversations", {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+    expect(resp.status).toBe(204);
+    expect(resp.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(resp.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+    expect(resp.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+  });
+
+  it("Unknown route -> 404 (exact)", async () => {
+    const resp = await worker.fetch("/v1/unknown-route", {
+      headers: { Authorization: `Bearer ${API_TOKEN}` },
+    });
+    expect(resp.status).toBe(404);
+  });
+
+  it("Deterministic error-handler path", async () => {
+    // Trigger an error in ConversationsController.rename by sending invalid JSON (empty title)
+    // PUT /v1/conversations/:id
+    const resp = await worker.fetch("/v1/conversations/123", {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${API_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        key: "test_key",
-        value: "test_value",
-        provenance: {
-          source_type: "user",
-          source_id: "test-user",
-          timestamp: Date.now(),
-          confidence: 1.0,
-        },
-        explicit_confirm: false,
-      }),
+      body: JSON.stringify({ title: "" }), // Empty title should fail validation
     });
 
-    if (resp.status !== 403) {
-      console.error("Deny Identity Error:", await resp.text());
-    }
-    expect(resp.status).toBe(403);
-    const data = (await resp.json()) as { error: string };
-    expect(data.error).toContain("Policy denied");
-  });
-
-  it("should allow identity write with confirmation", async () => {
-    const resp = await worker.fetch("/v1/identity", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        key: "test_key",
-        value: "test_value",
-        provenance: {
-          source_type: "user",
-          source_id: "test-user",
-          timestamp: Date.now(),
-          confidence: 1.0,
-        },
-        explicit_confirm: true,
-      }),
+    expect(resp.status).toBe(400);
+    const data = await resp.json();
+    expect(data).toMatchObject({
+      status: 400,
     });
-
-    if (resp.status !== 200) {
-      console.error("Allow Identity Error:", await resp.text());
-    }
-    expect(resp.status).toBe(200);
-  });
-
-  it("should hash runbook task", async () => {
-    const resp = await worker.fetch("/v1/runbooks/hash", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-      body: "  Deploy to production  ",
-    });
-
-    expect(resp.status).toBe(200);
-    const data = (await resp.json()) as { taskId: string };
-    expect(data.taskId).toBeDefined();
-  });
-
-  it("should manage dev logs", async () => {
-    // Clear logs
-    const clearResp = await worker.fetch("/api/dev/logs/clear", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-    });
-    expect(clearResp.status).toBe(200);
-
-    // Get logs (should be empty)
-    const resp = await worker.fetch("/api/dev/logs", {
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-    });
-    expect(resp.status).toBe(200);
-    const logs = (await resp.json()) as unknown[];
-    expect(Array.isArray(logs)).toBe(true);
-    // expect(logs.length).toBe(0); // Might not be 0 if other tests caused errors in parallel, but safe enough for now
+    expect((data as { error: string }).error).toContain("Invalid input");
   });
 });
