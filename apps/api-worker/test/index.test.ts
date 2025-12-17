@@ -50,7 +50,6 @@ describe("API Worker Integration", () => {
     worker = await unstable_dev(path.resolve(__dirname, "../src/index.ts"), {
       env: "test",
       vars: { API_TOKEN },
-      bundle: false,
       experimental: { disableExperimentalWarning: true },
       ip: "127.0.0.1",
       inspectorPort: 0,
