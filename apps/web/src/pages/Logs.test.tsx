@@ -153,7 +153,7 @@ describe("Logs Page", () => {
 
   it("clears logs", async () => {
     vi.mocked(api.logs.list).mockResolvedValue(mockLogs);
-    vi.mocked(api.logs.clear).mockResolvedValue(undefined);
+    vi.mocked(api.logs.clear).mockResolvedValue({ success: true, deleted: 10 });
 
     renderWithProviders(<Logs />);
 

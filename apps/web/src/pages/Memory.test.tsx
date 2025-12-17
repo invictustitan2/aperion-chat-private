@@ -170,9 +170,23 @@ describe("Memory Page", () => {
         rationale: "Supports this memory",
         confidence: 0.8,
         createdAt: Date.now(),
+        createdBy: "system",
       },
     ]);
-    vi.mocked(api.relationships.create).mockResolvedValue({ id: "rel-new" });
+    vi.mocked(api.relationships.create).mockResolvedValue({
+      success: true,
+      relationship: {
+        id: "rel-new",
+        type: "EVIDENCE_FOR",
+        fromKind: "episodic",
+        fromId: "ep-1",
+        toKind: "semantic",
+        toId: "sem-1",
+        rationale: "New relationship",
+        createdAt: Date.now(),
+        createdBy: "user",
+      },
+    });
 
     renderWithClient(<Memory />);
 

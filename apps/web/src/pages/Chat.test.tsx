@@ -69,7 +69,11 @@ function renderWithClient(ui: React.ReactNode) {
 describe("Chat Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.preferences.get).mockResolvedValue({ value: "default" });
+    vi.mocked(api.preferences.get).mockResolvedValue({
+      value: "default",
+      key: "theme",
+      updatedAt: Date.now(),
+    });
     vi.mocked(api.conversations.list).mockResolvedValue([]);
     vi.mocked(api.episodic.list).mockResolvedValue([]);
   });
@@ -87,8 +91,8 @@ describe("Chat Page", () => {
       {
         id: "1",
         title: "Test Conversation",
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
 
@@ -101,8 +105,8 @@ describe("Chat Page", () => {
     vi.mocked(api.conversations.create).mockResolvedValue({
       id: "2",
       title: "New Conversation",
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     renderWithClient(<Chat />);
@@ -116,12 +120,16 @@ describe("Chat Page", () => {
   });
 
   it("sends a message", async () => {
-    vi.mocked(api.episodic.create).mockResolvedValue({ id: "msg1" });
+    vi.mocked(api.episodic.create).mockResolvedValue({
+      success: true,
+      id: "msg1",
+      receipt: {},
+    });
     vi.mocked(api.chat.stream).mockImplementation(
       async (prompt, history, convId, onToken, onMeta, onComplete) => {
         onToken("Hello");
         onToken(" world");
-        onComplete();
+        if (onComplete) onComplete();
       },
     );
 
@@ -146,15 +154,29 @@ describe("Chat Page", () => {
     vi.mocked(api.episodic.list).mockResolvedValue([
       {
         id: "msg1",
+        type: "episodic",
         content: "Hello from user",
         createdAt: Date.now(),
-        provenance: { source_type: "user" },
+        hash: "hash1",
+        provenance: {
+          source_type: "user",
+          source_id: "user-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
       {
         id: "msg2",
+        type: "episodic",
         content: "Hello from AI",
         createdAt: Date.now(),
-        provenance: { source_type: "ai" },
+        hash: "hash2",
+        provenance: {
+          source_type: "model",
+          source_id: "model-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
     ]);
 
@@ -169,11 +191,14 @@ describe("Chat Page", () => {
       {
         id: "1",
         title: "To Delete",
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
-    vi.mocked(api.conversations.delete).mockResolvedValue(undefined);
+    vi.mocked(api.conversations.delete).mockResolvedValue({
+      success: true,
+      id: "1",
+    });
 
     renderWithClient(<Chat />);
 
@@ -192,11 +217,12 @@ describe("Chat Page", () => {
       {
         id: "1",
         title: "Old Title",
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       },
     ]);
     vi.mocked(api.conversations.rename).mockResolvedValue({
+      success: true,
       id: "1",
       title: "New Title",
     });
@@ -222,14 +248,22 @@ describe("Chat Page", () => {
     vi.mocked(api.episodic.list).mockResolvedValue([
       {
         id: "msg1",
+        type: "episodic",
         content: "Typo",
         createdAt: Date.now(),
-        provenance: { source_type: "user" },
+        hash: "hash1",
+        provenance: {
+          source_type: "user",
+          source_id: "user-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
     ]);
     vi.mocked(api.episodic.update).mockResolvedValue({
+      success: true,
       id: "msg1",
-      content: "Fixed",
+      status: "updated",
     });
 
     renderWithClient(<Chat />);

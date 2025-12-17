@@ -40,21 +40,21 @@ const mockData = {
   ],
   summary: [
     {
-      range: "24h",
+      range: "24h" as const,
       episodicCount: 2,
       semanticCount: 1,
       userMessages: 1,
       assistantMessages: 1,
     },
     {
-      range: "7d",
+      range: "7d" as const,
       episodicCount: 2,
       semanticCount: 1,
       userMessages: 1,
       assistantMessages: 1,
     },
     {
-      range: "30d",
+      range: "30d" as const,
       episodicCount: 2,
       semanticCount: 1,
       userMessages: 1,
@@ -99,7 +99,8 @@ describe("Analytics page", () => {
   });
 
   it("shows empty state", async () => {
-    vi.mocked(api.analytics.dashboard).mockResolvedValue(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(api.analytics.dashboard).mockResolvedValue(null as any);
     renderWithClient(<Analytics />);
     expect(await screen.findByText("No analytics data.")).toBeInTheDocument();
   });

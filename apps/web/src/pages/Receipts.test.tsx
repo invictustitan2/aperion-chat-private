@@ -45,14 +45,14 @@ describe("Receipts Page", () => {
       {
         id: "r1",
         timestamp: Date.now(),
-        action: "allow",
+        action: "allow" as const,
         allowed: true,
         reason: "Policy check passed",
       },
       {
         id: "r2",
         timestamp: Date.now(),
-        action: "deny",
+        action: "deny" as const,
         allowed: false,
         reason: "Policy violation",
       },

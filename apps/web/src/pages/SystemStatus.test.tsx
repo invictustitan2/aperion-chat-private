@@ -71,7 +71,6 @@ describe("SystemStatus page", () => {
       url: "/api",
       method: "GET",
       status: 500,
-      statusText: "API Error",
       message: "API Error",
     });
     logRuntimeError(new Error("Client Error"));

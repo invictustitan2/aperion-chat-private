@@ -84,6 +84,8 @@ describe("CommandPalette", () => {
         content: "Found memory",
         score: 0.9,
         createdAt: Date.now(),
+        provenance: { source_type: "user", source_id: "test" },
+        references: [],
       },
     ]);
 

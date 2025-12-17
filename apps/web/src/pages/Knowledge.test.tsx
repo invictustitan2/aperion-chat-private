@@ -99,7 +99,17 @@ describe("Knowledge Page", () => {
 
   it("promotes semantic memory", async () => {
     vi.mocked(api.knowledge.list).mockResolvedValue([]);
-    vi.mocked(api.knowledge.promote).mockResolvedValue({});
+    vi.mocked(api.knowledge.promote).mockResolvedValue({
+      success: true,
+      record: {
+        id: "k-1",
+        title: "Promoted Knowledge",
+        content: "Content",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        tags: [],
+      },
+    });
 
     renderWithClient(<Knowledge />);
 

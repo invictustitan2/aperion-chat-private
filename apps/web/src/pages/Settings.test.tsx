@@ -109,10 +109,17 @@ describe("Settings Page", () => {
     vi.mocked(api.identity.list).mockResolvedValue([
       {
         id: "1",
-        name: "Test",
-        email: "test@example.com",
-        created_at: "",
-        updated_at: "",
+        type: "identity",
+        key: "user_name",
+        value: "Test User",
+        createdAt: Date.now(),
+        hash: "hash",
+        provenance: {
+          source_type: "user",
+          source_id: "user-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
     ]);
 

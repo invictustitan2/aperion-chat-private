@@ -37,7 +37,11 @@ describe("Layout", () => {
   });
 
   it("renders navigation links", () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ value: "dark" });
+    vi.mocked(api.preferences.get).mockResolvedValue({
+      value: "dark",
+      key: "theme",
+      updatedAt: Date.now(),
+    });
     render(
       <BrowserRouter>
         <Layout />
@@ -53,7 +57,11 @@ describe("Layout", () => {
   });
 
   it("loads theme from preferences", async () => {
-    vi.mocked(api.preferences.get).mockResolvedValue({ value: "light" });
+    vi.mocked(api.preferences.get).mockResolvedValue({
+      value: "light",
+      key: "theme",
+      updatedAt: Date.now(),
+    });
     const { setTheme } = await import("../lib/theme");
 
     render(

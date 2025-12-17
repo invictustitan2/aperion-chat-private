@@ -55,19 +55,41 @@ describe("Identity Page", () => {
   it("renders identity list and preferences", async () => {
     const mockIdentities = [
       {
+        id: "id-1",
+        type: "identity" as const,
         key: "user_preferences",
-        value: { preferredTone: "formal" },
+        value: { note: "Global user preferences" },
+        createdAt: Date.now(),
+        hash: "hash1",
+        provenance: {
+          source_type: "system" as const,
+          source_id: "system",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
         preferredTone: "formal",
         memoryRetentionDays: 60,
         interfaceTheme: "light",
       },
       {
+        id: "id-2",
+        type: "identity" as const,
         key: "user_name",
         value: "Alice",
         lastVerified: Date.now(),
+        createdAt: Date.now(),
+        hash: "hash2",
+        provenance: {
+          source_type: "user" as const,
+          source_id: "user-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
     ];
-    vi.mocked(api.identity.list).mockResolvedValue(mockIdentities);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(api.identity.list).mockResolvedValue(mockIdentities as any);
 
     renderWithClient(<Identity />);
 
@@ -85,7 +107,10 @@ describe("Identity Page", () => {
 
   it("updates preferences", async () => {
     vi.mocked(api.identity.list).mockResolvedValue([]);
-    vi.mocked(api.identity.create).mockResolvedValue({});
+    vi.mocked(api.identity.create).mockResolvedValue({
+      success: true,
+      id: "new-id",
+    });
 
     renderWithClient(<Identity />);
 
@@ -104,7 +129,10 @@ describe("Identity Page", () => {
 
   it("creates a new identity", async () => {
     vi.mocked(api.identity.list).mockResolvedValue([]);
-    vi.mocked(api.identity.create).mockResolvedValue({});
+    vi.mocked(api.identity.create).mockResolvedValue({
+      success: true,
+      id: "new-id",
+    });
 
     renderWithClient(<Identity />);
 
@@ -132,12 +160,25 @@ describe("Identity Page", () => {
   it("edits an existing identity", async () => {
     const mockIdentities = [
       {
+        id: "id-1",
+        type: "identity" as const,
         key: "user_name",
         value: "Alice",
+        createdAt: Date.now(),
+        hash: "hash1",
+        provenance: {
+          source_type: "user" as const,
+          source_id: "user-1",
+          timestamp: Date.now(),
+          confidence: 1,
+        },
       },
     ];
     vi.mocked(api.identity.list).mockResolvedValue(mockIdentities);
-    vi.mocked(api.identity.create).mockResolvedValue({});
+    vi.mocked(api.identity.create).mockResolvedValue({
+      success: true,
+      id: "new-id",
+    });
 
     renderWithClient(<Identity />);
 
