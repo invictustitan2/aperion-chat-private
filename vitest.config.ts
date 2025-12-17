@@ -51,6 +51,12 @@ export default defineConfig({
         "**/playwright-report/**",
         "**/test-results/**",
       ],
+      thresholds: {
+        lines: 45,
+        statements: 45,
+        functions: 40,
+        branches: 50,
+      },
     },
   },
 });

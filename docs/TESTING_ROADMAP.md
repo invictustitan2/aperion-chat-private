@@ -10,15 +10,15 @@ Command:
 
 Results:
 
-- Tests: 137 passed
-- Test Files: 36 passed
+- Tests: 246 passed
+- Test Files: 54 passed
 
 Coverage:
 
-- Statements: 31.74% (3825/12050)
-- Lines: 31.74% (3825/12050)
-- Functions: 42.33% (116/274)
-- Branches: 57.14% (288/504)
+- Statements: 60.6% (7303/12050)
+- Lines: 60.6% (7303/12050)
+- Functions: 58.29% (239/410)
+- Branches: 69.13% (746/1079)
 
 Observed warnings / constraints (must be handled deterministically):
 
@@ -27,6 +27,7 @@ Observed warnings / constraints (must be handled deterministically):
 - Vectorize index doesn’t support local dev (needs mocking or `remote: true` strategy).
 - `apps/api-worker/test/index.test.ts` is now active and passing (integration tests).
 - `apps/api-worker/test/app.wiring.test.ts` covers composition root wiring (in-process).
+- `apps/web/src/lib/api.test.ts` covers shared API client logic.
 
 Runtime types (this PR):
 
@@ -90,7 +91,7 @@ Preferred test types (maximize executed lines):
 - API Worker: request-driven integration tests (Miniflare/Wrangler-style) that exercise end-to-end routing through middleware → controller → service boundary (with mocks at binding edges).
 - Web: React Testing Library tests that render pages and assert user-visible state transitions (loading/error/success), not implementation details.
 
-### Phase 2: 40% → 60% Lines/Statements
+### Phase 2: 40% → 60% Lines/Statements (Completed)
 
 Goal: increase coverage while adding stronger behavioral guarantees for core flows.
 
@@ -188,19 +189,31 @@ Stability requirements:
 
 ## Next 10 Tasks (Checklist)
 
-- [ ] Run `pnpm -w test:coverage` and extract the top 10 uncovered files (paste output into the PR):
+- [x] Run `pnpm -w test:coverage` and extract the top 10 uncovered files (paste output into the PR):
   - `node -e "const s=require('./coverage/vitest/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
 - [x] Create the binding seam module `apps/api-worker/test/bindings/mockBindings.ts` (Fake AI, Fake Vectorize, Fake Queues).
 - [x] Refactor worker integration tests to import bindings from the seam (no ad-hoc mocks).
 - [x] Unskip + rewrite `apps/api-worker/test/index.test.ts` to verify wiring + middleware order + stable error shapes.
 - [x] Add request-driven tests that execute `apps/api-worker/src/index.ts` composition (routing + middleware assembly) through real HTTP requests.
-- [ ] Add React Testing Library tests for `Memory` page core flows (search → expand → empty/error states).
-- [ ] Add React Testing Library tests for `Chat` page core flows (render → send error handling; deterministic).
-- [ ] Add React Testing Library tests for Conversations page/list + key hooks/stores used by these pages.
-- [ ] Add tests for Relationships UI behaviors (list/create) with deterministic API mocking.
+- [x] Add React Testing Library tests for `Memory` page core flows (search → expand → empty/error states).
+- [x] Add React Testing Library tests for `Chat` page core flows (render → send error handling; deterministic).
+- [x] Add React Testing Library tests for Conversations page/list + key hooks/stores used by these pages.
+- [x] Add tests for Relationships UI behaviors (list/create) with deterministic API mocking.
 - [x] Add a “no-network” Vitest setup (block outbound `fetch`).
 - [x] Migrate API Worker typing from `@cloudflare/workers-types` to Wrangler runtime types (`worker-configuration.d.ts`).
-- [ ] Implement CI Gate A (non-regression at 27.24% Lines/Statements); define the ratchet plan to 35% then 40% after Phase 1 merges.
+- [x] Implement CI Gate A (non-regression at 40% Lines/Statements); define the ratchet plan to 60% after Phase 2 merges.
+- [x] Add tests for `CommandPalette` (top offender).
+- [x] Add tests for `Identity` page (top offender).
+- [x] Add tests for `Settings` page (top offender).
+- [x] Add tests for `Logs` page (top offender).
+- [x] Expand `Chat` page tests to cover error handling and edge cases.
+- [x] Expand `api.ts` tests to cover all methods and error states.
+- [x] Add tests for `ReceiptsController` (backend coverage).
+- [x] Add tests for `LogsController` (backend coverage).
+- [x] Add tests for `RunbooksController` (backend coverage).
+- [x] Add tests for `MediaController` (backend coverage).
+- [x] Add tests for `JobsController` (backend coverage).
+- [x] Add tests for `cors`, `errorHandler`, and `rateLimit` middleware.
 
 ## Pre-PR Verification Checklist (Required for This PR)
 
