@@ -8,11 +8,20 @@ on:
       - "apps/web/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch: # Allow manual deployment
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false # Don't cancel production deployments
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy
+    environment:
+      name: production
+      url: https://chat.aperion.cc
     permissions:
       contents: read
       deployments: write
@@ -31,14 +40,22 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Verify (Lint, Test)
-        run: pnpm verify
+        run: pnpm --filter @aperion/web verify
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build Web App
         run: pnpm --filter @aperion/web build
         env:
+          NODE_OPTIONS: --max-old-space-size=4096
           VITE_API_BASE_URL: https://api.aperion.cc
           VITE_AUTH_TOKEN: ${{ secrets.API_TOKEN }}
 

@@ -9,11 +9,22 @@ on:
       - "packages/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/deploy-api.yml"
+  workflow_dispatch: # Allow manual deployment
+
+concurrency:
+  group: deploy-api-production
+  cancel-in-progress: false # Don't cancel production deployments
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy
+    environment:
+      name: production
+      url: https://api.aperion.cc
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +39,28 @@ jobs:
           node-version: "20"
           cache: "pnpm"
 
+      - name: Cache Wrangler
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/.wrangler
+            node_modules/.cache
+          key: ${{ runner.os }}-wrangler-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-wrangler-
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r --filter !@aperion/web build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Verify (Lint, Test)
-        run: pnpm verify
+        run: pnpm --filter @aperion/api-worker verify
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       # Custom domain is now managed by Wrangler (Worker Custom Domain).
       # The ensure-worker-domain.sh script successfully cleared the initial conflict.

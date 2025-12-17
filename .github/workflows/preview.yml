@@ -4,9 +4,15 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true # Cancel old preview deployments when new commits are pushed
+
 jobs:
   preview:
     runs-on: ubuntu-latest
+    environment:
+      name: preview
     permissions:
       contents: read
       deployments: write
@@ -27,15 +33,17 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build Workspace
         run: pnpm -r build
-
-      - name: Build Web
-        run: pnpm --filter @aperion/web build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          VITE_API_BASE_URL: https://api.aperion.cc
+          VITE_AUTH_TOKEN: ${{ secrets.API_TOKEN }}
 
       - name: Deploy to Cloudflare Pages (Preview)
+        id: deploy-pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -45,8 +53,24 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
 
-      - name: Build Worker
-        run: pnpm --filter @aperion/api-worker build
+      - name: Comment PR with Preview URLs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = '${{ steps.deploy-pages.outputs.url }}';
+            const comment = `### 🚀 Preview Deployment Ready!
+
+            **Web App:** ${previewUrl}
+            **API Worker:** https://api.aperion.cc
+
+            Preview will be available for this branch until it's deleted.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
 
       - name: Deploy Worker (Preview)
         uses: cloudflare/wrangler-action@v3
@@ -54,4 +78,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/api-worker
-          command: deploy --dry-run # For safety, remove --dry-run once secrets are set
+          command: deploy --dry-run
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
