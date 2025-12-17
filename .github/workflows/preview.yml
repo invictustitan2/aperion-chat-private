@@ -60,8 +60,10 @@ jobs:
             const previewUrl = '${{ steps.deploy-pages.outputs.url }}';
             const comment = `### 🚀 Preview Deployment Ready!
 
-            **Web App:** ${previewUrl}
-            **API Worker:** https://api.aperion.cc
+            **Web App Preview:** ${previewUrl}
+            **API Worker:** https://api.aperion.cc _(production - preview uses production API)_
+
+            > **Note:** Preview deployments use the production API backend. The Worker deployment above runs in dry-run mode for validation only.
 
             Preview will be available for this branch until it's deleted.`;
 
