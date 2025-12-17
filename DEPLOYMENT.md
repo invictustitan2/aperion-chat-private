@@ -169,29 +169,37 @@ npx wrangler queues create aperion-memory-queue
 
 ### Automatic Deployments
 
-Deployments are triggered automatically by GitHub Actions:
+Deployments are triggered automatically by GitHub Actions **after CI passes**:
 
 #### Production API Worker
 
-- **Trigger:** Push to `main` with changes in:
-  - `apps/api-worker/**`
-  - `packages/**`
-  - `pnpm-lock.yaml`
-  - `.github/workflows/deploy-api.yml`
+- **Trigger:** After CI workflow completes successfully on `main` branch
+- **Conditions:**
+  - CI must pass
+  - Changes detected in:
+    - `apps/api-worker/**`
+    - `packages/**`
+    - `pnpm-lock.yaml`
+    - `.github/workflows/deploy-api.yml`
 - **Workflow:** `.github/workflows/deploy-api.yml`
 - **Environment:** `production`
 - **URL:** https://api.aperion.cc
 
 #### Production Web App
 
-- **Trigger:** Push to `main` with changes in:
-  - `apps/web/**`
-  - `packages/**`
-  - `pnpm-lock.yaml`
-  - `.github/workflows/deploy-web.yml`
+- **Trigger:** After CI workflow completes successfully on `main` branch
+- **Conditions:**
+  - CI must pass
+  - Changes detected in:
+    - `apps/web/**`
+    - `packages/**`
+    - `pnpm-lock.yaml`
+    - `.github/workflows/deploy-web.yml`
 - **Workflow:** `.github/workflows/deploy-web.yml`
 - **Environment:** `production`
 - **URL:** https://chat.aperion.cc
+
+**Note:** Deployments only run if CI passes. If CI fails, deployments are skipped to prevent deploying broken code.
 
 ### Manual Deployments
 
@@ -226,6 +234,15 @@ npx wrangler pages deploy dist --project-name aperion-chat-web
 ```
 
 ## Workflow Features
+
+### CI-Gated Deployments
+
+Production deployments only run after CI passes:
+
+- **CI Workflow** runs first on every push to `main`
+- **Deploy Workflows** trigger only after CI completes successfully
+- If CI fails, deployments are automatically skipped
+- Manual deployments via `workflow_dispatch` bypass this check
 
 ### Concurrency Control
 
