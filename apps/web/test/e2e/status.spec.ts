@@ -11,6 +11,15 @@ test("system status page shows empty state", async ({ page }) => {
     }
   });
 
+  // Mock the theme preference call to prevent Layout from logging an error on 401/404
+  await page.route("**/v1/preferences/theme", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ key: "theme", value: "system" }),
+    });
+  });
+
   await page.goto("/status");
   await expect(
     page.getByRole("heading", { name: "System Status", level: 1 }),
