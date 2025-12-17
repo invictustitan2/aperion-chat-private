@@ -83,7 +83,7 @@ describe("Chat Page", () => {
   it("renders the chat interface", async () => {
     renderWithClient(<Chat />);
     expect(
-      screen.getByPlaceholderText("Type a message… (Shift+Enter for newline)"),
+      screen.getByPlaceholderText("Type a message..."),
     ).toBeInTheDocument();
     expect(screen.getByTitle("New conversation")).toBeInTheDocument();
   });
@@ -137,9 +137,7 @@ describe("Chat Page", () => {
 
     renderWithClient(<Chat />);
 
-    const input = screen.getByPlaceholderText(
-      "Type a message… (Shift+Enter for newline)",
-    );
+    const input = screen.getByPlaceholderText("Type a message...");
     fireEvent.change(input, { target: { value: "Hello" } });
 
     const sendBtn = screen.getByLabelText("Send");

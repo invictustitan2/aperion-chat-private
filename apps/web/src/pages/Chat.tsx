@@ -1496,7 +1496,7 @@ export function Chat() {
                     )?.requestSubmit();
                   }
                 }}
-                placeholder="Type a message… (Shift+Enter for newline)"
+                placeholder="Type a message..."
                 rows={1}
                 className="w-full resize-none bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
                 disabled={sendMessage.isPending || clearAll.isPending}
