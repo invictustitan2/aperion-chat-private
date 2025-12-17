@@ -318,6 +318,16 @@ export const api = {
         { friendlyName: "Update episodic" },
       );
     },
+    clear: async (): Promise<{ success: boolean; cleared?: number }> => {
+      return fetchJson(
+        `${API_BASE_URL}/v1/episodic?confirm=true`,
+        {
+          method: "DELETE",
+          headers,
+        },
+        { friendlyName: "Clear episodic" },
+      );
+    },
   },
   semantic: {
     create: async (

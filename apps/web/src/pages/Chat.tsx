@@ -29,6 +29,25 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
 import { MessageContent } from "../components/MessageContent";
 
+function formatDayLabel(ts: number) {
+  return new Date(ts).toLocaleDateString([], {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function isSameDay(a: number, b: number) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
 export function Chat() {
   const [searchParams] = useSearchParams();
 
@@ -58,10 +77,24 @@ export function Chat() {
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const queryClient = useQueryClient();
+
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
+  const lastSeenLastMessageIdRef = useRef<string | null>(null);
+
+  const streamingStartAtRef = useRef<number | null>(null);
+  const lastPromptUserMessageIdRef = useRef<string | null>(null);
+  const [responseTimeMsByUserMessageId, setResponseTimeMsByUserMessageId] =
+    useState<Record<string, number>>({});
+  const [streamingElapsedMs, setStreamingElapsedMs] = useState(0);
+
+  const [slashIndex, setSlashIndex] = useState(0);
 
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -225,6 +258,74 @@ export function Chat() {
     [],
   );
 
+  const slashCommands = [
+    {
+      command: "/clear",
+      description: "Clear all messages",
+    },
+    {
+      command: "/summarize",
+      description: "Summarize this chat",
+    },
+  ] as const;
+
+  const slashQuery = input.trim().startsWith("/")
+    ? input.trim().split(/\s+/)[0]
+    : "";
+  const slashMatches = slashQuery
+    ? slashCommands.filter((c) => c.command.startsWith(slashQuery))
+    : [];
+  const showSlashAutocomplete =
+    slashQuery.length > 0 && slashMatches.length > 0 && input.trim() === input;
+
+  const clearAll = useMutation({
+    mutationFn: async () => {
+      return api.episodic.clear();
+    },
+    onSuccess: () => {
+      setInput("");
+      setHasNewMessages(false);
+      setNewMessagesCount(0);
+      queryClient.invalidateQueries({ queryKey: ["episodic"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+
+  const summarizeChat = useMutation({
+    mutationFn: async () => {
+      const contents = (history || []).map((m) => m.content);
+      if (contents.length === 0)
+        return { summary: "(No messages to summarize.)" };
+      return api.semantic.summarize(contents);
+    },
+    onSuccess: (res) => {
+      setInput(res.summary);
+      window.setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    },
+  });
+
+  const scrollToBottom = (behavior: ScrollBehavior) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (
+      typeof (el as unknown as { scrollTo?: unknown }).scrollTo === "function"
+    ) {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+  };
+
+  const getNearBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return true;
+    const threshold = 80;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    return distance <= threshold;
+  };
+
   const regenerateResponse = useMutation({
     mutationFn: async () => {
       const msgs = history || [];
@@ -239,6 +340,7 @@ export function Chat() {
       if (lastUserIdx === -1) throw new Error("No user message to regenerate");
 
       const prompt = msgs[lastUserIdx].content;
+      lastPromptUserMessageIdRef.current = msgs[lastUserIdx].id;
       const historySlice = msgs.slice(
         Math.max(0, lastUserIdx - 10),
         lastUserIdx,
@@ -254,6 +356,8 @@ export function Chat() {
       setIsStreaming(true);
       setStreamingResponse("");
       setStreamingDerivedFrom([]);
+      streamingStartAtRef.current = Date.now();
+      setStreamingElapsedMs(0);
 
       await api.chat.stream(
         prompt,
@@ -267,6 +371,23 @@ export function Chat() {
         },
         () => {
           setIsStreaming(false);
+          const start = streamingStartAtRef.current;
+          if (start) {
+            const elapsed = Date.now() - start;
+            const derived = streamingDerivedFrom;
+            const lastUserId = lastPromptUserMessageIdRef.current;
+            const key =
+              lastUserId ||
+              (Array.isArray(derived) && derived.length > 0
+                ? derived[0]
+                : null);
+            if (key) {
+              setResponseTimeMsByUserMessageId((prev) => ({
+                ...prev,
+                [key]: elapsed,
+              }));
+            }
+          }
           queryClient.invalidateQueries({ queryKey: ["episodic"] });
         },
       );
@@ -294,6 +415,8 @@ export function Chat() {
           : undefined,
       );
 
+      lastPromptUserMessageIdRef.current = episodicRes.id;
+
       // 2. Optional: Write semantic if enabled (user explicitly confirmed via toggle)
       if (isMemoryWriteEnabled) {
         await api.semantic.create(text, [episodicRes.id], {
@@ -309,6 +432,8 @@ export function Chat() {
       setIsStreaming(true);
       setStreamingResponse("");
       setStreamingDerivedFrom([]);
+      streamingStartAtRef.current = Date.now();
+      setStreamingElapsedMs(0);
 
       const historyForModel = (history || []).slice(-10).map((m) => ({
         role:
@@ -334,6 +459,23 @@ export function Chat() {
         () => {
           // Stream complete - refresh to get persisted response
           setIsStreaming(false);
+          const start = streamingStartAtRef.current;
+          if (start) {
+            const elapsed = Date.now() - start;
+            const derived = streamingDerivedFrom;
+            const lastUserId = lastPromptUserMessageIdRef.current;
+            const key =
+              lastUserId ||
+              (Array.isArray(derived) && derived.length > 0
+                ? derived[0]
+                : null);
+            if (key) {
+              setResponseTimeMsByUserMessageId((prev) => ({
+                ...prev,
+                [key]: elapsed,
+              }));
+            }
+          }
           queryClient.invalidateQueries({ queryKey: ["episodic"] });
         },
       );
@@ -350,12 +492,76 @@ export function Chat() {
     },
   });
 
-  // Auto-scroll to bottom
+  // Bottom-aware scroll + new message indicator
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const near = getNearBottom();
+      setIsAtBottom(near);
+      if (near) {
+        setHasNewMessages(false);
+        setNewMessagesCount(0);
+        const lastId = (history || []).at(-1)?.id ?? null;
+        lastSeenLastMessageIdRef.current = lastId;
+      }
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [history]);
+
+  useEffect(() => {
+    if (!history) return;
+    const lastId = history.at(-1)?.id ?? null;
+    const prevLastId = lastSeenLastMessageIdRef.current;
+
+    const appended = lastId !== null && lastId !== prevLastId;
+
+    if (getNearBottom()) {
+      scrollToBottom(history.length <= 1 ? "auto" : "smooth");
+      setHasNewMessages(false);
+      setNewMessagesCount(0);
+      lastSeenLastMessageIdRef.current = lastId;
+      return;
+    }
+
+    if (appended) {
+      setHasNewMessages(true);
+      setNewMessagesCount((c) => c + 1);
     }
   }, [history]);
+
+  // Keep streaming pinned if at bottom.
+  useEffect(() => {
+    if (!isStreaming) return;
+    if (!isAtBottom) return;
+    scrollToBottom("auto");
+  }, [isStreaming, streamingResponse, isAtBottom]);
+
+  // Track streaming elapsed time for UI.
+  useEffect(() => {
+    if (!isStreaming) return;
+    const start = streamingStartAtRef.current;
+    if (!start) return;
+    const t = window.setInterval(() => {
+      setStreamingElapsedMs(Date.now() - start);
+    }, 100);
+    return () => window.clearInterval(t);
+  }, [isStreaming]);
+
+  // Auto-grow textarea
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const next = Math.min(el.scrollHeight, 200);
+    el.style.height = `${next}px`;
+  }, [input]);
 
   // If a shared message is specified, scroll to it once it exists.
   useEffect(() => {
@@ -520,7 +726,20 @@ export function Chat() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || sendMessage.isPending) return;
+    const trimmed = input.trim();
+    if (!trimmed) return;
+
+    if (trimmed === "/clear") {
+      if (!clearAll.isPending) clearAll.mutate();
+      return;
+    }
+
+    if (trimmed === "/summarize") {
+      if (!summarizeChat.isPending) summarizeChat.mutate();
+      return;
+    }
+
+    if (sendMessage.isPending) return;
     sendMessage.mutate(input);
   };
 
@@ -876,174 +1095,243 @@ export function Chat() {
               <span>Error loading history: {error.message}</span>
             </div>
           ) : (
-            history?.map((msg) => {
+            history?.map((msg, idx) => {
+              const prev = idx > 0 ? history[idx - 1] : null;
+              const showDaySeparator =
+                !prev || !isSameDay(prev.createdAt, msg.createdAt);
               const isUser = String(msg.provenance?.source_type) === "user";
               const isEditing = editingMessageId === msg.id;
+
+              const derivedFrom = Array.isArray(msg.provenance?.derived_from)
+                ? msg.provenance.derived_from
+                : [];
+              const modelVersion =
+                typeof msg.provenance?.model_version === "string"
+                  ? msg.provenance.model_version
+                  : "";
+              const responseMs = derivedFrom
+                .map((id) => responseTimeMsByUserMessageId[id])
+                .find((v) => typeof v === "number");
+
               return (
-                <div
-                  key={msg.id}
-                  data-message-id={msg.id}
-                  className={clsx(
-                    "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
-                    isUser ? "self-end items-end" : "self-start items-start",
-                  )}
-                >
-                  <div className="flex items-baseline gap-2 px-1">
-                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                      {isUser ? "You" : "Aperion"}
-                    </span>
-                    <span className="text-[10px] font-mono text-white/20">
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div
-                    className={clsx(
-                      "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
-                      highlightMessageId === msg.id &&
-                        "ring-1 ring-white/20 border-white/20",
-                      isUser
-                        ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
-                        : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
-                    )}
-                  >
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          rows={3}
-                          className={clsx(
-                            "w-full resize-y bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all",
-                          )}
-                          disabled={updateMessage.isPending}
-                        />
-                        {editError && (
-                          <div className="text-xs text-red-400 flex items-center gap-2">
-                            <AlertCircle className="w-3 h-3" />
-                            {editError}
-                          </div>
-                        )}
+                <React.Fragment key={msg.id}>
+                  {showDaySeparator && (
+                    <div className="flex items-center justify-center py-2">
+                      <div className="px-3 py-1 rounded-full text-[10px] font-mono text-white/30 bg-white/5 border border-white/10">
+                        {formatDayLabel(msg.createdAt)}
                       </div>
-                    ) : (
-                      <MessageContent content={msg.content} />
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  {/* Message Actions */}
                   <div
+                    data-message-id={msg.id}
                     className={clsx(
-                      "flex items-center gap-1 px-1 transition-opacity duration-200",
-                      "opacity-0 group-hover:opacity-100",
-                      isUser ? "flex-row-reverse" : "flex-row",
+                      "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
+                      isUser ? "self-end items-end" : "self-start items-start",
                     )}
                   >
-                    {/* Share Link */}
-                    <button
-                      onClick={() => shareMessageLink(msg.id)}
-                      className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                      title="Copy shareable message link"
-                      disabled={isEditing}
-                    >
-                      {copiedId === `share:${msg.id}` ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Share2 className="w-3.5 h-3.5" />
+                    <div className="flex items-baseline gap-2 px-1">
+                      <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                        {isUser ? "You" : "Aperion"}
+                      </span>
+                      <span className="text-[10px] font-mono text-white/20">
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div
+                      className={clsx(
+                        "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
+                        highlightMessageId === msg.id &&
+                          "ring-1 ring-white/20 border-white/20",
+                        isUser
+                          ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
+                          : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
                       )}
-                    </button>
-
-                    {/* Copy Button */}
-                    <button
-                      onClick={() => handleCopy(msg.id, msg.content)}
-                      className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                      title="Copy to clipboard"
-                      disabled={isEditing}
                     >
-                      {copiedId === msg.id ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            rows={3}
+                            className={clsx(
+                              "w-full resize-y bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all",
+                            )}
+                            disabled={updateMessage.isPending}
+                          />
+                          {editError && (
+                            <div className="text-xs text-red-400 flex items-center gap-2">
+                              <AlertCircle className="w-3 h-3" />
+                              {editError}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <Copy className="w-3.5 h-3.5" />
+                        <>
+                          <MessageContent content={msg.content} />
+                          {!isUser &&
+                            (modelVersion ||
+                              derivedFrom.length > 0 ||
+                              typeof responseMs === "number") && (
+                              <div className="mt-2 text-[10px] font-mono text-white/30 flex flex-wrap gap-x-3 gap-y-1">
+                                {modelVersion && (
+                                  <span>model: {modelVersion}</span>
+                                )}
+                                {derivedFrom.length > 0 && (
+                                  <span>
+                                    derived: {derivedFrom.length}{" "}
+                                    {derivedFrom.length === 1
+                                      ? "memory"
+                                      : "memories"}
+                                  </span>
+                                )}
+                                {typeof responseMs === "number" && (
+                                  <span>
+                                    response: {(responseMs / 1000).toFixed(1)}s
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                        </>
                       )}
-                    </button>
+                    </div>
 
-                    {/* Edit Buttons (user messages only) */}
-                    {isUser && (
-                      <>
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={saveEditing}
-                              className={clsx(
-                                "p-1.5 rounded-md transition-all",
-                                updateMessage.isPending
-                                  ? "text-gray-600 bg-white/5"
-                                  : "text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30",
-                              )}
-                              title="Save edit"
-                              disabled={updateMessage.isPending}
-                            >
-                              {updateMessage.isPending ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                              title="Cancel edit"
-                              disabled={updateMessage.isPending}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </>
+                    {/* Message Actions */}
+                    <div
+                      className={clsx(
+                        "flex items-center gap-1 px-1 transition-opacity duration-200",
+                        "opacity-0 group-hover:opacity-100",
+                        isUser ? "flex-row-reverse" : "flex-row",
+                      )}
+                    >
+                      {/* Share Link */}
+                      <button
+                        onClick={() => shareMessageLink(msg.id)}
+                        className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                        title="Copy shareable message link"
+                        disabled={isEditing}
+                      >
+                        {copiedId === `share:${msg.id}` ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                         ) : (
-                          <button
-                            onClick={() => startEditing(msg.id, msg.content)}
-                            className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                            title="Edit message"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
+                          <Share2 className="w-3.5 h-3.5" />
                         )}
-                      </>
-                    )}
+                      </button>
 
-                    {/* Rating Buttons (AI messages only) */}
-                    {!isUser && (
-                      <>
-                        <button
-                          onClick={() => handleRate(msg.id, "up")}
-                          className={clsx(
-                            "p-1.5 rounded-md transition-all",
-                            ratedMessages[msg.id] === "up"
-                              ? "text-emerald-400 bg-emerald-500/20"
-                              : "text-gray-500 hover:text-white hover:bg-white/10",
+                      {/* Copy Button */}
+                      <button
+                        onClick={() => handleCopy(msg.id, msg.content)}
+                        className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                        title="Copy to clipboard"
+                        disabled={isEditing}
+                      >
+                        {copiedId === msg.id ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+
+                      {/* Edit Buttons (user messages only) */}
+                      {isUser && (
+                        <>
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={saveEditing}
+                                className={clsx(
+                                  "p-1.5 rounded-md transition-all",
+                                  updateMessage.isPending
+                                    ? "text-gray-600 bg-white/5"
+                                    : "text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30",
+                                )}
+                                title="Save edit"
+                                disabled={updateMessage.isPending}
+                              >
+                                {updateMessage.isPending ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                                title="Cancel edit"
+                                disabled={updateMessage.isPending}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(msg.id, msg.content)}
+                              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                              title="Edit message"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
                           )}
-                          title="Good response"
-                        >
-                          <ThumbsUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleRate(msg.id, "down")}
-                          className={clsx(
-                            "p-1.5 rounded-md transition-all",
-                            ratedMessages[msg.id] === "down"
-                              ? "text-red-400 bg-red-500/20"
-                              : "text-gray-500 hover:text-white hover:bg-white/10",
-                          )}
-                          title="Poor response"
-                        >
-                          <ThumbsDown className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
+                        </>
+                      )}
+
+                      {/* Rating Buttons (AI messages only) */}
+                      {!isUser && (
+                        <>
+                          <button
+                            onClick={() => handleRate(msg.id, "up")}
+                            className={clsx(
+                              "p-1.5 rounded-md transition-all",
+                              ratedMessages[msg.id] === "up"
+                                ? "text-emerald-400 bg-emerald-500/20"
+                                : "text-gray-500 hover:text-white hover:bg-white/10",
+                            )}
+                            title="Good response"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleRate(msg.id, "down")}
+                            className={clsx(
+                              "p-1.5 rounded-md transition-all",
+                              ratedMessages[msg.id] === "down"
+                                ? "text-red-400 bg-red-500/20"
+                                : "text-gray-500 hover:text-white hover:bg-white/10",
+                            )}
+                            title="Poor response"
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })
+          )}
+
+          {/* New messages indicator */}
+          {hasNewMessages && (
+            <div className="sticky bottom-4 flex justify-center pointer-events-none">
+              <button
+                type="button"
+                onClick={() => {
+                  scrollToBottom("smooth");
+                  setHasNewMessages(false);
+                  setNewMessagesCount(0);
+                  lastSeenLastMessageIdRef.current =
+                    (history || []).at(-1)?.id ?? null;
+                }}
+                className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs text-white/80 hover:bg-white/15 transition-all"
+              >
+                New messages
+                {newMessagesCount > 0 ? ` (${newMessagesCount})` : ""}
+              </button>
+            </div>
           )}
 
           {/* Optimistic / Pending Message */}
@@ -1067,7 +1355,7 @@ export function Chat() {
                 </span>
                 <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-                  Streaming
+                  Streaming • {(streamingElapsedMs / 1000).toFixed(1)}s
                 </span>
               </div>
               <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
@@ -1131,6 +1419,7 @@ export function Chat() {
               className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10"
               onClick={() => fileInputRef.current?.click()}
               title="Attach Image"
+              aria-label="Attach image"
               disabled={isUploading}
             >
               {isUploading ? (
@@ -1154,6 +1443,7 @@ export function Chat() {
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isProcessingVoice}
               title={isRecording ? "Stop Recording" : "Voice Chat"}
+              aria-label={isRecording ? "Stop recording" : "Voice chat"}
             >
               {isProcessingVoice ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -1165,26 +1455,95 @@ export function Chat() {
             </button>
 
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
+                ref={inputRef}
                 value={input}
                 onChange={(e) => {
+                  setSlashIndex(0);
                   setInput(e.target.value);
-                  // Broadcast typing event to other clients
                   if (e.target.value) {
                     sendTyping();
                   }
                 }}
-                placeholder="Type a message..."
-                className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
-                disabled={sendMessage.isPending}
+                onKeyDown={(e) => {
+                  if (showSlashAutocomplete && slashMatches.length > 0) {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setSlashIndex((i) => (i + 1) % slashMatches.length);
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setSlashIndex(
+                        (i) =>
+                          (i - 1 + slashMatches.length) % slashMatches.length,
+                      );
+                      return;
+                    }
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      if (slashQuery && slashMatches[slashIndex]) {
+                        e.preventDefault();
+                        setInput(slashMatches[slashIndex].command);
+                        return;
+                      }
+                    }
+                  }
+
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    (
+                      e.currentTarget.form as HTMLFormElement | null
+                    )?.requestSubmit();
+                  }
+                }}
+                placeholder="Type a message… (Shift+Enter for newline)"
+                rows={1}
+                className="w-full resize-none bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+                disabled={sendMessage.isPending || clearAll.isPending}
               />
+
+              {showSlashAutocomplete && (
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-black/60 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+                  {slashMatches.map((c, i) => (
+                    <button
+                      key={c.command}
+                      type="button"
+                      onClick={() => setInput(c.command)}
+                      className={clsx(
+                        "w-full text-left px-3 py-2 text-xs font-mono flex items-center justify-between",
+                        i === slashIndex
+                          ? "bg-white/10 text-white"
+                          : "text-white/70 hover:bg-white/5",
+                      )}
+                    >
+                      <span>{c.command}</span>
+                      <span className="text-white/30">{c.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-1 px-2 flex justify-between text-[10px] font-mono text-white/20">
+                <span>
+                  {clearAll.isPending
+                    ? "Clearing…"
+                    : summarizeChat.isPending
+                      ? "Summarizing…"
+                      : ""}
+                </span>
+                <span>{input.length} chars</span>
+              </div>
             </div>
 
             <button
               type="submit"
               aria-label="Send"
-              disabled={!input.trim() || sendMessage.isPending}
+              disabled={
+                !input.trim() ||
+                sendMessage.isPending ||
+                clearAll.isPending ||
+                summarizeChat.isPending
+              }
               className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
             >
               <Send className="w-5 h-5" />

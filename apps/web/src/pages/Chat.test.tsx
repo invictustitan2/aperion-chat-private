@@ -32,9 +32,11 @@ vi.mock("../lib/api", () => ({
       list: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      clear: vi.fn(),
     },
     semantic: {
       create: vi.fn(),
+      summarize: vi.fn(),
     },
   },
 }));
@@ -81,7 +83,7 @@ describe("Chat Page", () => {
   it("renders the chat interface", async () => {
     renderWithClient(<Chat />);
     expect(
-      screen.getByPlaceholderText("Type a message..."),
+      screen.getByPlaceholderText("Type a message… (Shift+Enter for newline)"),
     ).toBeInTheDocument();
     expect(screen.getByTitle("New conversation")).toBeInTheDocument();
   });
@@ -135,7 +137,9 @@ describe("Chat Page", () => {
 
     renderWithClient(<Chat />);
 
-    const input = screen.getByPlaceholderText("Type a message...");
+    const input = screen.getByPlaceholderText(
+      "Type a message… (Shift+Enter for newline)",
+    );
     fireEvent.change(input, { target: { value: "Hello" } });
 
     const sendBtn = screen.getByLabelText("Send");
