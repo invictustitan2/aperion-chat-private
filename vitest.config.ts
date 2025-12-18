@@ -17,9 +17,6 @@ export default defineConfig({
       },
     },
     environment: "node",
-    environmentMatchGlobs: [
-      ["apps/web/**/*.{test,spec}.?(c|m)[jt]s?(x)", "jsdom"],
-    ],
     setupFiles: ["./vitest.setup.ts", "./test/setup.ts"],
     exclude: [
       "**/node_modules/**",
