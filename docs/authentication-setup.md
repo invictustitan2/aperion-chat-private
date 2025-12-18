@@ -43,10 +43,26 @@ This generates a 256-bit secure random token and provides setup instructions.
 ### Token Security Best Practices
 
 1. **Never commit tokens** to version control
-2. **Use different tokens** for development and production (optional but recommended)
+2. **Decide whether to share tokens across environments** (optional)
+   - This repo’s current GitHub workflows use a single `API_TOKEN` secret for Production and Preview deploys.
+   - You can split tokens (e.g., separate `API_TOKEN_PREVIEW`) if you also update workflows + Worker secrets accordingly.
 3. **Rotate tokens periodically** (every 90 days recommended)
 4. **Store securely** in secret management systems
 5. **Limit token exposure** - only set where needed
+
+## Where The Token Lives (And Why You Might Not Know It)
+
+In the “Cloudflare-first + GitHub Actions” setup, the production token typically exists only in:
+
+- **GitHub Actions Secret**: `API_TOKEN` (used at deploy time)
+- **Cloudflare Worker Secret**: `API_TOKEN` (used at runtime)
+
+Important operational detail:
+
+- **GitHub Actions secrets are not readable after being set** (they can be used by workflows, but not retrieved).
+- **Cloudflare Worker secrets are not retrievable** (you can list that a secret exists, but cannot fetch its value).
+
+If you do not have the token value stored anywhere else (password manager, encrypted vault, etc.), the correct remedy is **rotation** (generate a new token and update GitHub + Worker + redeploy the web build).
 
 ## Environment Configuration
 
@@ -137,11 +153,15 @@ The Worker implements **environment-aware CORS** for security:
 
 ### Allowed Origins
 
-| Environment    | Allowed Origins                                      |
-| -------------- | ---------------------------------------------------- |
-| **Local**      | `http://localhost:5173`, `http://127.0.0.1:5173`     |
-| **Preview**    | `*.pages.dev` (Cloudflare Pages preview deployments) |
-| **Production** | `https://chat.aperion.cc`                            |
+| Environment    | Allowed Origins                                  |
+| -------------- | ------------------------------------------------ |
+| **Local**      | `http://localhost:5173`, `http://127.0.0.1:5173` |
+| **Production** | `https://chat.aperion.cc`                        |
+
+Notes:
+
+- The current Worker CORS implementation is a strict allow-list and does **not** automatically allow `*.pages.dev` preview origins.
+- Preview deployments can still be useful for build/test verification, but browser-based preview traffic may fail CORS unless you explicitly allow preview origins.
 
 ### How It Works
 
@@ -155,8 +175,8 @@ function getCorsHeaders(request: IRequest): Record<string, string> {
     "http://127.0.0.1:5173",
     "https://chat.aperion.cc",
   ];
-  const isPreviewDeploy = origin.endsWith(".pages.dev");
-  const isAllowed = allowedOrigins.includes(origin) || isPreviewDeploy;
+
+  const isAllowed = allowedOrigins.includes(origin);
 
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[2],
@@ -194,7 +214,7 @@ pnpm --filter @aperion/api-worker dev
 
 # In another terminal, test without auth (should fail)
 curl http://127.0.0.1:8787/v1/identity
-# Expected: {"error":"Unauthorized: Missing Authorization header"}
+# Expected: 401 Unauthorized
 
 # Test with auth (should succeed)
 curl -H "Authorization: Bearer <your-token>" http://127.0.0.1:8787/v1/identity
@@ -206,7 +226,7 @@ curl -H "Authorization: Bearer <your-token>" http://127.0.0.1:8787/v1/identity
 ```bash
 # Test without auth (should fail)
 curl https://api.aperion.cc/v1/identity
-# Expected: {"error":"Unauthorized: Missing Authorization header"}
+# Expected: 401 Unauthorized
 
 # Test with auth (should succeed)
 curl -H "Authorization: Bearer <your-token>" https://api.aperion.cc/v1/identity
@@ -292,7 +312,7 @@ For production systems, implement a grace period:
 
 ### 401 Unauthorized errors
 
-**Cause:** Token not sent or Worker secret not set
+**Cause:** Token not sent, token scheme is invalid, or Worker secret not set
 
 **Solutions:**
 
@@ -302,7 +322,7 @@ For production systems, implement a grace period:
 
 ### 403 Forbidden errors
 
-**Cause:** Token sent but doesn't match
+**Cause:** Token sent but doesn't match the Worker secret
 
 **Solutions:**
 

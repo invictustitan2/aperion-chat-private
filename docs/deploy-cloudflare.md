@@ -76,6 +76,8 @@ This repo deploys the web app from GitHub Actions and uploads the built `apps/we
 - `VITE_API_BASE_URL` and `VITE_AUTH_TOKEN` are injected at build time by the workflow.
 - If you deploy via GitHub Actions, Pages dashboard environment variables are not used for the build.
 
+Operational note: GitHub Actions secrets and Cloudflare Worker secrets are effectively write-only. You can use them in workflows/runtime, but you generally cannot retrieve the plaintext value later. Keep the token in a secure vault/password manager, or rotate it if it’s lost.
+
 ### Custom Domain
 
 In the Pages project settings > Custom Domains, add `chat.aperion.cc`.

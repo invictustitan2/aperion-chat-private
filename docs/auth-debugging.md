@@ -91,7 +91,7 @@ wrangler secret put API_TOKEN
 
 ### 403 Forbidden
 
-**Cause:** Token mismatch between frontend and backend
+**Cause:** Token was provided but does not match the Worker secret (`API_TOKEN`)
 
 **Fix:** Ensure the same token is used in:
 
@@ -99,6 +99,11 @@ wrangler secret put API_TOKEN
 - Worker secret → `API_TOKEN`
 
 **Fast diagnosis:** The API includes `X-Aperion-Auth-Fingerprint` (a non-secret SHA-256 prefix) and `X-Aperion-Trace-Id` on responses. If the client fingerprint (hash of your `VITE_AUTH_TOKEN`) differs from the server fingerprint, you’ve found the mismatch.
+
+Important details:
+
+- `X-Aperion-Auth-Fingerprint` is derived from the Worker’s configured `API_TOKEN` (server-side). It does not reflect the token you sent.
+- GitHub Actions secrets and Cloudflare Worker secrets are write-only in practice: you can use them, but you generally cannot retrieve the plaintext value later. If you no longer have the token value stored anywhere, the remedy is token rotation.
 
 ### CORS Errors
 

@@ -14,7 +14,8 @@ Aperion Chat consists of two main components deployed to Cloudflare:
 2. **Web App** (`apps/web`)
    - Deployed to: Cloudflare Pages
    - Domain: `chat.aperion.cc`
-   - Project: `aperion-chat-web`
+
+- Project: `aperion-chat-private`
 
 ## Prerequisites
 
@@ -80,7 +81,7 @@ This automatically creates the necessary DNS records when deployed.
 
 Configure in Cloudflare Dashboard:
 
-1. Go to **Pages → aperion-chat-web → Custom domains**
+1. Go to **Pages → aperion-chat-private → Custom domains**
 2. Click **Set up a custom domain**
 3. Enter `chat.aperion.cc`
 4. Cloudflare will automatically create a CNAME record
@@ -109,7 +110,7 @@ The web app needs environment variables for build-time configuration.
 
 ### Set in Cloudflare Dashboard
 
-1. Go to **Pages → aperion-chat-web → Settings → Environment variables**
+1. Go to **Pages → aperion-chat-private → Settings → Environment variables**
 2. Add the following variables for **Production**:
 
 | Variable Name       | Value                    | Description                             |
@@ -230,7 +231,7 @@ cd apps/web
 pnpm build
 
 # Deploy via wrangler pages
-npx wrangler pages deploy dist --project-name aperion-chat-web
+npx wrangler pages deploy dist --project-name aperion-chat-private
 ```
 
 ## Workflow Features
@@ -325,7 +326,7 @@ npx wrangler deploy
 
 # Deploy Web App
 cd ../web
-npx wrangler pages deploy dist --project-name aperion-chat-web
+npx wrangler pages deploy dist --project-name aperion-chat-private
 ```
 
 ### Deploy Only API
@@ -340,7 +341,7 @@ npx wrangler deploy
 ```bash
 cd apps/web
 pnpm build
-npx wrangler pages deploy dist --project-name aperion-chat-web
+npx wrangler pages deploy dist --project-name aperion-chat-private
 ```
 
 ### Apply Database Migrations
@@ -419,7 +420,7 @@ npx wrangler d1 migrations apply aperion-memory --remote
 ### Cloudflare Dashboard
 
 - **Worker Logs:** Workers & Pages → aperion-api-worker → Logs
-- **Pages Logs:** Pages → aperion-chat-web → Deployment logs
+- **Pages Logs:** Pages → aperion-chat-private → Deployment logs
 - **Analytics:** Workers & Pages → aperion-api-worker → Analytics
 
 ### GitHub Actions

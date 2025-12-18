@@ -2,7 +2,7 @@
 
 The Aperion Chat API is a RESTful interface running on Cloudflare Workers. It uses Bearer Token authentication and JSON payloads.
 
-**Base URL**: `https://api.aperion.cc` (Production) / `http://localhost:8787` (Local)
+**Base URL**: `https://api.aperion.cc` (Production) / `http://127.0.0.1:8787` (Local)
 
 ## Authentication
 
@@ -138,8 +138,8 @@ Standard HTTP status codes are used:
 
 - `200/201`: Success
 - `400`: Bad Request (Validation failed)
-- `401`: Unauthorized (Missing/Invalid Token)
-- `403`: Forbidden (Policy denied)
+- `401`: Unauthorized (missing token, invalid scheme, or server not configured)
+- `403`: Forbidden (token provided but invalid; some endpoints may also use 403 for policy denial)
 - `500`: Internal Server Error (Context ID logged)
 
 ## OpenAPI Spec
