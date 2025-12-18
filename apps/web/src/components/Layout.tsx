@@ -142,7 +142,7 @@ export function Layout() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-transparent">
+    <div className="flex h-screen h-[100dvh] overflow-hidden bg-transparent min-h-0">
       {/* Desktop Sidebar (Hidden on Mobile) */}
       <aside
         className="hidden md:flex w-64 glass-dark border-r border-white/5 flex-col z-20"
@@ -153,7 +153,7 @@ export function Layout() {
       </aside>
 
       {/* Mobile Header (Visible on Mobile) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 glass-dark border-b border-white/5 z-30 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)]">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-top))] glass-dark border-b border-white/5 z-30 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-2">
           <Shield className="w-6 h-6 text-emerald-500" />
           <span className="font-bold text-xl tracking-tight text-white">
@@ -206,9 +206,9 @@ export function Layout() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 pt-16 md:pt-0">
+      <main className="flex-1 flex flex-col relative z-10 pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0 min-w-0 min-h-0">
         {/* We add top padding on mobile to account for the fixed header */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-0">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-0 min-h-0">
           <Outlet />
         </div>
       </main>

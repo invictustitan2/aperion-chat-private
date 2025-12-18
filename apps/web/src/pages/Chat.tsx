@@ -563,6 +563,26 @@ export function Chat() {
     el.style.height = `${next}px`;
   }, [input]);
 
+  // Mobile viewport changes (address bar / keyboard) can change available height.
+  // If the user is already near the bottom, keep the chat pinned.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onResize = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const threshold = 80;
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distance <= threshold) {
+        el.scrollTop = el.scrollHeight;
+      }
+    };
+
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
   // If a shared message is specified, scroll to it once it exists.
   useEffect(() => {
     const msg = searchParams.get("message");
@@ -807,11 +827,11 @@ export function Chat() {
 
   return (
     <div
-      className="flex flex-col md:flex-row h-full relative"
+      className="flex flex-col md:flex-row h-full min-h-0 overflow-hidden relative"
       ref={chatContainerRef}
     >
       {/* Conversations Sidebar */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 glass-dark">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 glass-dark flex flex-col md:h-full shrink-0">
         <div className="p-4 flex items-center justify-between gap-2">
           <div className="text-sm font-semibold text-white">Conversations</div>
           <button
@@ -828,7 +848,7 @@ export function Chat() {
           </button>
         </div>
 
-        <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-[calc(100vh-9rem)] overflow-y-auto no-scrollbar">
+        <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-none flex-1 min-h-0 overflow-y-auto no-scrollbar">
           <button
             onClick={() => setActiveConversationId(null)}
             className={clsx(
@@ -925,7 +945,7 @@ export function Chat() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col h-full">
+      <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
         {/* Header */}
         <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
           <div className="flex items-center gap-2">
@@ -1082,7 +1102,7 @@ export function Chat() {
 
         {/* Chat Area */}
         <div
-          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
+          className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6"
           ref={scrollRef}
         >
           {isLoading ? (
@@ -1269,7 +1289,7 @@ export function Chat() {
                           ) : (
                             <button
                               onClick={() => startEditing(msg.id, msg.content)}
-                              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
+                              className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6"
                               title="Edit message"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -1394,7 +1414,7 @@ export function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0">
           {sendMessage.isError && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
@@ -1464,6 +1484,9 @@ export function Chat() {
                   if (e.target.value) {
                     sendTyping();
                   }
+                }}
+                onFocus={() => {
+                  window.setTimeout(() => scrollToBottom("auto"), 0);
                 }}
                 onKeyDown={(e) => {
                   if (showSlashAutocomplete && slashMatches.length > 0) {
