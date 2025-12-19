@@ -7,6 +7,19 @@
     --sar: env(safe-area-inset-right);
     --sab: env(safe-area-inset-bottom);
     --sal: env(safe-area-inset-left);
+
+    /* Aperion Runtime Theme Variables */
+    /* These can be toggled for light/dark/slate themes */
+    --surface: hsl(210, 24%, 7%);
+    --surface-elevated: hsl(210, 20%, 12%);
+    --surface-glass: rgba(255, 255, 255, 0.05);
+    --text: hsl(0, 0%, 100%);
+    --text-muted: hsl(0, 0%, 60%);
+    --text-subtle: hsl(0, 0%, 40%);
+    --accent: hsl(156, 55%, 47%); /* Emerald */
+    --accent-hover: hsl(156, 55%, 55%);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-subtle: rgba(255, 255, 255, 0.05);
   }
 
   html {
@@ -37,6 +50,15 @@
 
   .glass-dark {
     @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  /* Accessibility: Focus Utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-black;
+  }
+
+  .focus-ring-visible {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black;
   }
 
   /* Hide scrollbar for clean UI */

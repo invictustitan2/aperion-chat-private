@@ -37,6 +37,11 @@ const Insights = lazy(() =>
   import("./pages/Insights").then((m) => ({ default: m.Insights })),
 );
 
+// UI Lab - Development only route for component testing
+const UILab = lazy(() =>
+  import("./pages/UILab").then((m) => ({ default: m.UILab })),
+);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -165,6 +170,15 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <Insights />
+                  </Suspense>
+                }
+              />
+              {/* UI Lab - Development Only */}
+              <Route
+                path="ui-lab"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <UILab />
                   </Suspense>
                 }
               />
