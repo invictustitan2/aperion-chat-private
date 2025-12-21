@@ -3,6 +3,12 @@ import { expect, test } from "@playwright/test";
 // Define iPhone 15 viewport exactly as requested
 const IPHONE_15 = { width: 393, height: 852 };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 test.use({
   viewport: IPHONE_15,
   userAgent:
@@ -12,34 +18,71 @@ test.use({
 test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
   const screenshotDir = "apps/web/docs/qa/screenshots";
 
+  let conversations: Array<{
+    id: string;
+    title: string;
+    createdAt: number;
+    updatedAt: number;
+  }>;
+  let episodic: Array<{
+    id: string;
+    createdAt: number;
+    type: "episodic";
+    content: string;
+    hash: string;
+    provenance: {
+      source_type: "user" | "system" | "model" | "external";
+      source_id: string;
+      timestamp: number;
+      confidence: number;
+    };
+    conversation_id?: string;
+  }>;
+
   test.beforeEach(async ({ page }) => {
+    conversations = [
+      {
+        id: "conv-123",
+        title: "Existing Conversation",
+        createdAt: 1_700_000_000_000,
+        updatedAt: 1_700_000_000_000,
+      },
+    ];
+    episodic = [];
+
     // Mock API responses to simulate backend
     await page.route("**/v1/conversations?limit=**", async (route) => {
+      if (route.request().method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
       await route.fulfill({
         status: 200,
+        headers: corsHeaders,
         contentType: "application/json",
-        body: JSON.stringify([
-          {
-            id: "conv-123",
-            title: "Existing Conversation",
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          },
-        ]),
+        body: JSON.stringify(conversations),
       });
     });
 
     await page.route("**/v1/conversations", async (route) => {
+      if (route.request().method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+
       // Create new conversation mock
       if (route.request().method() === "POST") {
         const body = {
           id: "conv-new-123",
           title: "New Chat",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          createdAt: 1_700_000_000_000,
+          updatedAt: 1_700_000_000_000,
         };
+
+        conversations = [body, ...conversations];
         await route.fulfill({
           status: 200,
+          headers: corsHeaders,
           contentType: "application/json",
           body: JSON.stringify(body),
         });
@@ -48,13 +91,91 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
       }
     });
 
+    await page.route("**/v1/episodic?**", async (route) => {
+      const method = route.request().method();
+      if (method === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+
+      if (method === "GET") {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify(episodic),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.route("**/v1/episodic", async (route) => {
+      const method = route.request().method();
+      if (method === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+
+      if (method === "POST") {
+        const body = route.request().postDataJSON() as {
+          content?: string;
+          conversation_id?: string;
+          provenance?: {
+            source_type?: "user" | "system" | "model" | "external";
+            source_id?: string;
+            timestamp?: number;
+            confidence?: number;
+          };
+        };
+
+        const id = "msg-user-1";
+        const createdAt = 1_700_000_000_001;
+        episodic.push({
+          id,
+          createdAt,
+          type: "episodic",
+          content: String(body.content ?? ""),
+          hash: "hash-user-1",
+          provenance: {
+            source_type: "user",
+            source_id: "operator",
+            timestamp: createdAt,
+            confidence: 1,
+          },
+          ...(body.conversation_id
+            ? { conversation_id: body.conversation_id }
+            : {}),
+        });
+
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            id,
+            receipt: { allowed: true },
+          }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
     await page.route("**/v1/chat/stream", async (route) => {
+      const method = route.request().method();
+      if (method === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
-        contentType: "text/event-stream",
-        body: 'data: {"token": "Hello from QA"}\n\ndata: [DONE]\n\n', // Simplified for non-streaming plain mock if needed, but playwright handles stream body differently or we construct response.
-        // For simplicity in Playwright fulfill, static body is easier if client handles it.
-        // Client expects SSE. Let's send simple full SSE block.
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        body: 'data: {"token": "Hello from QA"}\n\ndata: [DONE]\n\n',
       });
     });
 
@@ -108,7 +229,7 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
     await sendBtn.click();
 
     // Wait for input to clear (avoids strict mode error matching input value)
-    await expect(input).toHaveValue("");
+    await expect(input).toHaveValue("", { timeout: 10000 });
 
     // Wait for message to appear
     await expect(page.getByText("Hello world QA")).toBeVisible();

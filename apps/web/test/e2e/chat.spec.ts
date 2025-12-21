@@ -221,6 +221,82 @@ test("voice chat ui elements are visible", async ({ page }) => {
 test("mobile layout with glassmorphism", async ({ page }) => {
   // Simulate iPhone 15 Pro viewport
   await page.setViewportSize({ width: 393, height: 852 });
+
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
+  // Create a conversation so mobile switches to detail view.
+  await page.route("**/v1/conversations*", async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        headers,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+      return;
+    }
+
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 200,
+        headers,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "conv-glass-1",
+          title: "Glass Convo",
+          createdAt: 1_700_000_000_000,
+          updatedAt: 1_700_000_000_000,
+        }),
+      });
+      return;
+    }
+
+    await route.fulfill({ status: 200, headers, body: "{}" });
+  });
+
+  await page.route("**/v1/episodic*", async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        headers,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "epi-1",
+            createdAt: 1_700_000_000_001,
+            type: "episodic",
+            content: "Glass message",
+            hash: "hash-epi-1",
+            provenance: {
+              source_type: "user",
+              source_id: "operator",
+              timestamp: 1_700_000_000_001,
+              confidence: 1,
+            },
+            conversation_id: "conv-glass-1",
+          },
+        ]),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+
   await page.goto("/chat");
 
   // Verify Safe Area wrapper exists (checking for padding/margins typical of safe area)
@@ -228,27 +304,9 @@ test("mobile layout with glassmorphism", async ({ page }) => {
   const main = page.locator("main");
   await expect(main).toBeVisible();
 
-  // Verify Glassmorphism classes on messages
-  // We expect at least one message bubble to have backdrop-blur
-  // Mock a message first to ensure one exists
-  await page.route("**/v1/episodic*", async (route) => {
-    if (route.request().method() === "GET") {
-      await route.fulfill({
-        headers: { "Access-Control-Allow-Origin": "*" },
-        json: [
-          {
-            id: "1",
-            content: "Glass message",
-            createdAt: Date.now(),
-            role: "user",
-          },
-        ],
-      });
-    } else {
-      await route.continue();
-    }
-  });
-  await page.goto("/chat");
+  // Mobile defaults to Index view; create a conversation to switch to Detail.
+  await page.getByLabel("New conversation").click();
+  await expect(page.getByPlaceholder("Type a message...")).toBeVisible();
 
   const bubble = page.getByText("Glass message");
   await expect(bubble).toBeVisible();
