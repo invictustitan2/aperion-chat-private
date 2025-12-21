@@ -48,12 +48,12 @@ describe("Layout", () => {
       </BrowserRouter>,
     );
 
-    expect(screen.getByText("Chat")).toBeInTheDocument();
-    expect(screen.getByText("Memory")).toBeInTheDocument();
+    expect(screen.getAllByText("Chat").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Memory").length).toBeGreaterThan(0);
     expect(screen.getByText("Identity")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
     expect(screen.getByText("System Status")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.getAllByText("Settings").length).toBeGreaterThan(0);
   });
 
   it("loads theme from preferences", async () => {

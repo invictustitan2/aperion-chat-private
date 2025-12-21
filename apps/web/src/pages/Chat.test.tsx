@@ -454,55 +454,22 @@ describe("Mobile Navigation", () => {
     mockMatchMedia(true); // Enforce Mobile
   });
 
-  it("defaults to Index view (conversation list) on mobile", async () => {
+  it("defaults to chat-first mode on mobile", async () => {
     vi.mocked(api.conversations.list).mockResolvedValue([]);
     vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
-    // "Conversations" header is in sidebar
-    expect(screen.getByText("Conversations")).toBeInTheDocument();
-
-    // Header text "Operator Chat" is in detail view, but it's also in Index view?
-    // Wait, "Operator Chat" is in the main header.
-    // In my code:
-    // Sidebar (Index) has "Conversations" text.
-    // Detail has "Operator Chat".
-    // On mobile, if Index view: Sidebar is visible. Detail is hidden.
-    // So "Operator Chat" should NOT be visible?
-    // Let's check Chat.tsx logic.
-    // <aside> (Sidebar) is rendered if (!isMobile || mobileView === "index").
-    // <div className="flex-1..."> (Detail) is rendered if (!isMobile || mobileView === "detail").
-    // "Operator Chat" is inside Detail.
-    // So "Operator Chat" should NOT be visible in Index view.
-
-    expect(screen.queryByText("Operator Chat")).not.toBeInTheDocument();
-  });
-
-  it("active conversation switches to Detail view on mobile", async () => {
-    vi.mocked(api.conversations.list).mockResolvedValue([
-      {
-        id: "1",
-        title: "Mobile Convo",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
-    ]);
-    vi.mocked(api.episodic.list).mockResolvedValue([]);
-
-    renderWithClient(<Chat />);
-
-    await waitFor(() => screen.getByText("Mobile Convo"));
-    fireEvent.click(screen.getByText("Mobile Convo"));
-
-    // Now in Detail View
-    expect(screen.getByText("Operator Chat")).toBeInTheDocument();
-    expect(screen.getByLabelText("Back to conversations")).toBeInTheDocument();
-    // Sidebar hidden
+    // Chat-first: main chat is visible immediately.
+    await waitFor(() =>
+      expect(screen.getByText("Operator Chat")).toBeInTheDocument(),
+    );
+    // Conversations are summonable via drawer.
+    expect(screen.getByLabelText("Open conversations")).toBeInTheDocument();
     expect(screen.queryByText("Conversations")).not.toBeInTheDocument();
   });
 
-  it("Back button returns to Index view", async () => {
+  it("opens conversations drawer and selects a conversation", async () => {
     vi.mocked(api.conversations.list).mockResolvedValue([
       {
         id: "1",
@@ -515,35 +482,27 @@ describe("Mobile Navigation", () => {
 
     renderWithClient(<Chat />);
 
+    fireEvent.click(screen.getByLabelText("Open conversations"));
+
+    await waitFor(() => screen.getByText("Conversations"));
     await waitFor(() => screen.getByText("Mobile Convo"));
     fireEvent.click(screen.getByText("Mobile Convo"));
 
-    const backBtn = screen.getByLabelText("Back to conversations");
-    fireEvent.click(backBtn);
-
-    // Back to Index
-    expect(screen.getByText("Conversations")).toBeInTheDocument();
-    expect(screen.queryByText("Operator Chat")).not.toBeInTheDocument();
+    // Drawer closes; chat remains visible.
+    expect(screen.getByText("Operator Chat")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText("Conversations")).not.toBeInTheDocument(),
+    );
   });
 
-  it("Back button on mobile has accessible touch target (tap44)", async () => {
-    vi.mocked(api.conversations.list).mockResolvedValue([
-      {
-        id: "1",
-        title: "Mobile Convo",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
-    ]);
+  it("conversations drawer toggle has accessible touch target (tap44)", async () => {
+    vi.mocked(api.conversations.list).mockResolvedValue([]);
     vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
-    await waitFor(() => screen.getByText("Mobile Convo"));
-    fireEvent.click(screen.getByText("Mobile Convo"));
-
-    const backBtn = screen.getByLabelText("Back to conversations");
-    expect(backBtn).toHaveClass("tap44");
+    const openBtn = await screen.findByLabelText("Open conversations");
+    expect(openBtn).toHaveClass("tap44");
   });
 
   it("ChatInput has mobile safe-area padding", async () => {
@@ -557,10 +516,6 @@ describe("Mobile Navigation", () => {
     ]);
     vi.mocked(api.episodic.list).mockResolvedValue([]);
     renderWithClient(<Chat />);
-
-    // Switch to Detail view
-    await waitFor(() => screen.getByText("Mobile Convo"));
-    fireEvent.click(screen.getByText("Mobile Convo"));
 
     // Find the input wrapper
     const input = await screen.findByLabelText("Message input");

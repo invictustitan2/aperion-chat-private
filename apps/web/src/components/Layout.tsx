@@ -86,6 +86,13 @@ export function Layout() {
     { path: "/settings", label: "Settings", icon: Settings },
   ];
 
+  const mobilePrimaryNavItems = [
+    { path: "/chat", label: "Chat", icon: MessageSquare },
+    { path: "/memory", label: "Memory", icon: Brain },
+    { path: "/knowledge", label: "Knowledge", icon: FileText },
+    { path: "/settings", label: "Settings", icon: Settings },
+  ];
+
   const handleVibrate = () => {
     if (typeof navigator !== "undefined" && navigator.vibrate) {
       navigator.vibrate(10);
@@ -152,24 +159,58 @@ export function Layout() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Header (Visible on Mobile) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-top))] glass-dark border-b border-white/5 z-30 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-2">
-          <Shield className="w-6 h-6 text-emerald-500" />
-          <span className="font-bold text-xl tracking-tight text-white">
-            Aperion
-          </span>
+      {/* Mobile Bottom Action Rail */}
+      <nav
+        className={clsx(
+          "md:hidden fixed bottom-0 left-0 right-0 z-30 glass-dark border-t border-white/5",
+          "pb-[env(safe-area-inset-bottom)]",
+        )}
+        aria-label="Primary navigation"
+      >
+        <div className="grid grid-cols-5 h-14">
+          {mobilePrimaryNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={handleVibrate}
+                aria-current={isActive ? "page" : undefined}
+                className={clsx(
+                  "flex flex-col items-center justify-center gap-1 text-[11px]",
+                  "motion-base",
+                  isActive
+                    ? "text-emerald-400"
+                    : "text-gray-400 hover:text-gray-200",
+                )}
+              >
+                <Icon className="w-5 h-5" aria-hidden="true" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => {
+              handleVibrate();
+              setIsMobileMenuOpen(true);
+            }}
+            className={clsx(
+              "flex flex-col items-center justify-center gap-1 text-[11px]",
+              "motion-base",
+              isMobileMenuOpen
+                ? "text-emerald-400"
+                : "text-gray-400 hover:text-gray-200",
+            )}
+            aria-label="More"
+          >
+            <Menu className="w-5 h-5" aria-hidden="true" />
+            <span className="font-medium">More</span>
+          </button>
         </div>
-        <button
-          onClick={() => {
-            handleVibrate();
-            setIsMobileMenuOpen(true);
-          }}
-          className="p-2 text-gray-300 active:text-white transition-colors"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </div>
+      </nav>
 
       {/* Mobile Sidebar Drawer */}
       <AnimatePresence>
@@ -206,8 +247,7 @@ export function Layout() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0 min-w-0 min-h-0">
-        {/* We add top padding on mobile to account for the fixed header */}
+      <main className="flex-1 flex flex-col relative z-10 pt-[env(safe-area-inset-top)] md:pt-0 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0 min-w-0 min-h-0">
         <div className="flex-1 overflow-y-auto no-scrollbar p-0 min-h-0">
           <Outlet />
         </div>

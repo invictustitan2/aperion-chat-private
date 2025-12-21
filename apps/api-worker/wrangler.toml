@@ -71,6 +71,7 @@ dataset = "aperion_metrics"
 [env.test]
 [env.test.vars]
 API_TOKEN = "test-token"
+APERION_ENV = "test"
 
 [env.test.ai]
 binding = "AI"
@@ -84,6 +85,43 @@ binding = "BROWSER"
 binding = "MEMORY_DB"
 database_name = "aperion-memory-test"
 database_id = "test-db-local"
+
+# NOTE: Wrangler environments do not inherit bindings from the top-level config.
+# We define these explicitly to avoid "not inherited" warnings and future test
+# surprises if/when tests start depending on these bindings.
+
+[[env.test.kv_namespaces]]
+binding = "CACHE_KV"
+id = "212d43171f574b06b22f6fa4f24ca8a1"
+
+[[env.test.vectorize]]
+binding = "MEMORY_VECTORS"
+index_name = "aperion-vectors"
+
+[[env.test.durable_objects.bindings]]
+name = "CHAT_STATE"
+class_name = "ChatState"
+
+[[env.test.migrations]]
+tag = "v1"
+new_classes = ["ChatState"]
+
+[[env.test.queues.producers]]
+binding = "MEMORY_QUEUE"
+queue = "aperion-memory-queue"
+
+[[env.test.queues.consumers]]
+queue = "aperion-memory-queue"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[[env.test.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "aperion-media"
+
+[[env.test.analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "aperion_metrics"
 
 # Preview environment (used by GitHub PR preview workflow)
 # - Separate Worker name

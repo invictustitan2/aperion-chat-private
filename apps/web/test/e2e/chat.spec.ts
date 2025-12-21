@@ -304,8 +304,7 @@ test("mobile layout with glassmorphism", async ({ page }) => {
   const main = page.locator("main");
   await expect(main).toBeVisible();
 
-  // Mobile defaults to Index view; create a conversation to switch to Detail.
-  await page.getByLabel("New conversation").click();
+  // Hard mobile mode is chat-first; the composer should be visible immediately.
   await expect(page.getByPlaceholder("Type a message...")).toBeVisible();
 
   const bubble = page.getByText("Glass message");

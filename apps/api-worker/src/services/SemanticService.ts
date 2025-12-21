@@ -2,6 +2,7 @@ import { MemoryProvenance, SemanticRecord } from "@aperion/memory-core";
 import { MemoryWriteGate } from "@aperion/policy";
 import { computeHash } from "@aperion/shared";
 import { generateChatCompletion, generateEmbedding } from "../lib/ai";
+import { getVectorStore, isTestEnv } from "../lib/vectorStore";
 import { Env } from "../types";
 
 export class SemanticService {
@@ -79,8 +80,8 @@ export class SemanticService {
         )
         .run();
 
-      if (this.env.MEMORY_VECTORS && record.embedding) {
-        await this.env.MEMORY_VECTORS.insert([
+      if (record.embedding) {
+        await getVectorStore(this.env).insert([
           {
             id: record.id,
             values: record.embedding,
@@ -97,12 +98,17 @@ export class SemanticService {
   }
 
   async search(query: string, limit: number = 5) {
-    if (!this.env.AI || !this.env.MEMORY_VECTORS) {
-      throw new Error("AI/Vectorize not configured");
+    const vectorStore = getVectorStore(this.env);
+    if (!this.env.AI) throw new Error("AI not configured");
+
+    // Preserve production behavior (surface misconfiguration), but keep test mode safe.
+    if (!this.env.MEMORY_VECTORS) {
+      if (isTestEnv(this.env)) return [];
+      throw new Error("Vectorize not configured");
     }
 
     const embedding = await generateEmbedding(this.env.AI, query);
-    const matches = await this.env.MEMORY_VECTORS.query(embedding, {
+    const matches = await vectorStore.query(embedding, {
       topK: limit,
       returnMetadata: true,
     });
@@ -197,7 +203,7 @@ export class SemanticService {
     if (this.env.AI && this.env.MEMORY_VECTORS) {
       try {
         const embedding = await generateEmbedding(this.env.AI, query);
-        const matches = await this.env.MEMORY_VECTORS.query(embedding, {
+        const matches = await getVectorStore(this.env).query(embedding, {
           topK: limit,
           returnMetadata: true,
         });

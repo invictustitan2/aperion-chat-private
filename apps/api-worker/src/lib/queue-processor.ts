@@ -3,6 +3,7 @@ import { computeHash } from "@aperion/shared";
 import { Env } from "../types";
 import { generateChatCompletion, generateEmbedding } from "./ai";
 import { ConversationsService } from "../services/ConversationsService";
+import { getVectorStore } from "./vectorStore";
 
 // Define the shape of messages sent to the queue
 export type MemoryQueueMessage =
@@ -133,7 +134,7 @@ async function processSemantic(record: SemanticRecord, env: Env) {
     .run();
 
   if (env.MEMORY_VECTORS && record.embedding) {
-    await env.MEMORY_VECTORS.insert([
+    await getVectorStore(env).insert([
       {
         id: record.id,
         values: record.embedding,

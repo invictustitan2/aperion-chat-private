@@ -109,8 +109,7 @@ test.describe("Visual Regression Smoke Tests", () => {
     await mockChatBackend(page);
     await page.goto("/chat");
 
-    // Mobile defaults to Index view; open a conversation to reach the composer.
-    await page.getByLabel("New conversation").click();
+    // Hard mobile mode is chat-first; composer should be visible immediately.
     await expect(page.getByPlaceholder("Type a message...")).toBeVisible();
 
     // Chat sidebar is unmounted on mobile detail view.

@@ -91,7 +91,7 @@ export function MessageBubble({
     <div
       data-message-id={message.id}
       className={clsx(
-        "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-fade-in",
+        "group flex flex-col gap-1 max-w-[92%] md:max-w-2xl animate-fade-in",
         isUser ? "self-end items-end" : "self-start items-start",
       )}
     >
@@ -111,7 +111,7 @@ export function MessageBubble({
       {/* Message Content */}
       <div
         className={clsx(
-          "p-4 md:p-3 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border", // Mobile p-4, Desktop p-3
+          "p-4 md:p-3 rounded-2xl text-base md:text-base leading-relaxed shadow-sm backdrop-blur-sm border", // Mobile p-4, Desktop p-3
           "motion-base",
           isHighlighted && "ring-1 ring-white/20 border-white/20",
           isUser
