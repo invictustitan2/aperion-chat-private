@@ -33,6 +33,15 @@ export class WebSocketClient {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private isIntentionalClose = false;
+  private warnedCannotSendThisCycle = false;
+
+  private telemetry = {
+    firstConnectedAtMs: null as number | null,
+    connectCount: 0,
+    reconnectAttemptCount: 0,
+    unexpectedCloseCount: 0,
+    lastClose: null as null | { code: number; reason: string },
+  };
 
   private onMessage?: MessageHandler;
   private onConnect?: ConnectionHandler;
@@ -54,6 +63,7 @@ export class WebSocketClient {
     }
 
     this.isIntentionalClose = false;
+    this.warnedCannotSendThisCycle = false;
 
     try {
       // Append auth token as query param if provided
@@ -67,7 +77,14 @@ export class WebSocketClient {
         if (import.meta.env.DEV) {
           console.log("[WS] Connected");
         }
+
+        this.telemetry.connectCount++;
+        if (this.telemetry.firstConnectedAtMs === null) {
+          this.telemetry.firstConnectedAtMs = Date.now();
+        }
+
         this.reconnectAttempts = 0;
+        this.warnedCannotSendThisCycle = false;
         this.startPing();
         this.onConnect?.();
       };
@@ -81,10 +98,23 @@ export class WebSocketClient {
         }
       };
 
-      this.ws.onclose = () => {
-        if (import.meta.env.DEV) {
-          console.log("[WS] Disconnected");
+      this.ws.onclose = (evt) => {
+        // Prod-safe one-line close-code logging.
+        try {
+          const e = evt as CloseEvent;
+          this.telemetry.lastClose = { code: e.code, reason: e.reason };
+          if (!this.isIntentionalClose && e.code !== 1000) {
+            this.telemetry.unexpectedCloseCount++;
+          }
+          console.info("[WS] Closed", {
+            code: e.code,
+            reason: e.reason,
+            wasClean: e.wasClean,
+          });
+        } catch {
+          console.info("[WS] Closed");
         }
+
         this.stopPing();
         this.onDisconnect?.();
 
@@ -114,7 +144,11 @@ export class WebSocketClient {
 
   send(message: WebSocketMessage): boolean {
     if (this.ws?.readyState !== WebSocket.OPEN) {
-      console.warn("[WS] Cannot send, not connected");
+      // Throttle to one warning per reconnect cycle.
+      if (!this.warnedCannotSendThisCycle) {
+        console.warn("[WS] Cannot send (not connected)");
+        this.warnedCannotSendThisCycle = true;
+      }
       return false;
     }
 
@@ -158,15 +192,26 @@ export class WebSocketClient {
     }
 
     this.reconnectAttempts++;
+    this.telemetry.reconnectAttemptCount++;
+    const delay = this.computeReconnectDelayMs();
     if (import.meta.env.DEV) {
       console.log(
-        `[WS] Reconnecting in ${this.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+        `[WS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
       );
     }
+    this.warnedCannotSendThisCycle = false;
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
-    }, this.reconnectInterval);
+    }, delay);
+  }
+
+  private computeReconnectDelayMs(): number {
+    const base = this.reconnectInterval;
+    const exp = Math.min(4, this.reconnectAttempts - 1);
+    const unjittered = Math.min(15000, base * Math.pow(2, exp));
+    const jitter = 0.5 + Math.random(); // 0.5x..1.5x
+    return Math.round(unjittered * jitter);
   }
 
   private clearReconnectTimeout(): void {
@@ -175,6 +220,16 @@ export class WebSocketClient {
       this.reconnectTimeout = null;
     }
   }
+
+  getTelemetrySnapshot(): {
+    firstConnectedAtMs: number | null;
+    connectCount: number;
+    reconnectAttemptCount: number;
+    unexpectedCloseCount: number;
+    lastClose: null | { code: number; reason: string };
+  } {
+    return { ...this.telemetry };
+  }
 }
 
 // Singleton instance for the app
@@ -182,6 +237,12 @@ let wsClient: WebSocketClient | null = null;
 
 export function getWebSocketClient(): WebSocketClient | null {
   return wsClient;
+}
+
+export function getWebSocketTelemetry(): ReturnType<
+  NonNullable<typeof wsClient>["getTelemetrySnapshot"]
+> | null {
+  return wsClient ? wsClient.getTelemetrySnapshot() : null;
 }
 
 export function initializeWebSocket(
@@ -207,6 +268,13 @@ export function initializeWebSocket(
     onConnect: handlers?.onConnect,
     onDisconnect: handlers?.onDisconnect,
   });
+
+  // DEV-only: expose a stable hook for debugging without UI changes.
+  if (import.meta.env.DEV) {
+    (
+      globalThis as unknown as { __aperionWsTelemetry?: () => unknown }
+    ).__aperionWsTelemetry = () => wsClient?.getTelemetrySnapshot() ?? null;
+  }
 
   return wsClient;
 }

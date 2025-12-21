@@ -141,13 +141,19 @@ test("chat flow with dynamic mock", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Hello! How can I help you?")).toBeVisible();
 
-  await page.getByPlaceholder("Type a message...").fill("My new message");
-  await page.getByRole("button", { name: "Send" }).click();
+  const composer = page.getByRole("textbox", { name: "Message input" });
+  await composer.fill("My new message");
+  await page.getByRole("button", { name: "Send message" }).click();
+
+  // Wait for the composer to clear (avoids matching the textarea text).
+  await expect(composer).toHaveValue("");
 
   // Wait for the new message to appear (it will appear after refetch)
   // We might need to wait for the refetch interval or trigger it.
   // The component invalidates queries on success, so it should refetch immediately.
-  await expect(page.getByText("My new message")).toBeVisible();
+  await expect(
+    page.locator("[data-message-id]").filter({ hasText: "My new message" }),
+  ).toBeVisible();
 });
 
 test("export button generates PDF", async ({ page }) => {

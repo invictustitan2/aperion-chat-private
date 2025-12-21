@@ -940,6 +940,7 @@ export function Chat() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsConversationsOpen(false)}
+              data-testid="conversations-scrim"
               className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               aria-hidden="true"
             />

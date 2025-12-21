@@ -1,13 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { mkdirSync } from "node:fs";
 
 // Define iPhone 15 viewport exactly as requested
 const IPHONE_15 = { width: 393, height: 852 };
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
 
 test.use({
   viewport: IPHONE_15,
@@ -16,146 +11,59 @@ test.use({
 });
 
 test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
-  let conversations: Array<{
+  const screenshotDir = "apps/web/docs/qa/screenshots";
+
+  let episodicRecords: Array<{
     id: string;
-    title: string;
-    createdAt: number;
-    updatedAt: number;
-  }>;
-  let episodic: Array<{
-    id: string;
-    createdAt: number;
-    type: "episodic";
     content: string;
-    hash: string;
-    provenance: {
-      source_type: "user" | "system" | "model" | "external";
-      source_id: string;
-      timestamp: number;
-      confidence: number;
-    };
-    conversation_id?: string;
-  }>;
+    createdAt: number;
+    provenance: Record<string, unknown>;
+  }> = [];
+
+  test.beforeAll(() => {
+    mkdirSync(screenshotDir, { recursive: true });
+  });
 
   test.beforeEach(async ({ page }) => {
-    conversations = [
-      {
-        id: "conv-123",
-        title: "Existing Conversation",
-        createdAt: 1_700_000_000_000,
-        updatedAt: 1_700_000_000_000,
-      },
-    ];
-    episodic = [];
+    episodicRecords = [];
 
     // Mock API responses to simulate backend
-    await page.route("**/v1/conversations?limit=**", async (route) => {
-      if (route.request().method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
-        return;
-      }
-      await route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: "application/json",
-        body: JSON.stringify(conversations),
-      });
-    });
+    await page.route("**/v1/conversations**", async (route) => {
+      const req = route.request();
+      const url = new URL(req.url());
 
-    await page.route("**/v1/conversations", async (route) => {
-      if (route.request().method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
+      if (!url.pathname.endsWith("/v1/conversations")) {
+        await route.continue();
         return;
       }
 
-      // Create new conversation mock
-      if (route.request().method() === "POST") {
+      if (req.method() === "POST") {
         const body = {
           id: "conv-new-123",
           title: "New Chat",
-          createdAt: 1_700_000_000_000,
-          updatedAt: 1_700_000_000_000,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         };
-
-        conversations = [body, ...conversations];
         await route.fulfill({
           status: 200,
-          headers: corsHeaders,
           contentType: "application/json",
           body: JSON.stringify(body),
         });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route("**/v1/episodic?**", async (route) => {
-      const method = route.request().method();
-      if (method === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
         return;
       }
 
-      if (method === "GET") {
+      if (req.method() === "GET") {
         await route.fulfill({
           status: 200,
-          headers: corsHeaders,
           contentType: "application/json",
-          body: JSON.stringify(episodic),
-        });
-        return;
-      }
-
-      await route.continue();
-    });
-
-    await page.route("**/v1/episodic", async (route) => {
-      const method = route.request().method();
-      if (method === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
-        return;
-      }
-
-      if (method === "POST") {
-        const body = route.request().postDataJSON() as {
-          content?: string;
-          conversation_id?: string;
-          provenance?: {
-            source_type?: "user" | "system" | "model" | "external";
-            source_id?: string;
-            timestamp?: number;
-            confidence?: number;
-          };
-        };
-
-        const id = "msg-user-1";
-        const createdAt = 1_700_000_000_001;
-        episodic.push({
-          id,
-          createdAt,
-          type: "episodic",
-          content: String(body.content ?? ""),
-          hash: "hash-user-1",
-          provenance: {
-            source_type: "user",
-            source_id: "operator",
-            timestamp: createdAt,
-            confidence: 1,
-          },
-          ...(body.conversation_id
-            ? { conversation_id: body.conversation_id }
-            : {}),
-        });
-
-        await route.fulfill({
-          status: 200,
-          headers: corsHeaders,
-          contentType: "application/json",
-          body: JSON.stringify({
-            success: true,
-            id,
-            receipt: { allowed: true },
-          }),
+          body: JSON.stringify([
+            {
+              id: "conv-123",
+              title: "Existing Conversation",
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            },
+          ]),
         });
         return;
       }
@@ -164,16 +72,69 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
     });
 
     await page.route("**/v1/chat/stream", async (route) => {
-      const method = route.request().method();
-      if (method === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: corsHeaders });
+      // Static SSE body (intentionally non-streaming in Playwright fulfill)
+      await route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body:
+          'data: {"token": "Hello "}\n\n' +
+          'data: {"token": "from "}\n\n' +
+          'data: {"token": "QA"}\n\n' +
+          "data: [DONE]\n\n",
+      });
+    });
+
+    // Mock episodic list + create (Chat UI reads history from GET /v1/episodic and
+    // writes user messages to POST /v1/episodic).
+    await page.route("**/v1/episodic**", async (route) => {
+      const req = route.request();
+      const url = new URL(req.url());
+
+      if (!url.pathname.endsWith("/v1/episodic")) {
+        await route.continue();
         return;
       }
 
+      if (req.method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(episodicRecords),
+        });
+        return;
+      }
+
+      if (req.method() === "POST") {
+        const body = (await req.postDataJSON()) as {
+          content?: string;
+          provenance?: Record<string, unknown>;
+        };
+
+        const id = `epi-${episodicRecords.length + 1}`;
+        episodicRecords.push({
+          id,
+          content: String(body.content ?? ""),
+          createdAt: Date.now(),
+          provenance: body.provenance ?? {},
+        });
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true, id, receipt: {} }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    // Mock semantic creation (optional but good to have)
+    await page.route("**/v1/semantic", async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-        body: 'data: {"token": "Hello from QA"}\n\ndata: [DONE]\n\n',
+        contentType: "application/json",
+        body: JSON.stringify({ success: true, id: "sem-123", receipt: {} }),
       });
     });
 
@@ -183,99 +144,119 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
 
   test("Task 1 & 2: Baseline Screenshots & Flow Verification", async ({
     page,
-  }, testInfo) => {
-    const screenshotPath = (fileName: string) => testInfo.outputPath(fileName);
-
-    // A) /chat opens to chat-first view (composer visible).
-    await expect(page.getByPlaceholder("Type a message...")).toBeVisible();
-
-    // Open conversations drawer for index-style screenshot.
-    await page.getByTestId("conversations-drawer-toggle").click();
-    await expect(page.getByTestId("conversations-drawer")).toBeVisible();
-    await expect(page.getByText("Conversations")).toBeVisible();
-    await expect(
-      page.getByPlaceholder("Search conversations..."),
-    ).toBeVisible();
-
-    // Screenshot: qa-iphone15-chat-index.png (drawer open)
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-chat-index.png"),
-    });
-    console.log("PASS: Flow A - Drawer View");
-
-    // B) Create new conversation (inside drawer)
-    const newConvBtn = page
-      .getByTestId("conversations-drawer")
-      .getByTestId("new-conversation");
-    await expect(newConvBtn).toBeVisible();
-    await newConvBtn.click();
-
-    // Select the newly created conversation to close drawer.
-    await expect(page.getByText("New Chat")).toBeVisible();
-    await page.getByText("New Chat").click();
-    await expect(page.getByTestId("conversations-drawer")).toHaveCount(0);
-
-    // D) Send message
+  }) => {
+    const openDrawer = page.getByTestId("conversations-drawer-toggle");
+    const drawer = page.getByTestId("conversations-drawer");
+    const drawerScrim = page.getByTestId("conversations-scrim");
     const input = page.getByPlaceholder("Type a message...");
-    await input.focus();
-    // Screenshot: qa-iphone15-composer-focus.png
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-composer-focus.png"),
-    });
-    console.log("PASS: Flow C - Composer Focus");
 
-    await input.fill("Hello world QA");
-    const sendBtn = page.getByLabel("Send message");
-    await sendBtn.click();
+    await test.step("A) Open conversations drawer and screenshot index", async () => {
+      await expect(openDrawer).toBeVisible();
+      await openDrawer.click();
 
-    // Wait for input to clear (avoids strict mode error matching input value)
-    await expect(input).toHaveValue("", { timeout: 10000 });
+      await expect(drawer).toBeVisible();
+      await expect(
+        drawer.getByPlaceholder("Search conversations..."),
+      ).toBeVisible();
 
-    // Wait for message to appear
-    await expect(page.getByText("Hello world QA")).toBeVisible();
-    console.log("PASS: Flow D - Message Sent");
-
-    // Screenshot: qa-iphone15-chat-detail.png (with content)
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-chat-detail.png"),
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-chat-index.png`,
+      });
     });
 
-    // qa-iphone15-message-actions.png
-    // Hover or focus a message bubble to see actions? Or are they always visible on mobile?
-    // Code says: "Mobile: Always visible. Desktop: Hover/Focus only" for opacity-100 logic.
-    // So on mobile viewport they should be visible.
-    // Actually the message bubble wrapper has the actions.
-    const shareBtn = page.getByLabel("Share message").first();
-    await expect(shareBtn).toBeVisible();
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-message-actions.png"),
+    await test.step("B) Create new conversation and close drawer", async () => {
+      const newConvBtn = drawer.getByTestId("new-conversation");
+      await expect(newConvBtn).toBeVisible();
+      await newConvBtn.click();
+
+      // Close the drawer so it doesn't intercept taps/clicks in the main view.
+      await expect(drawerScrim).toBeVisible();
+
+      // Important: Playwright clicks the element center by default, but the drawer covers
+      // most of the scrim; a center click is intercepted. Compute a point *outside* the
+      // drawer from its bounding box (resilient to width tweaks).
+      const drawerBox = await drawer.boundingBox();
+      if (!drawerBox) throw new Error("Drawer bounding box not available");
+
+      const viewport = page.viewportSize();
+      if (!viewport) throw new Error("Viewport size not available");
+
+      const margin = 12;
+
+      // Click just to the right of the drawer; clamp within viewport.
+      const clickX = Math.min(
+        drawerBox.x + drawerBox.width + margin,
+        viewport.width - 2,
+      );
+      const clickY = Math.min(drawerBox.y + 40, viewport.height - 2);
+
+      await page.mouse.click(clickX, clickY);
+      await expect(drawer).toBeHidden();
     });
 
-    // qa-iphone15-actions-row.png (Header actions)
-    // The header is at the top.
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-actions-row.png"),
-      clip: { x: 0, y: 0, width: 393, height: 150 },
+    await test.step("C) Focus composer and take screenshot", async () => {
+      await expect(input).toBeVisible();
+      await input.focus();
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-composer-focus.png`,
+      });
     });
 
-    // qa-iphone15-safe-area-top.png
-    // We can infer this from the full screenshot, but let's take a dedicated crop
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-safe-area-top.png"),
-      clip: { x: 0, y: 0, width: 393, height: 60 },
+    await test.step("D) Send message and screenshot detail", async () => {
+      await input.fill("Hello world QA");
+      const sendBtn = page.getByLabel("Send message");
+      await expect(sendBtn).toBeEnabled();
+      await sendBtn.click();
+
+      // Wait for input to clear (avoids strict mode collision with textarea value)
+      await expect(input).toHaveValue("");
+
+      // Wait for message bubble to appear (history is refreshed after streaming ends).
+      const userBubble = page
+        .getByTestId("message-bubble")
+        .filter({ has: page.getByText("Hello world QA") });
+      await expect(userBubble).toBeVisible({ timeout: 10_000 });
+
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-chat-detail.png`,
+      });
     });
 
-    // qa-iphone15-safe-area-bottom.png
-    await page.screenshot({
-      path: screenshotPath("qa-iphone15-safe-area-bottom.png"),
-      clip: { x: 0, y: 852 - 60, width: 393, height: 60 },
+    await test.step("E) Message actions screenshot", async () => {
+      const bubble = page
+        .getByTestId("message-bubble")
+        .filter({ has: page.getByText("Hello world QA") });
+      await expect(bubble).toBeVisible();
+
+      const shareBtn = bubble.getByLabel("Share message");
+      await expect(shareBtn).toBeVisible();
+
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-message-actions.png`,
+      });
     });
 
-    // I) Back to conversations
-    // Chat-first mobile no longer has an index/detail back button; opening the drawer is the supported way.
-    await page.getByTestId("conversations-drawer-toggle").click();
-    await expect(page.getByTestId("conversations-drawer")).toBeVisible();
-    await expect(page.getByText("Conversations")).toBeVisible();
-    console.log("PASS: Flow I - Drawer Opened");
+    await test.step("F) Header actions + safe area screenshots", async () => {
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-actions-row.png`,
+        clip: { x: 0, y: 0, width: 393, height: 150 },
+      });
+
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-safe-area-top.png`,
+        clip: { x: 0, y: 0, width: 393, height: 60 },
+      });
+
+      await page.screenshot({
+        path: `${screenshotDir}/qa-iphone15-safe-area-bottom.png`,
+        clip: { x: 0, y: 852 - 60, width: 393, height: 60 },
+      });
+    });
+
+    await test.step("I) Back to conversations (open drawer)", async () => {
+      await expect(openDrawer).toBeVisible();
+      await openDrawer.click();
+      await expect(drawer).toBeVisible();
+    });
   });
 });

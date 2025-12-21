@@ -31,6 +31,23 @@ describe("API Worker wiring (in-process coverage)", () => {
     expect(resp.status).toBe(401);
   });
 
+  it("Access mode missing assertion -> 401 (fail-closed canary)", async () => {
+    const app = createApp();
+    const req = new Request("http://local.test/v1/conversations");
+    const envAccessMode = {
+      ...mockEnv,
+      APERION_AUTH_MODE: "access",
+      CF_ACCESS_TEAM_DOMAIN: "team",
+      CF_ACCESS_AUD: "aud",
+    } as unknown as Env;
+    const resp = await app.fetch(req, envAccessMode, ctx);
+    expect(resp.status).toBe(401);
+    const data = await resp.json();
+    expect(data).toMatchObject({
+      status: 401,
+    });
+  });
+
   it("OPTIONS -> 204 and includes CORS headers", async () => {
     const app = createApp();
     const req = new Request("http://local.test/v1/conversations", {

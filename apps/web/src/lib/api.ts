@@ -1,17 +1,15 @@
 import { EpisodicRecord, IdentityRecord } from "@aperion/memory-core";
 import { logApiError } from "./errorLog";
+import { isDevRuntime } from "./authMode";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787";
-const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN;
-const authHeaders: Record<string, string> = AUTH_TOKEN
-  ? { Authorization: `Bearer ${AUTH_TOKEN}` }
-  : {};
+const authHeaders: Record<string, string> = {};
 
-if (!AUTH_TOKEN) {
-  console.warn(
-    "VITE_AUTH_TOKEN is missing. API calls will likely fail. Add it to your .env (local) or inject it at build time via CI.",
-  );
+if (isDevRuntime()) {
+  // DEV-only note: browser auth should come from Access session cookies/headers.
+  // Keep message free of env var names to avoid shipping hints.
+  console.info("[dev] Web auth expects an active Access session.");
 }
 
 if (!import.meta.env.VITE_API_BASE_URL) {
@@ -57,6 +55,7 @@ export interface PreferenceRecord {
   key: string;
   value: unknown;
   updatedAt: number;
+  isDefault?: boolean;
 }
 
 export interface KnowledgeRecord {

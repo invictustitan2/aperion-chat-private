@@ -46,7 +46,7 @@ describe("CORS Middleware", () => {
       "GET, POST, PUT, DELETE, OPTIONS",
     );
     expect(headers["Access-Control-Allow-Headers"]).toBe(
-      "Content-Type, Authorization",
+      "Content-Type, Authorization, CF-Access-Client-Id, CF-Access-Client-Secret",
     );
     expect(headers["Access-Control-Max-Age"]).toBe("86400");
     expect(headers["Access-Control-Allow-Credentials"]).toBe("true");

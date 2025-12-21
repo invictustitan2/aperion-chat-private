@@ -100,5 +100,14 @@ test.describe("Navigation", () => {
     await expect(page.getByText("Appearance")).toBeVisible();
     await expect(page.getByText("About")).toBeVisible();
     await expect(page.getByText("Infrastructure")).toBeVisible();
+
+    // Prod-safety guardrail: settings must not render token/debug env-var hints.
+    await expect(page.locator("body")).not.toContainText("VITE_AUTH_TOKEN");
+    await expect(page.locator("body")).not.toContainText("Ensure VITE_");
+    // Avoid obvious JWT/token patterns.
+    const bodyText = await page.locator("body").innerText();
+    expect(bodyText).not.toMatch(
+      /eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/,
+    );
   });
 });

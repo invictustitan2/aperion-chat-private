@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { api } from "../lib/api";
+
+vi.mock("../lib/authMode", () => ({
+  shouldShowDevDebugUi: vi.fn(() => false),
+}));
+
+import { shouldShowDevDebugUi } from "../lib/authMode";
 import { Settings } from "./Settings";
 
 // Mock the API
@@ -49,7 +55,6 @@ describe("Settings Page", () => {
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("API Status")).toBeInTheDocument();
     expect(screen.getByText("Appearance")).toBeInTheDocument();
-    expect(screen.getByText("Authentication Debug")).toBeInTheDocument();
     expect(screen.getByText("About")).toBeInTheDocument();
     expect(screen.getByText("Infrastructure")).toBeInTheDocument();
   });
@@ -105,7 +110,13 @@ describe("Settings Page", () => {
     }
   });
 
-  it("runs auth self-test successfully", async () => {
+  it("does not render auth debug by default", () => {
+    renderWithProviders(<Settings />);
+    expect(screen.queryByText("Authentication Debug")).not.toBeInTheDocument();
+  });
+
+  it("runs auth self-test successfully when debug is enabled", async () => {
+    vi.mocked(shouldShowDevDebugUi).mockReturnValue(true);
     vi.mocked(api.identity.list).mockResolvedValue([
       {
         id: "1",
@@ -125,6 +136,8 @@ describe("Settings Page", () => {
 
     renderWithProviders(<Settings />);
 
+    expect(screen.getByText("Authentication Debug")).toBeInTheDocument();
+
     const runButton = screen.getByText("Run auth self-test");
     fireEvent.click(runButton);
 
@@ -135,10 +148,13 @@ describe("Settings Page", () => {
     });
   });
 
-  it("runs auth self-test failure", async () => {
+  it("runs auth self-test failure when debug is enabled", async () => {
+    vi.mocked(shouldShowDevDebugUi).mockReturnValue(true);
     vi.mocked(api.identity.list).mockRejectedValue(new Error("Auth Failed"));
 
     renderWithProviders(<Settings />);
+
+    expect(screen.getByText("Authentication Debug")).toBeInTheDocument();
 
     const runButton = screen.getByText("Run auth self-test");
     fireEvent.click(runButton);

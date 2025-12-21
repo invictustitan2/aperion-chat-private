@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import { applyTheme, getTheme, onThemeChange, toggleTheme } from "../lib/theme";
+import { shouldShowDevDebugUi } from "../lib/authMode";
 
 export function Settings() {
   const [isDark, setIsDark] = useState(() => {
@@ -34,16 +35,11 @@ export function Settings() {
     refetchInterval: 30000, // Check every 30 seconds
   });
 
-  const authToken = import.meta.env.VITE_AUTH_TOKEN as string | undefined;
+  const showDebug = shouldShowDevDebugUi();
   const apiBaseUrl = useMemo(
     () => import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787",
     [],
   );
-  const authPreview = useMemo(() => {
-    if (!authToken) return "Not configured";
-    if (authToken.length <= 12) return authToken;
-    return `${authToken.slice(0, 6)}…${authToken.slice(-4)}`;
-  }, [authToken]);
 
   const [authCheck, setAuthCheck] = useState<
     | { status: "idle" }
@@ -157,114 +153,99 @@ export function Settings() {
           </div>
         </section>
 
-        {/* Auth Debugging */}
-        <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            {authCheck.status === "ok" ? (
-              <ShieldCheck className="w-5 h-5 text-emerald-500" />
-            ) : authCheck.status === "error" ? (
-              <ShieldAlert className="w-5 h-5 text-red-500" />
-            ) : (
-              <ShieldAlert className="w-5 h-5 text-yellow-500" />
-            )}
-            Authentication Debug
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">API Base URL</span>
-              <span className="font-mono text-xs truncate max-w-[200px] text-gray-200">
-                {apiBaseUrl}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Auth Token</span>
-              <span className="font-mono text-xs truncate max-w-[200px] text-gray-200">
-                {authPreview}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <button
-              onClick={runAuthCheck}
-              disabled={authCheck.status === "running"}
-              className={clsx(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                authCheck.status === "ok"
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white",
-                authCheck.status === "running" &&
-                  "opacity-70 cursor-not-allowed",
+        {/* Auth Debugging (DEV only) */}
+        {showDebug && (
+          <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              {authCheck.status === "ok" ? (
+                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              ) : authCheck.status === "error" ? (
+                <ShieldAlert className="w-5 h-5 text-red-500" />
+              ) : (
+                <ShieldAlert className="w-5 h-5 text-yellow-500" />
               )}
-            >
-              {authCheck.status === "running"
-                ? "Running check..."
-                : "Run auth self-test"}
-            </button>
-            <div className="text-sm text-gray-400">
-              {authCheck.status === "ok" && (
-                <span>
-                  Authentication succeeded in {authCheck.latency}ms.{" "}
-                  {authCheck.detail}
+              Authentication Debug
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">API Base URL</span>
+                <span className="font-mono text-xs truncate max-w-[200px] text-gray-200">
+                  {apiBaseUrl}
                 </span>
-              )}
-              {authCheck.status === "error" && (
-                <span>
-                  Auth failed: {authCheck.detail}. Confirm CORS for {apiBaseUrl}{" "}
-                  and that VITE_AUTH_TOKEN matches the Worker configuration.
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Auth</span>
+                <span className="text-xs truncate max-w-[200px] text-gray-200">
+                  Access session
                 </span>
-              )}
-              {authCheck.status === "idle" && (
-                <span>
-                  Run the self-test to validate your token and CORS
-                  configuration.
-                </span>
-              )}
-              {authCheck.status === "running" && (
-                <span>Checking /v1/identity...</span>
-              )}
+              </div>
             </div>
-          </div>
 
-          <ul className="text-xs text-gray-400 list-disc pl-5 space-y-1">
-            <li>
-              Ensure VITE_AUTH_TOKEN is set in your .env (local) or injected at
-              build time via CI.
-            </li>
-            <li>
-              VITE_API_BASE_URL should point to the Worker domain that accepts
-              your origin to avoid CORS failures.
-            </li>
-            <li>
-              Restart the dev server after updating env vars so the UI can pick
-              up the new token.
-            </li>
-          </ul>
-        </section>
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <button
+                onClick={runAuthCheck}
+                disabled={authCheck.status === "running"}
+                className={clsx(
+                  "inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  authCheck.status === "ok"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white",
+                  authCheck.status === "running" &&
+                    "opacity-70 cursor-not-allowed",
+                )}
+              >
+                {authCheck.status === "running"
+                  ? "Running check..."
+                  : "Run auth self-test"}
+              </button>
+              <div className="text-sm text-gray-400">
+                {authCheck.status === "ok" && (
+                  <span>
+                    Authentication succeeded in {authCheck.latency}ms.{" "}
+                    {authCheck.detail}
+                  </span>
+                )}
+                {authCheck.status === "error" && (
+                  <span>
+                    Auth failed: {authCheck.detail}. Confirm CORS for{" "}
+                    {apiBaseUrl}.
+                  </span>
+                )}
+                {authCheck.status === "idle" && (
+                  <span>Run the self-test to validate auth and CORS.</span>
+                )}
+                {authCheck.status === "running" && (
+                  <span>Checking /v1/identity...</span>
+                )}
+              </div>
+            </div>
 
-        {/* Version Info */}
+            <ul className="text-xs text-gray-400 list-disc pl-5 space-y-1">
+              <li>In local dev, ensure you have an active Access session.</li>
+              <li>
+                Ensure the API base URL points at a Worker origin that accepts
+                your dev server origin (CORS).
+              </li>
+            </ul>
+          </section>
+        )}
+
+        {/* About */}
         <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
           <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-blue-500" />
             About
           </h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Version</span>
-              <span className="font-mono">0.1.0</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Environment</span>
-              <span className="font-mono">
-                {import.meta.env.MODE || "production"}
-              </span>
-            </div>
+          <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">API Endpoint</span>
               <span className="font-mono text-xs truncate max-w-[250px]">
                 {import.meta.env.VITE_API_BASE_URL || "Not configured"}
               </span>
+            </div>
+            <div className="text-xs text-gray-400">
+              Auth uses an Access session (no browser bearer tokens).
             </div>
           </div>
         </section>

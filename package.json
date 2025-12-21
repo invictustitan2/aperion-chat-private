@@ -20,6 +20,7 @@
     "test:coverage:web": "vitest run --coverage --environment jsdom --dir apps/web/src",
     "coverage:report": "node ./scripts/coverage/report.mjs",
     "test:e2e": "playwright test",
+    "guard:prod-secrets": "node ./scripts/guard-prod-secrets.mjs",
     "ship": "echo '🚀 Running verification pipeline...'; pnpm typecheck && pnpm lint && pnpm test && echo '✅ Ready to Ship!'",
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
     "prepare": "husky"

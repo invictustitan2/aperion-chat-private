@@ -65,6 +65,9 @@ jobs:
           # Reduce wrangler log noise
           WRANGLER_LOG: none
 
+      - name: Guard (no prod auth-token hints)
+        run: pnpm guard:prod-secrets
+
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test | grep @playwright/test | sed 's/.*@playwright\/test //')" >> $GITHUB_ENV

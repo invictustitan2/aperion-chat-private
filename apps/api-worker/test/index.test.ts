@@ -67,7 +67,7 @@ describe.skipIf(isCI)("API Worker Integration", () => {
     expect(resp.status).toBe(401);
     const data = await resp.json();
     expect(data).toEqual({
-      error: "Unauthorized: Missing authentication token",
+      error: "Unauthorized (missing bearer token)",
       status: 401,
     });
   });
@@ -80,7 +80,7 @@ describe.skipIf(isCI)("API Worker Integration", () => {
     const data = await resp.json();
     expect(data).toEqual({
       error:
-        "Unauthorized: Invalid authentication scheme. Use 'Bearer <token>'",
+        "Unauthorized (missing bearer token): Invalid authentication scheme",
       status: 401,
     });
   });
@@ -92,7 +92,7 @@ describe.skipIf(isCI)("API Worker Integration", () => {
     expect(resp.status).toBe(403);
     const data = await resp.json();
     expect(data).toEqual({
-      error: "Forbidden: Invalid credentials",
+      error: "Forbidden (invalid credentials)",
       status: 403,
     });
   });
