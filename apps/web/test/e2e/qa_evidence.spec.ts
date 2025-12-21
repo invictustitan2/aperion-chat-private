@@ -49,18 +49,6 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
     });
 
     await page.route("**/v1/chat/stream", async (route) => {
-      // Stream response mock
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode('data: {"token": "Hello "}\n\n'));
-          controller.enqueue(encoder.encode('data: {"token": "from "}\n\n'));
-          controller.enqueue(encoder.encode('data: {"token": "QA"}\n\n'));
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-        },
-      });
-
       await route.fulfill({
         status: 200,
         contentType: "text/event-stream",
@@ -135,7 +123,6 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
     // Hover or focus a message bubble to see actions? Or are they always visible on mobile?
     // Code says: "Mobile: Always visible. Desktop: Hover/Focus only" for opacity-100 logic.
     // So on mobile viewport they should be visible.
-    const messageBubble = page.locator(".group").last();
     // Actually the message bubble wrapper has the actions.
     const shareBtn = page.getByLabel("Share message").first();
     await expect(shareBtn).toBeVisible();

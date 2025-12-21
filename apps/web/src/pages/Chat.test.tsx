@@ -455,8 +455,8 @@ describe("Mobile Navigation", () => {
   });
 
   it("defaults to Index view (conversation list) on mobile", async () => {
-    (api.conversations.list as any).mockResolvedValue([]);
-    (api.episodic.list as any).mockResolvedValue([]);
+    vi.mocked(api.conversations.list).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
@@ -480,10 +480,15 @@ describe("Mobile Navigation", () => {
   });
 
   it("active conversation switches to Detail view on mobile", async () => {
-    (api.conversations.list as any).mockResolvedValue([
-      { id: "1", title: "Mobile Convo", updatedAt: Date.now() },
+    vi.mocked(api.conversations.list).mockResolvedValue([
+      {
+        id: "1",
+        title: "Mobile Convo",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
     ]);
-    (api.episodic.list as any).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
@@ -498,10 +503,15 @@ describe("Mobile Navigation", () => {
   });
 
   it("Back button returns to Index view", async () => {
-    (api.conversations.list as any).mockResolvedValue([
-      { id: "1", title: "Mobile Convo", updatedAt: Date.now() },
+    vi.mocked(api.conversations.list).mockResolvedValue([
+      {
+        id: "1",
+        title: "Mobile Convo",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
     ]);
-    (api.episodic.list as any).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
@@ -517,10 +527,15 @@ describe("Mobile Navigation", () => {
   });
 
   it("Back button on mobile has accessible touch target (tap44)", async () => {
-    (api.conversations.list as any).mockResolvedValue([
-      { id: "1", title: "Mobile Convo", updatedAt: Date.now() },
+    vi.mocked(api.conversations.list).mockResolvedValue([
+      {
+        id: "1",
+        title: "Mobile Convo",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
     ]);
-    (api.episodic.list as any).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
 
     renderWithClient(<Chat />);
 
@@ -532,10 +547,15 @@ describe("Mobile Navigation", () => {
   });
 
   it("ChatInput has mobile safe-area padding", async () => {
-    (api.conversations.list as any).mockResolvedValue([
-      { id: "1", title: "Mobile Convo", updatedAt: Date.now() },
+    vi.mocked(api.conversations.list).mockResolvedValue([
+      {
+        id: "1",
+        title: "Mobile Convo",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
     ]);
-    (api.episodic.list as any).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
     renderWithClient(<Chat />);
 
     // Switch to Detail view
