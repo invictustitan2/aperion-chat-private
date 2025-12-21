@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./styles/touchTargets.css";
+@import "./styles/tokens.css";
 
 @layer base {
   :root {
@@ -49,7 +51,7 @@
   }
 
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+    @apply bg-black/40 backdrop-blur-md md:backdrop-blur-xl border border-white/5;
   }
 
   /* Accessibility: Focus Utilities */

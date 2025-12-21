@@ -1,0 +1,77 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import React from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { Chat } from "./Chat";
+import { api } from "../lib/api";
+
+// Helper to mock matchMedia
+function mockMatchMedia(matches: boolean) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
+
+// ... rest of the file ...
+
+// Add Mobile Navigation tests
+describe("Mobile Navigation", () => {
+    beforeEach(() => {
+      mockMatchMedia(true); // Mobile
+    });
+
+    it("defaults to Index view (conversation list) on mobile", async () => {
+      renderChat();
+      // Conversation list should be visible
+      expect(screen.getByText("Conversations")).toBeInTheDocument();
+      // Message input should NOT be visible (or at least checking for detail view elements)
+      // Note: We need a distinctive element. The Back button is only in Detail view.
+      expect(screen.queryByLabelText("Back to conversations")).not.toBeInTheDocument();
+    });
+
+    it("active conversation switches to Detail view on mobile", async () => {
+      // Setup active conversation via params?
+      // Or just click one.
+      (api.conversations.list as any).mockResolvedValue([
+        { id: "1", title: "Mobile Convo", updatedAt: Date.now() }
+      ]);
+      (api.chat.history as any).mockResolvedValue([]);
+
+      renderChat();
+
+      await waitFor(() => screen.getByText("Mobile Convo"));
+      fireEvent.click(screen.getByText("Mobile Convo"));
+
+      // Now in Detail View
+      expect(screen.getByLabelText("Back to conversations")).toBeInTheDocument();
+      expect(screen.queryByText("Conversations")).not.toBeInTheDocument();
+    });
+
+    it("Back button returns to Index view", async () => {
+        (api.conversations.list as any).mockResolvedValue([
+            { id: "1", title: "Mobile Convo", updatedAt: Date.now() }
+        ]);
+        (api.chat.history as any).mockResolvedValue([]);
+
+        renderChat();
+        await waitFor(() => screen.getByText("Mobile Convo"));
+        fireEvent.click(screen.getByText("Mobile Convo"));
+
+        const backBtn = screen.getByLabelText("Back to conversations");
+        fireEvent.click(backBtn);
+
+        // Back to Index
+        expect(screen.getByText("Conversations")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Back to conversations")).not.toBeInTheDocument();
+    });
+});

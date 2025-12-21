@@ -1,0 +1,20 @@
+/* Mobile Touch Target Utilities */
+.tap44 {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tapPad {
+  padding: 10px;
+}
+
+@media (min-width: 768px) {
+  /* Reset or adjust for desktop if needed, though 44px is generally good for click targets too */
+  .tap44 {
+    /* Optional: can relax to smaller size on desktop if dense usage is required,
+       but keeping it accessible is usually better. */
+  }
+}

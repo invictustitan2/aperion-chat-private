@@ -173,7 +173,7 @@ export function ChatInput({
             />
             <button
               type="button"
-              className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10 focus-ring-visible flex-shrink-0"
+              className="text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10 focus-ring-visible flex-shrink-0 tap44"
               onClick={() => fileInputRef.current?.click()}
               title="Attach Image"
               aria-label="Attach image"
@@ -193,7 +193,7 @@ export function ChatInput({
           <button
             type="button"
             className={clsx(
-              "p-3 transition-all rounded-full focus-ring-visible flex-shrink-0",
+              "transition-all rounded-full focus-ring-visible flex-shrink-0 tap44",
               isRecording
                 ? "bg-red-500/80 text-white animate-pulse shadow-lg shadow-red-500/40"
                 : isProcessingVoice
@@ -270,10 +270,10 @@ export function ChatInput({
 
           {/* Helper Text */}
           <div
-            className="mt-1 px-2 flex justify-between text-2xs font-mono text-white/20"
+            className="mt-1 px-2 flex justify-end md:justify-between text-2xs font-mono text-white/20"
             id="char-counter"
           >
-            <span className="flex items-center gap-2">
+            <span className="hidden md:flex items-center gap-2">
               <kbd className="px-2 py-0.5 bg-white/5 rounded border border-white/10">
                 Enter
               </kbd>

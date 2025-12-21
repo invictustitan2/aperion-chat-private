@@ -1,0 +1,78 @@
+@layer utilities {
+  /* Border Radius Scale */
+  .radius-sm {
+    @apply rounded-lg;
+  }
+  .radius-md {
+    @apply rounded-xl;
+  }
+  .radius-lg {
+    @apply rounded-2xl;
+  }
+  .radius-full {
+    @apply rounded-full;
+  }
+
+  /* Shadow Elevation */
+  .shadow-subtle {
+    @apply shadow-sm;
+  }
+  .shadow-card {
+    @apply shadow-md;
+  }
+  .shadow-float {
+    @apply shadow-xl shadow-black/20;
+  }
+
+  /* Components: Buttons (Icon) */
+  .btn-icon-sm {
+    @apply w-8 h-8 flex items-center justify-center p-0 rounded-full transition-colors;
+  }
+  .btn-icon-md {
+    @apply w-10 h-10 flex items-center justify-center p-0 rounded-full transition-colors;
+  }
+  .btn-icon-lg {
+    @apply w-12 h-12 flex items-center justify-center p-0 rounded-full transition-colors;
+  }
+
+  /* Spacing Wrapper Helpers (Container Consistency) */
+  .container-page {
+    @apply w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8;
+  }
+
+  .container-reading {
+    @apply w-full max-w-3xl mx-auto;
+  }
+
+  /* Motion Tokens */
+  :root {
+    --motion-fast: 150ms;
+    --motion-base: 200ms;
+    --motion-slow: 250ms;
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .motion-base {
+    transition-property:
+      transform, opacity, background-color, border-color, color;
+    transition-duration: var(--motion-base);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .motion-fast {
+    transition-property:
+      transform, opacity, background-color, border-color, color;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-base,
+    .motion-fast {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

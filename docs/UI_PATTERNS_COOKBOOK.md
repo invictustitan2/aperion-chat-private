@@ -481,7 +481,54 @@ const [value, setValue] = useState(initialValue);
 
 ---
 
-## Mobile Patterns
+## Mobile Patterns (iPhone 15 First)
+
+### iPhone-First Responsive Layouts
+
+**Index/Detail Pattern (Mandatory)**
+On mobile, never show sidebar + content simultaneously if it cramps the view.
+
+```tsx
+// Chat Layout Logic
+const isMobile = useMediaQuery("(max-width: 768px)");
+const [view, setView] = useState<"index" | "detail">("index");
+
+return isMobile ? (
+  view === "index" ? (
+    <ConversationList onSelect={() => setView("detail")} />
+  ) : (
+    <ChatDetail onBack={() => setView("index")} />
+  )
+) : (
+  <SplitView>
+    <Sidebar />
+    <ChatDetail />
+  </SplitView>
+);
+```
+
+### Mobile Chat Navigation
+
+**Drawer Pattern**
+Use for secondary actions, but NOT for primary conversation switching if possible.
+
+```tsx
+<Drawer isOpen={isOpen} onClose={close}>
+  <ConversationList />
+</Drawer>
+```
+
+**Back Button (Detail View)**
+Always fixed top-left in detail view.
+
+```tsx
+<button
+  className="fixed top-0 left-0 p-3 pt-[env(safe-area-inset-top)] z-50"
+  aria-label="Back to conversations"
+>
+  <ChevronLeft className="w-6 h-6" />
+</button>
+```
 
 ### Safe Area Insets
 

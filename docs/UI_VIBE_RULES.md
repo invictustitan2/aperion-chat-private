@@ -67,6 +67,25 @@
 - Toast for global events
 - Never add multiple notification libraries
 
+## Critical System Rules (DO NOT CHANGE LIGHTLY)
+
+### 1. Motion & Performance
+
+- **Blur Caps**: Mobile surfaces MUST NOT exceed `backdrop-blur-md`.
+- **Animation**: Use `transform` and `opacity` only. Avoid animating `width`, `height`, or `padding`.
+- **Duration**: Use standard tokens (`150ms`, `200ms`). No arbitrary magic numbers.
+
+### 2. Layout & Density
+
+- **Reading Container**: Main chat text must be wrapped in `max-w-3xl` (or `container-reading`) for readability.
+- **Touch Targets**: All mobile interactive elements must be at least 44x44px.
+- **Sidebar**: Hidden by default on mobile, persistent on desktop (>1024px).
+
+### 3. Accessibility
+
+- **Labels**: Icon-only buttons MUST have `aria-label`.
+- **Focus**: `focus-visible` styles must be present.
+
 ---
 
 ## 5 Anti-Rules (Never Do This)
@@ -156,6 +175,33 @@
 
 ## PR Checklist
 
+### 11. **Mobile Fluidity (iPhone 15 First)**
+
+- **Touch Targets:** Min `44x44px` for all actions.
+- **Safe Areas:** Adhere to `env(safe-area-inset-*)`.
+- **Navigation:** Back button always visible in detail views.
+- **Keyboard:** Input never obscured by virtual keyboard.
+
+---
+
+## 6 Anti-Rules (Never Do This)
+
+### ❌ 1. Multiple button styles across codebase
+
+// ... existing content ...
+
+### ❌ 6. Glassmorphism Overload on Mobile
+
+**Wrong:**
+Using `backdrop-blur-xl` on full-screen mobile overlays (causes scroll lag).
+
+**Right:**
+Use `glass-dark` (moderate blur) or solid colors for deep navigation layers on mobile.
+
+---
+
+## PR Checklist (iPhone 15 QA)
+
 Copy this into every PR touching UI:
 
 ```
@@ -167,7 +213,11 @@ Copy this into every PR touching UI:
 - [ ] No arbitrary gradients or animations
 - [ ] Typography uses approved scale
 - [ ] Tested with keyboard only
-- [ ] Tested at mobile width (375px)
+- [ ] **Tested on Mobile (375px+):**
+    - [ ] Navigates Index <-> Detail smoothly
+    - [ ] Input not hidden by keyboard
+    - [ ] Touch targets >= 44px
+    - [ ] Safe areas respected (notch/home bar)
 ```
 
 ---

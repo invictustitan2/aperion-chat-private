@@ -1,0 +1,80 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Primary: local dev server debugging
+      "name": "Firefox: Web (Vite) – Debug",
+      "type": "firefox",
+      "request": "launch",
+      "reAttach": true,
+
+      // If your dev server is different, change it (Vite default: 5173)
+      "url": "http://localhost:5173/",
+
+      // Monorepo web root
+      "webRoot": "${workspaceFolder}/apps/web",
+
+      // Deterministic, repo-local profile (fixes "Profile Missing")
+      // Make sure this folder exists (see prompt below)
+      "profile": "${workspaceFolder}/.vscode/.firefox-profile",
+
+      // Quality-of-life
+      "sourceMaps": true,
+      "skipFiles": ["**/node_modules/**"],
+      "tmpDir": false,
+
+      // Remote-safe logging: Debug Console only (no file writes)
+      "log": {
+        "consoleLevel": "Info"
+      },
+
+      // Optional: automatically start dev server (requires tasks.json entry)
+      "preLaunchTask": "web:dev"
+    },
+
+    {
+      // Production smoke debug (limited: no source maps unless served)
+      "name": "Firefox: Production – chat.aperion.cc",
+      "type": "firefox",
+      "request": "launch",
+      "reAttach": true,
+      "url": "https://chat.aperion.cc/chat",
+      "webRoot": "${workspaceFolder}/apps/web",
+      "profile": "${workspaceFolder}/.vscode/.firefox-profile",
+      "sourceMaps": true,
+      "skipFiles": ["**/node_modules/**"],
+      "log": {
+        "consoleLevel": "Info"
+      }
+    },
+
+    {
+      // Only use this if YOU start Firefox with a debugger server:
+      // firefox --start-debugger-server 6000 -profile <path>
+      "name": "Firefox: Attach (Debugger Server :6000)",
+      "type": "firefox",
+      "request": "attach",
+      "host": "127.0.0.1",
+      "port": 6000,
+      "webRoot": "${workspaceFolder}/apps/web",
+      "sourceMaps": true,
+      "skipFiles": ["**/node_modules/**"],
+      "log": {
+        "consoleLevel": "Info"
+      }
+    },
+
+    {
+      // Optional: only relevant if you're actually debugging a web extension
+      "name": "Firefox: Launch WebExtension",
+      "type": "firefox",
+      "request": "launch",
+      "reAttach": true,
+      "addonPath": "${workspaceFolder}",
+      "profile": "${workspaceFolder}/.vscode/.firefox-profile",
+      "log": {
+        "consoleLevel": "Info"
+      }
+    }
+  ]
+}

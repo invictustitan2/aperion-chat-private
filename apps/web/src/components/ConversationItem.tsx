@@ -86,8 +86,11 @@ export function ConversationItem({
   return (
     <div
       className={clsx(
-        "group flex items-center gap-2 px-2 py-1 rounded-lg transition-all",
-        isActive ? "bg-white/5" : "hover:bg-white/5",
+        "group flex flex-col p-3 md:p-2 cursor-pointer motion-base mb-2 relative overflow-hidden", // Mobile p-3, Desktop p-2
+        "mx-2 radius-md border",
+        isActive
+          ? "bg-white/10 border-emerald-500/30 shadow-card"
+          : "hover:bg-white/5 border-transparent hover:border-white/5",
       )}
     >
       {/* Main Content */}
@@ -131,10 +134,10 @@ export function ConversationItem({
 
       {/* Actions */}
       {!isRenaming && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        <div className="flex items-center gap-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           <button
             onClick={() => onStartRename(conversation.id, conversation.title)}
-            className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+            className="text-gray-500 hover:text-white hover:bg-white/10 radius-sm motion-fast focus-ring-visible tap44"
             title="Rename"
             aria-label={`Rename ${conversation.title}`}
           >
@@ -143,7 +146,7 @@ export function ConversationItem({
 
           <button
             onClick={() => onDelete(conversation.id)}
-            className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+            className="text-gray-500 hover:text-white hover:bg-white/10 radius-sm motion-fast focus-ring-visible tap44"
             title="Delete"
             disabled={isDeleting}
             aria-label={`Delete ${conversation.title}`}

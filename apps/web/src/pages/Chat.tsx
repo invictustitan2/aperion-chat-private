@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import {
   AlertCircle,
   CheckCircle,
+  ChevronLeft,
   Download,
   Loader2,
   Plus,
@@ -29,6 +30,7 @@ import {
   ConversationListSkeleton,
   MessageSkeleton,
 } from "../components/ui/Skeleton";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
 
@@ -821,475 +823,538 @@ export function Chat() {
     updateMessage.mutate({ id: editingMessageId, content: trimmed });
   };
 
+  // Mobile Navigation Logic
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const [mobileView, setMobileView] = useState<"index" | "detail">("index");
+
+  // Sync mobile view with active conversation
+  useEffect(() => {
+    if (isMobile) {
+      if (activeConversationId) {
+        setMobileView("detail");
+      } else {
+        setMobileView("index");
+      }
+    }
+  }, [isMobile, activeConversationId]);
+
+  const handleMobileBack = () => {
+    setActiveConversationId(null);
+    setMobileView("index");
+  };
+
   return (
     <div
       className="flex flex-col md:flex-row h-full min-h-0 overflow-hidden relative"
       ref={chatContainerRef}
     >
-      {/* Conversations Sidebar */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 glass-dark flex flex-col md:h-full shrink-0">
-        <div className="p-4 flex items-center justify-between gap-2">
-          <div className="text-sm font-semibold text-white">Conversations</div>
-          <button
-            onClick={() => createConversation.mutate()}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-            title="New conversation"
-            disabled={createConversation.isPending}
-          >
-            {createConversation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-
-        {/* Conversation Search */}
-        <ConversationSearch
-          onSearchChange={setConversationSearchQuery}
-          placeholder="Search conversations..."
-        />
-
-        <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-none flex-1 min-h-0 overflow-y-auto no-scrollbar">
-          <button
-            onClick={() => setActiveConversationId(null)}
-            className={clsx(
-              "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
-              activeConversationId === null
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "text-gray-300 hover:bg-white/5",
-            )}
-            title="View all messages"
-          >
-            All Messages
-          </button>
-
-          {conversationsQuery.isLoading ? (
-            <ConversationListSkeleton count={5} />
-          ) : conversationsQuery.error ? (
-            <div className="px-3 py-2 text-sm text-red-400 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" /> Failed to load
+      {/* Conversations Sidebar - Mobile: Show only in Index view */}
+      {(!isMobile || mobileView === "index") && (
+        <aside className="w-full md:w-72 lg:w-80 border-b md:border-b-0 md:border-r border-white/10 glass-dark flex flex-col h-full shrink-0 transition-all duration-300">
+          <div className="p-4 flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold text-white">
+              Conversations
             </div>
-          ) : conversationsQuery.data?.length === 0 ? (
-            <NoConversationsState
-              onCreate={() => createConversation.mutate()}
-            />
-          ) : filteredConversations.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-500 text-center">
-              No matches found
-            </div>
-          ) : (
-            filteredConversations.map((c) => (
-              <ConversationItem
-                key={c.id}
-                conversation={c}
-                isActive={activeConversationId === c.id}
-                isRenaming={renamingConversationId === c.id}
-                renameDraft={conversationTitleDraft}
-                onClick={() => setActiveConversationId(c.id)}
-                onRename={(id, title) =>
-                  renameConversation.mutate({ id, title })
-                }
-                onDelete={(id) => deleteConversation.mutate(id)}
-                onStartRename={(id, title) => {
-                  setRenamingConversationId(id);
-                  setConversationTitleDraft(title);
-                }}
-                onCancelRename={() => {
-                  setRenamingConversationId(null);
-                  setConversationTitleDraft("");
-                }}
-                isDeleting={
-                  deleteConversation.isPending &&
-                  deletingConversationId === c.id
-                }
-                isRenamePending={
-                  renameConversation.isPending &&
-                  renamingConversationId === c.id
-                }
-              />
-            ))
-          )}
-        </div>
-      </aside>
-
-      <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
-        {/* Header */}
-        <header className="p-4 md:p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-dark z-10">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-              Operator Chat
-            </h1>
-            {/* Connection Status */}
-            <span
-              className={clsx(
-                "p-1 rounded-full",
-                isConnected ? "text-emerald-400" : "text-red-400",
-              )}
-              title={isConnected ? "Connected" : "Disconnected"}
-            >
-              {isConnected ? (
-                <Wifi className="w-4 h-4" />
-              ) : (
-                <WifiOff className="w-4 h-4" />
-              )}
-            </span>
-          </div>
-          <p className="text-gray-400 text-xs md:text-sm">
-            Secure channel • Episodic logging active • Context: last{" "}
-            {Math.min(history?.length ?? 0, 10)} messages
-          </p>
-
-          <div className="flex items-center gap-2 self-end md:self-auto">
-            {/* Tone Selector */}
-            <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm">
-              <span className="text-gray-400 font-medium">Tone</span>
-              <select
-                value={tone}
-                onChange={(e) =>
-                  onChangeTone(
-                    e.target.value as "default" | "concise" | "detailed",
-                  )
-                }
-                className="bg-transparent text-gray-200 outline-none"
-                aria-label="AI tone"
-              >
-                <option value="default">Default</option>
-                <option value="concise">Concise</option>
-                <option value="detailed">Detailed</option>
-              </select>
-            </div>
-
-            {/* Regenerate last response */}
             <button
-              onClick={() => regenerateResponse.mutate()}
-              disabled={
-                regenerateResponse.isPending ||
-                isStreaming ||
-                isLoading ||
-                !(history || []).some(
-                  (m) => String(m.provenance?.source_type) === "user",
-                )
-              }
-              className={clsx(
-                "p-2 rounded-full border transition-all backdrop-blur-sm",
-                regenerateResponse.isPending || isStreaming
-                  ? "bg-white/5 border-white/10 text-gray-600"
-                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
-              )}
-              title="Regenerate last response"
+              onClick={() => createConversation.mutate()}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              title="New conversation"
+              aria-label="New conversation"
+              disabled={createConversation.isPending}
             >
-              {regenerateResponse.isPending || isStreaming ? (
+              {createConversation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <RotateCcw className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
               )}
-            </button>
-
-            {/* Share Conversation */}
-            <button
-              onClick={shareConversationLink}
-              disabled={!activeConversationId}
-              className={clsx(
-                "p-2 rounded-full border transition-all backdrop-blur-sm",
-                activeConversationId
-                  ? "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                  : "bg-white/5 border-white/10 text-gray-600 cursor-not-allowed",
-              )}
-              title={
-                activeConversationId
-                  ? "Copy shareable conversation link"
-                  : "Select a conversation to share"
-              }
-            >
-              {copiedId === "__share_conversation__" ? (
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <Share2 className="w-4 h-4" />
-              )}
-            </button>
-
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              disabled={isExporting || !history?.length}
-              className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
-                isExporting
-                  ? "bg-white/5 border-white/10 text-gray-500"
-                  : exportSuccess
-                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
-              )}
-            >
-              {isExporting ? (
-                <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
-              ) : exportSuccess ? (
-                <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-              ) : (
-                <Download className="w-3 h-3 md:w-4 md:h-4" />
-              )}
-              <span className="font-medium">
-                {isExporting
-                  ? "Exporting..."
-                  : exportSuccess
-                    ? "Exported!"
-                    : "Export PDF"}
-              </span>
-            </button>
-
-            {/* Semantic Write Toggle */}
-            <button
-              onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
-              className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-all text-xs md:text-sm backdrop-blur-sm",
-                isMemoryWriteEnabled
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
-              )}
-            >
-              {isMemoryWriteEnabled ? (
-                <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
-              ) : (
-                <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
-              )}
-              <span className="font-medium">
-                Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
-              </span>
             </button>
           </div>
-        </header>
 
-        {/* Export Error Message */}
-        {exportError && (
-          <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
-            <AlertCircle className="w-4 h-4" />
-            {exportError}
-          </div>
-        )}
+          {/* Conversation Search */}
+          <ConversationSearch
+            onSearchChange={setConversationSearchQuery}
+            placeholder="Search conversations..."
+          />
 
-        {/* Chat Area */}
-        <div
-          className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6"
-          ref={scrollRef}
-        >
-          {isLoading ? (
-            <>
-              <MessageSkeleton />
-              <MessageSkeleton isUser />
-              <MessageSkeleton />
-            </>
-          ) : error ? (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
-              <AlertCircle className="w-5 h-5" />
-              <span>Error loading history: {error.message}</span>
-            </div>
-          ) : history?.length === 0 ? (
-            !activeConversationId ? (
-              <AllMessagesEmptyState />
+          <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-none flex-1 min-h-0 overflow-y-auto no-scrollbar">
+            <button
+              onClick={() => setActiveConversationId(null)}
+              className={clsx(
+                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                activeConversationId === null
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "text-gray-300 hover:bg-white/5",
+              )}
+              title="View all messages"
+              aria-label="View all messages"
+            >
+              All Messages
+            </button>
+
+            {conversationsQuery.isLoading ? (
+              <ConversationListSkeleton count={5} />
+            ) : conversationsQuery.error ? (
+              <div className="px-3 py-2 text-sm text-red-400 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" /> Failed to load
+              </div>
+            ) : conversationsQuery.data?.length === 0 ? (
+              <NoConversationsState
+                onCreate={() => createConversation.mutate()}
+              />
+            ) : filteredConversations.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                No matches found
+              </div>
             ) : (
-              <EmptyConversationState />
-            )
-          ) : (
-            history?.map((msg, idx) => {
-              const prev = idx > 0 ? history[idx - 1] : null;
-              const showDaySeparator =
-                !prev || !isSameDay(prev.createdAt, msg.createdAt);
-              const isUser = String(msg.provenance?.source_type) === "user";
+              filteredConversations.map((c) => (
+                <ConversationItem
+                  key={c.id}
+                  conversation={c}
+                  isActive={activeConversationId === c.id}
+                  isRenaming={renamingConversationId === c.id}
+                  renameDraft={conversationTitleDraft}
+                  onClick={() => setActiveConversationId(c.id)}
+                  onRename={(id, title) =>
+                    renameConversation.mutate({ id, title })
+                  }
+                  onDelete={(id) => deleteConversation.mutate(id)}
+                  onStartRename={(id, title) => {
+                    setRenamingConversationId(id);
+                    setConversationTitleDraft(title);
+                  }}
+                  onCancelRename={() => {
+                    setRenamingConversationId(null);
+                    setConversationTitleDraft("");
+                  }}
+                  isDeleting={
+                    deleteConversation.isPending &&
+                    deletingConversationId === c.id
+                  }
+                  isRenamePending={
+                    renameConversation.isPending &&
+                    renamingConversationId === c.id
+                  }
+                />
+              ))
+            )}
+          </div>
+        </aside>
+      )}
 
-              const responseMs = Array.isArray(msg.provenance?.derived_from)
-                ? msg.provenance.derived_from
-                    .map((id) => responseTimeMsByUserMessageId[id])
-                    .find((v) => typeof v === "number")
-                : undefined;
-
-              return (
-                <React.Fragment key={msg.id}>
-                  {showDaySeparator && (
-                    <div className="flex items-center justify-center py-2">
-                      <div className="px-3 py-1 rounded-full text-[10px] font-mono text-white/30 bg-white/5 border border-white/10">
-                        {formatDayLabel(msg.createdAt)}
-                      </div>
-                    </div>
-                  )}
-
-                  <MessageBubble
-                    message={msg}
-                    isUser={isUser}
-                    isHighlighted={highlightMessageId === msg.id}
-                    isEditing={editingMessageId === msg.id}
-                    editingContent={editingContent}
-                    editError={editError}
-                    copiedId={copiedId}
-                    rating={ratedMessages[msg.id]}
-                    responseTimeMs={responseMs}
-                    onCopy={handleCopy}
-                    onShare={shareMessageLink}
-                    onEdit={startEditing}
-                    onCancelEdit={cancelEditing}
-                    onSaveEdit={saveEditing}
-                    onRate={handleRate}
-                    onEditingContentChange={(content) =>
-                      setEditingContent(content)
-                    }
-                    isSavingEdit={
-                      updateMessage.isPending && editingMessageId === msg.id
-                    }
-                  />
-                </React.Fragment>
-              );
-            })
-          )}
-
-          {/* New messages indicator */}
-          {hasNewMessages && (
-            <div className="sticky bottom-4 flex justify-center pointer-events-none">
-              <button
-                type="button"
-                onClick={() => {
-                  scrollToBottom("smooth");
-                  setHasNewMessages(false);
-                  setNewMessagesCount(0);
-                  lastSeenLastMessageIdRef.current =
-                    (history || []).at(-1)?.id ?? null;
-                }}
-                className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs text-white/80 hover:bg-white/15 transition-all"
+      {/* Main Chat Area - Mobile: Show only in Detail view */}
+      {(!isMobile || mobileView === "detail") && (
+        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
+          {/* Header */}
+          {/* Header */}
+          <header
+            className={clsx(
+              "border-b border-white/10 glass-dark z-10 shadow-subtle",
+              "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+              "p-3 pt-[calc(0.75rem+env(safe-area-inset-top))]", // Mobile compact
+              "md:p-6 md:pt-6", // Desktop standard
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Mobile Back Button */}
+              {isMobile && (
+                <button
+                  onClick={handleMobileBack}
+                  className="mr-1 text-gray-400 hover:text-white tap44 flex-shrink-0"
+                  aria-label="Back to conversations"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+              <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight truncate">
+                Operator Chat
+              </h1>
+              {/* Connection Status */}
+              <span
+                className={clsx(
+                  "p-1 radius-full flex-shrink-0",
+                  isConnected ? "text-emerald-400" : "text-red-400",
+                )}
+                title={isConnected ? "Connected" : "Disconnected"}
               >
-                New messages
-                {newMessagesCount > 0 ? ` (${newMessagesCount})` : ""}
+                {isConnected ? (
+                  <Wifi className="w-4 h-4" />
+                ) : (
+                  <WifiOff className="w-4 h-4" />
+                )}
+              </span>
+            </div>
+
+            <p className="text-gray-400 text-xs md:text-sm hidden md:block">
+              Secure channel • Episodic logging active • Context: last{" "}
+              {Math.min(history?.length ?? 0, 10)} messages
+            </p>
+
+            <div
+              className={clsx(
+                "flex items-center gap-2",
+                "overflow-x-auto no-scrollbar pb-1 -mx-3 px-3 scroll-smooth", // Mobile: Scrollable
+                "md:pb-0 md:mx-0 md:px-0 md:overflow-visible", // Desktop: Reset
+                "md:flex-wrap md:justify-end lg:flex-nowrap", // Tablet: wrap, Desktop: nowrap
+              )}
+            >
+              {/* Tone Selector */}
+              <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 radius-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm shrink-0">
+                <span className="text-gray-400 font-medium">Tone</span>
+                <select
+                  value={tone}
+                  onChange={(e) =>
+                    onChangeTone(
+                      e.target.value as "default" | "concise" | "detailed",
+                    )
+                  }
+                  className="bg-transparent text-white font-medium focus:outline-none h-8 md:h-auto"
+                  aria-label="Select Tone"
+                >
+                  <option value="default">Default</option>
+                  <option value="concise">Concise</option>
+                  <option value="detailed">Detailed</option>
+                </select>
+              </div>
+
+              {/* Regenerate last response */}
+              <button
+                onClick={() => regenerateResponse.mutate()}
+                disabled={
+                  regenerateResponse.isPending ||
+                  isStreaming ||
+                  isLoading ||
+                  !(history || []).some(
+                    (m) => String(m.provenance?.source_type) === "user",
+                  )
+                }
+                className={clsx(
+                  "radius-full border motion-fast backdrop-blur-sm tap44 md:p-2 shrink-0",
+                  regenerateResponse.isPending || isStreaming
+                    ? "bg-white/5 border-white/10 text-gray-600"
+                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                )}
+                title="Regenerate last response"
+              >
+                {regenerateResponse.isPending || isStreaming ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+              </button>
+
+              {/* Share Button (Active Convo Only) */}
+              <button
+                onClick={shareConversationLink}
+                className={clsx(
+                  "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                  activeConversationId
+                    ? "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                    : "opacity-50 cursor-not-allowed border-transparent text-gray-500",
+                )}
+                disabled={!activeConversationId}
+                title={
+                  activeConversationId
+                    ? "Copy shareable conversation link"
+                    : "Select a conversation to share"
+                }
+              >
+                {copiedId === "__share_conversation__" ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Share2 className="w-4 h-4" />
+                )}
+              </button>
+
+              {/* Export Button */}
+              <button
+                onClick={handleExport}
+                disabled={isExporting || !history?.length}
+                className={clsx(
+                  "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                  isExporting
+                    ? "bg-white/5 border-white/10 text-gray-500"
+                    : exportSuccess
+                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                )}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
+                ) : exportSuccess ? (
+                  <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                ) : (
+                  <Download className="w-3 h-3 md:w-4 md:h-4" />
+                )}
+                <span className="font-medium hidden md:inline">
+                  {isExporting
+                    ? "Exporting..."
+                    : exportSuccess
+                      ? "Exported!"
+                      : "Export PDF"}
+                </span>
+              </button>
+
+              {/* Semantic Write Toggle */}
+              <button
+                onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
+                className={clsx(
+                  "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                  isMemoryWriteEnabled
+                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
+                )}
+                title={`Semantic Write: ${isMemoryWriteEnabled ? "ON" : "OFF"}`}
+              >
+                {isMemoryWriteEnabled ? (
+                  <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
+                ) : (
+                  <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
+                )}
+                <span className="font-medium hidden md:inline">
+                  Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
+                </span>
               </button>
             </div>
-          )}
+          </header>
 
-          {/* Optimistic / Pending Message */}
-          {sendMessage.isPending && !isStreaming && (
-            <div className="flex flex-col gap-1 opacity-60 self-end items-end">
-              <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
-                {input}
-              </div>
-              <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> Sending...
-              </span>
+          {/* Export Error Message */}
+          {exportError && (
+            <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
+              <AlertCircle className="w-4 h-4" />
+              {exportError}
             </div>
           )}
 
-          {/* Streaming AI Response */}
-          {isStreaming && streamingResponse && (
-            <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
-              <div className="flex items-baseline gap-2 px-1">
-                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                  Aperion
-                </span>
-                <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-                  Streaming • {(streamingElapsedMs / 1000).toFixed(1)}s
-                </span>
-              </div>
-              <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
-                <MessageContent content={streamingResponse} />
-                <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
-              </div>
-              {streamingDerivedFrom.length > 0 && (
-                <div className="px-1 text-[10px] font-mono text-gray-500">
-                  Influenced by: {streamingDerivedFrom.length} memory
-                  {streamingDerivedFrom.length === 1 ? "" : "ies"}
+          {/* Chat Area */}
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6"
+            ref={scrollRef}
+          >
+            <div className="container-reading space-y-6">
+              {isLoading ? (
+                <>
+                  <MessageSkeleton />
+                  <MessageSkeleton isUser />
+                  <MessageSkeleton />
+                </>
+              ) : error ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Error loading history: {error.message}</span>
+                </div>
+              ) : history?.length === 0 ? (
+                !activeConversationId ? (
+                  <AllMessagesEmptyState />
+                ) : (
+                  <EmptyConversationState />
+                )
+              ) : (
+                history?.map((msg, idx) => {
+                  const prev = idx > 0 ? history[idx - 1] : null;
+                  const showDaySeparator =
+                    !prev || !isSameDay(prev.createdAt, msg.createdAt);
+                  const isUser = String(msg.provenance?.source_type) === "user";
+
+                  const responseMs = Array.isArray(msg.provenance?.derived_from)
+                    ? msg.provenance.derived_from
+                        .map((id) => responseTimeMsByUserMessageId[id])
+                        .find((v) => typeof v === "number")
+                    : undefined;
+
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDaySeparator && (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="px-3 py-1 rounded-full text-[10px] font-mono text-white/30 bg-white/5 border border-white/10">
+                            {formatDayLabel(msg.createdAt)}
+                          </div>
+                        </div>
+                      )}
+
+                      <MessageBubble
+                        message={msg}
+                        isUser={isUser}
+                        isHighlighted={highlightMessageId === msg.id}
+                        isEditing={editingMessageId === msg.id}
+                        editingContent={editingContent}
+                        editError={editError}
+                        copiedId={copiedId}
+                        rating={ratedMessages[msg.id]}
+                        responseTimeMs={responseMs}
+                        onCopy={handleCopy}
+                        onShare={shareMessageLink}
+                        onEdit={startEditing}
+                        onCancelEdit={cancelEditing}
+                        onSaveEdit={saveEditing}
+                        onRate={handleRate}
+                        onEditingContentChange={(content) =>
+                          setEditingContent(content)
+                        }
+                        isSavingEdit={
+                          updateMessage.isPending && editingMessageId === msg.id
+                        }
+                      />
+                    </React.Fragment>
+                  );
+                })
+              )}
+
+              {/* New messages indicator */}
+              {hasNewMessages && (
+                <div className="sticky bottom-4 flex justify-center pointer-events-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      scrollToBottom("smooth");
+                      setHasNewMessages(false);
+                      setNewMessagesCount(0);
+                      lastSeenLastMessageIdRef.current =
+                        (history || []).at(-1)?.id ?? null;
+                    }}
+                    className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs text-white/80 hover:bg-white/15 transition-all"
+                  >
+                    New messages
+                    {newMessagesCount > 0 ? ` (${newMessagesCount})` : ""}
+                  </button>
+                </div>
+              )}
+
+              {/* Optimistic / Pending Message */}
+              {sendMessage.isPending && !isStreaming && (
+                <div className="flex flex-col gap-1 opacity-60 self-end items-end">
+                  <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
+                    {input}
+                  </div>
+                  <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Sending...
+                  </span>
+                </div>
+              )}
+
+              {/* Streaming AI Response */}
+              {isStreaming && streamingResponse && (
+                <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
+                  <div className="flex items-baseline gap-2 px-1">
+                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                      Aperion
+                    </span>
+                    <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                      Streaming • {(streamingElapsedMs / 1000).toFixed(1)}s
+                    </span>
+                  </div>
+                  <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
+                    <MessageContent content={streamingResponse} />
+                    <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
+                  </div>
+                  {streamingDerivedFrom.length > 0 && (
+                    <div className="px-1 text-[10px] font-mono text-gray-500">
+                      Influenced by: {streamingDerivedFrom.length} memory
+                      {streamingDerivedFrom.length === 1 ? "" : "ies"}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Typing Indicator */}
+              {typingUsers.length > 0 && (
+                <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
+                  <div className="flex gap-1">
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
+                  </div>
+                  <span>{typingUsers.join(", ")} is typing...</span>
                 </div>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Typing Indicator */}
-          {typingUsers.length > 0 && (
-            <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
-              <div className="flex gap-1">
-                <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                />
-                <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                />
-                <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                />
-              </div>
-              <span>{typingUsers.join(", ")} is typing...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Input Area */}
-        <div className="shrink-0">
-          <ChatInput
-            value={input}
-            onChange={(value: string) => {
-              setSlashIndex(0);
-              setInput(value);
-              if (value) sendTyping();
-            }}
-            onSubmit={handleSubmit}
-            onFileSelect={async (file: File) => {
-              setIsUploading(true);
-              try {
-                const { key } = await api.media.upload(file);
-                const url = api.media.getUrl(key);
-                setInput((prev) =>
-                  prev
-                    ? `${prev}\n![${file.name}](${url})`
-                    : `![${file.name}](${url})`,
-                );
-              } catch (err) {
-                console.error("Upload failed", err);
-              } finally {
-                setIsUploading(false);
-              }
-            }}
-            onVoiceRecord={startRecording}
-            onVoiceStop={stopRecording}
-            isSubmitting={
-              sendMessage.isPending ||
-              clearAll.isPending ||
-              summarizeChat.isPending
-            }
-            isUploading={isUploading}
-            isRecording={isRecording}
-            isProcessingVoice={isProcessingVoice}
-            error={
-              sendMessage.error
-                ? (sendMessage.error as unknown) instanceof Error
-                  ? (sendMessage.error as unknown as Error).message
-                  : String(sendMessage.error)
-                : null
-            }
-            voiceError={voiceError}
-            disabled={
-              sendMessage.isPending ||
-              clearAll.isPending ||
-              isUploading ||
-              isProcessingVoice
-            }
-            showCharCount={true}
-            placeholder="Type a message..."
-            slashAutocomplete={
-              showSlashAutocomplete
-                ? {
-                    matches: slashMatches,
-                    selectedIndex: slashIndex,
-                    onSelect: (cmd: string) => setInput(cmd),
-                    onNavigate: (dir: "up" | "down") =>
-                      setSlashIndex((i) =>
-                        dir === "down"
-                          ? (i + 1) % slashMatches.length
-                          : (i - 1 + slashMatches.length) % slashMatches.length,
-                      ),
+          {/* Input Area */}
+          <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <div className="container-reading">
+              {" "}
+              {/* Added max-width to input container too */}
+              <ChatInput
+                value={input}
+                onChange={(value: string) => {
+                  setSlashIndex(0);
+                  setInput(value);
+                  if (value) sendTyping();
+                }}
+                onSubmit={handleSubmit}
+                onFileSelect={async (file: File) => {
+                  setIsUploading(true);
+                  try {
+                    const { key } = await api.media.upload(file);
+                    const url = api.media.getUrl(key);
+                    setInput((prev) =>
+                      prev
+                        ? `${prev}\n![${file.name}](${url})`
+                        : `![${file.name}](${url})`,
+                    );
+                  } catch (err) {
+                    console.error("Upload failed", err);
+                  } finally {
+                    setIsUploading(false);
                   }
-                : undefined
-            }
-          />
+                }}
+                onVoiceRecord={startRecording}
+                onVoiceStop={stopRecording}
+                isSubmitting={
+                  sendMessage.isPending ||
+                  clearAll.isPending ||
+                  summarizeChat.isPending
+                }
+                isUploading={isUploading}
+                isRecording={isRecording}
+                isProcessingVoice={isProcessingVoice}
+                error={
+                  sendMessage.error
+                    ? (sendMessage.error as unknown) instanceof Error
+                      ? (sendMessage.error as unknown as Error).message
+                      : String(sendMessage.error)
+                    : null
+                }
+                voiceError={voiceError}
+                disabled={
+                  sendMessage.isPending ||
+                  clearAll.isPending ||
+                  isUploading ||
+                  isProcessingVoice
+                }
+                showCharCount={true}
+                placeholder="Type a message..."
+                slashAutocomplete={
+                  showSlashAutocomplete
+                    ? {
+                        matches: slashMatches,
+                        selectedIndex: slashIndex,
+                        onSelect: (cmd: string) => setInput(cmd),
+                        onNavigate: (dir: "up" | "down") =>
+                          setSlashIndex((i) =>
+                            dir === "down"
+                              ? (i + 1) % slashMatches.length
+                              : (i - 1 + slashMatches.length) %
+                                slashMatches.length,
+                          ),
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

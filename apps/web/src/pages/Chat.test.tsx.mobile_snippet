@@ -1,0 +1,77 @@
+
+// Mobile Navigation Tests
+describe("Mobile Navigation", () => {
+    beforeEach(() => {
+        // Reset mocks
+        vi.clearAllMocks();
+        // Setup default mocks similar to 'Chat Page' suite if needed, but specifically for mobile
+        vi.mocked(api.preferences.get).mockResolvedValue({
+            value: "default",
+            key: "ai.tone",
+            updatedAt: Date.now(),
+        });
+        mockMatchMedia(true); // Enforce Mobile
+    });
+
+    it("defaults to Index view (conversation list) on mobile", async () => {
+        (api.conversations.list as any).mockResolvedValue([]);
+        (api.chat.history as any).mockResolvedValue([]);
+
+        renderChat();
+
+        // "Conversations" header is in sidebar
+        expect(screen.getByText("Conversations")).toBeInTheDocument();
+
+        // Header text "Operator Chat" is in detail view, but it's also in Index view?
+        // Wait, "Operator Chat" is in the main header.
+        // In my code:
+        // Sidebar (Index) has "Conversations" text.
+        // Detail has "Operator Chat".
+        // On mobile, if Index view: Sidebar is visible. Detail is hidden.
+        // So "Operator Chat" should NOT be visible?
+        // Let's check Chat.tsx logic.
+        // <aside> (Sidebar) is rendered if (!isMobile || mobileView === "index").
+        // <div className="flex-1..."> (Detail) is rendered if (!isMobile || mobileView === "detail").
+        // "Operator Chat" is inside Detail.
+        // So "Operator Chat" should NOT be visible in Index view.
+
+        expect(screen.queryByText("Operator Chat")).not.toBeInTheDocument();
+    });
+
+    it("active conversation switches to Detail view on mobile", async () => {
+        (api.conversations.list as any).mockResolvedValue([
+            { id: "1", title: "Mobile Convo", updatedAt: Date.now() }
+        ]);
+        (api.chat.history as any).mockResolvedValue([]);
+
+        renderChat();
+
+        await waitFor(() => screen.getByText("Mobile Convo"));
+        fireEvent.click(screen.getByText("Mobile Convo"));
+
+        // Now in Detail View
+        expect(screen.getByText("Operator Chat")).toBeInTheDocument();
+        expect(screen.getByLabelText("Back to conversations")).toBeInTheDocument();
+        // Sidebar hidden
+        expect(screen.queryByText("Conversations")).not.toBeInTheDocument();
+    });
+
+    it("Back button returns to Index view", async () => {
+        (api.conversations.list as any).mockResolvedValue([
+            { id: "1", title: "Mobile Convo", updatedAt: Date.now() }
+        ]);
+        (api.chat.history as any).mockResolvedValue([]);
+
+        renderChat();
+
+        await waitFor(() => screen.getByText("Mobile Convo"));
+        fireEvent.click(screen.getByText("Mobile Convo"));
+
+        const backBtn = screen.getByLabelText("Back to conversations");
+        fireEvent.click(backBtn);
+
+        // Back to Index
+        expect(screen.getByText("Conversations")).toBeInTheDocument();
+        expect(screen.queryByText("Operator Chat")).not.toBeInTheDocument();
+    });
+});

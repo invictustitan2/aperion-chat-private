@@ -111,8 +111,8 @@ export function MessageBubble({
       {/* Message Content */}
       <div
         className={clsx(
-          "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
-          "transition-all duration-200",
+          "p-4 md:p-3 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border", // Mobile p-4, Desktop p-3
+          "motion-base",
           isHighlighted && "ring-1 ring-white/20 border-white/20",
           isUser
             ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
@@ -161,9 +161,9 @@ export function MessageBubble({
       <div
         className={clsx(
           "flex items-center gap-1 px-1",
-          "transition-opacity duration-200",
-          // Always visible on focus-within, only on hover otherwise
-          "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
+          "motion-base",
+          // Mobile: Always visible. Desktop: Hover/Focus only
+          "opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100",
           isUser ? "flex-row-reverse" : "flex-row",
         )}
       >
@@ -172,10 +172,10 @@ export function MessageBubble({
             <button
               onClick={onSaveEdit}
               className={clsx(
-                "p-1.5 rounded-md transition-all focus-ring-visible",
-                isSavingEdit
-                  ? "text-gray-600 bg-white/5 cursor-not-allowed"
-                  : "text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30",
+                "btn-icon-sm absolute -left-10 top-0 shadow-subtle",
+                isUser
+                  ? "bg-white/10 text-gray-300"
+                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
               )}
               title="Save edit"
               disabled={isSavingEdit}
@@ -189,7 +189,7 @@ export function MessageBubble({
             </button>
             <button
               onClick={onCancelEdit}
-              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible"
               title="Cancel edit"
               disabled={isSavingEdit}
               aria-label="Cancel edit"
@@ -203,7 +203,7 @@ export function MessageBubble({
             {onShare && (
               <button
                 onClick={() => onShare(message.id)}
-                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+                className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
                 title="Copy shareable message link"
                 aria-label="Share message"
               >
@@ -219,7 +219,7 @@ export function MessageBubble({
             {onCopy && (
               <button
                 onClick={() => onCopy(message.id, message.content)}
-                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+                className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
                 title="Copy to clipboard"
                 aria-label="Copy message"
               >
@@ -235,7 +235,7 @@ export function MessageBubble({
             {isUser && onEdit && (
               <button
                 onClick={() => onEdit(message.id, message.content)}
-                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"
+                className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
                 title="Edit message"
                 aria-label="Edit message"
               >
@@ -249,7 +249,7 @@ export function MessageBubble({
                 <button
                   onClick={() => onRate(message.id, "up")}
                   className={clsx(
-                    "p-1.5 rounded-md transition-all focus-ring-visible",
+                    "rounded-md motion-fast focus-ring-visible tap44",
                     rating === "up"
                       ? "text-emerald-400 bg-emerald-500/20"
                       : "text-gray-500 hover:text-white hover:bg-white/10",
@@ -263,7 +263,7 @@ export function MessageBubble({
                 <button
                   onClick={() => onRate(message.id, "down")}
                   className={clsx(
-                    "p-1.5 rounded-md transition-all focus-ring-visible",
+                    "rounded-md motion-fast focus-ring-visible tap44",
                     rating === "down"
                       ? "text-red-400 bg-red-500/20"
                       : "text-gray-500 hover:text-white hover:bg-white/10",
