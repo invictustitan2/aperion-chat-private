@@ -94,16 +94,6 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
-      - name: Sync Worker API_TOKEN Secret
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-        run: |
-          set -euo pipefail
-          echo "Syncing Worker secret API_TOKEN..."
-          echo "$API_TOKEN" | ./node_modules/.bin/wrangler secret put API_TOKEN --name aperion-api-worker --cwd apps/api-worker --env=""
-
       # Custom domain is now managed by Wrangler (Worker Custom Domain).
       # The ensure-worker-domain.sh script successfully cleared the initial conflict.
       # It is now disabled to prevent it from trying to delete the managed/read-only record.
@@ -133,47 +123,33 @@ jobs:
           workingDirectory: "apps/api-worker"
           command: 'deploy --env=""'
 
-      - name: Verify Authentication Setup
+      - name: Verify Authentication Setup (optional)
         env:
           API_URL: https://api.aperion.cc
-          API_TOKEN: ${{ secrets.API_TOKEN }}
+          CF_ACCESS_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_ID }}
+          CF_ACCESS_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_SECRET }}
         run: |
-          echo "Testing API authentication..."
+          set -euo pipefail
+          echo "Testing API authentication (Access mode)..."
 
-          # Test without auth (should return 401)
-          # Use /v1/episodic which supports GET requests
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/v1/episodic)
-          if [ "$STATUS" != "401" ]; then
-            echo "❌ API should require authentication but returned: $STATUS"
-            echo "Note: If 404, check if route supports GET method"
-            exit 1
+          if [ -z "${CF_ACCESS_SERVICE_TOKEN_ID:-}" ] || [ -z "${CF_ACCESS_SERVICE_TOKEN_SECRET:-}" ]; then
+            echo "ℹ️ Skipping authenticated API smoke test: CF_ACCESS_SERVICE_TOKEN_ID/SECRET not configured as GitHub secrets."
+            echo "   (This is expected if you rely purely on interactive Access login for the single operator.)"
+            exit 0
           fi
-          echo "✓ API requires authentication"
 
-          # Test with auth (should return 200)
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $API_TOKEN" $API_URL/v1/episodic)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
+            -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
+            "$API_URL/v1/identity")
+
           if [ "$STATUS" != "200" ]; then
-            echo "❌ Authentication failed with status: $STATUS"
+            echo "❌ Authenticated request failed (expected 200, got $STATUS)."
+            echo "   Confirm: (1) Access policy allows the service token, and (2) Worker vars CF_ACCESS_SERVICE_TOKEN_ID/SECRET match."
             exit 1
           fi
-          echo "✓ Authentication successful"
 
-          echo "Checking auth fingerprint matches deployed Worker..."
-          EXPECTED_FINGERPRINT=$(printf %s "$API_TOKEN" | openssl dgst -sha256 | awk '{print $2}' | cut -c1-12)
-          SERVER_FINGERPRINT=$(curl -sS -D - -o /dev/null "$API_URL/v1/identity" | tr -d '\r' | awk 'tolower($1)=="x-aperion-auth-fingerprint:"{print $2}' | tail -n 1)
-          echo "expected fingerprint: $EXPECTED_FINGERPRINT"
-          echo "server fingerprint:    $SERVER_FINGERPRINT"
-          if [ -z "$SERVER_FINGERPRINT" ]; then
-            echo "❌ Missing X-Aperion-Auth-Fingerprint header on server response"
-            exit 1
-          fi
-          if [ "$SERVER_FINGERPRINT" != "$EXPECTED_FINGERPRINT" ]; then
-            echo "❌ Fingerprint mismatch: server=$SERVER_FINGERPRINT expected=$EXPECTED_FINGERPRINT"
-            exit 1
-          fi
-          echo "✓ Fingerprint matches"
-
-          echo "✅ API deployment verified successfully"
+          echo "✓ Authenticated request succeeded (200)"
 
       - name: Upload Wrangler Logs (on failure)
         if: failure()

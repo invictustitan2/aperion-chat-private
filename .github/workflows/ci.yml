@@ -68,6 +68,9 @@ jobs:
       - name: Guard (no prod auth-token hints)
         run: pnpm guard:prod-secrets
 
+      - name: Guard (config drift)
+        run: pnpm guard:config-drift
+
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test | grep @playwright/test | sed 's/.*@playwright\/test //')" >> $GITHUB_ENV

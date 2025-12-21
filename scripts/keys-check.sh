@@ -11,13 +11,13 @@ else
   echo "  Action: Run ./scripts/secrets-bootstrap.sh"
 fi
 
-# Check for VITE_AUTH_TOKEN
-echo -n "Checking for VITE_AUTH_TOKEN... "
-if grep -q "VITE_AUTH_TOKEN" .env || [ -n "$VITE_AUTH_TOKEN" ]; then
+# Check for legacy AUTH_TOKEN (optional)
+echo -n "Checking for AUTH_TOKEN (optional)... "
+if grep -q "^AUTH_TOKEN=" .env || [ -n "${AUTH_TOKEN:-}" ]; then
   echo "✅ Set."
 else
-  echo "❌ Not set."
-  echo "  Action: Run ./scripts/secrets-bootstrap.sh"
+  echo "⚠️  Not set."
+  echo "  Note: The web UI does not use bearer tokens. AUTH_TOKEN is only for local API-only dev when using legacy token mode."
 fi
 
 # Check for AWS credentials

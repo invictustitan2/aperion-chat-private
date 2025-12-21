@@ -11,7 +11,7 @@ fi
 WORKER_PID=""
 LOG_FILE="worker.log"
 API_URL="${VITE_API_BASE_URL:-http://127.0.0.1:8787}"
-AUTH_TOKEN="${AUTH_TOKEN:-${VITE_AUTH_TOKEN:-}}"
+AUTH_TOKEN="${AUTH_TOKEN:-}"
 
 cleanup() {
   if [[ -n "${WORKER_PID}" ]]; then
@@ -51,24 +51,20 @@ WORKER_PID="$!"
 
 # 4) Wait until API is usable (not just “port open”)
 echo "⏳ Waiting for API to become ready..."
-if [[ -z "${AUTH_TOKEN}" ]]; then
-  echo "❌ Missing AUTH_TOKEN (or VITE_AUTH_TOKEN)."
-  echo "   Run: ./scripts/secrets-bootstrap.sh"
-  exit 1
-fi
+
+# Auth note:
+# - The web UI is Access-session-only and does not use bearer tokens.
+# - For local API-only development, you can optionally set AUTH_TOKEN to
+#   validate legacy token auth when APERION_AUTH_MODE=token/hybrid.
 
 MAX_RETRIES=40
 SLEEP_SECS=1
 READY=""
 
 for i in $(seq 1 "${MAX_RETRIES}"); do
-  # Require a successful authenticated response.
-  # If your API returns 200 with empty identity list, that's still success.
-  STATUS="$(curl -s -o /dev/null -w "%{http_code}" \
-    -H "Authorization: Bearer ${AUTH_TOKEN}" \
-    "${API_URL}/v1/identity" || true)"
-
-  if [[ "${STATUS}" == "200" ]]; then
+  # We only need to know the worker is running; an auth failure is still "ready".
+  STATUS="$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/v1/identity" || true)"
+  if [[ "${STATUS}" == "200" || "${STATUS}" == "401" || "${STATUS}" == "403" ]]; then
     READY="yes"
     break
   fi
@@ -79,13 +75,25 @@ done
 
 echo ""
 if [[ "${READY}" != "yes" ]]; then
-  echo "❌ API did not become ready in time (expected 200 from /v1/identity)."
+  echo "❌ API did not become ready in time (expected a response from /v1/identity)."
   echo "---- last 200 lines of ${LOG_FILE} ----"
   tail -n 200 "${LOG_FILE}" || true
   exit 1
 fi
 
-echo "✅ API is ready and auth is valid."
+echo "✅ API is responding."
+
+if [[ -n "${AUTH_TOKEN}" ]]; then
+  AUTH_STATUS="$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: Bearer ${AUTH_TOKEN}" \
+    "${API_URL}/v1/identity" || true)"
+  if [[ "${AUTH_STATUS}" == "200" ]]; then
+    echo "✅ Legacy token auth succeeded (AUTH_TOKEN)."
+  else
+    echo "ℹ️  Legacy token auth check skipped/failed (got ${AUTH_STATUS})."
+    echo "   This is expected if APERION_AUTH_MODE=access or API_TOKEN is not configured."
+  fi
+fi
 
 # 5) Run full verification suite
 echo "🔍 Running pnpm verify..."

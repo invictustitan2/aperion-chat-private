@@ -9,7 +9,10 @@
  * The token should be set in:
  * - GitHub Secrets: API_TOKEN
  * - Cloudflare Worker: wrangler secret put API_TOKEN
- * - Local .env: VITE_AUTH_TOKEN
+ * - Local scripts/curl (optional): AUTH_TOKEN
+ *
+ * Note: Production and the web UI use Cloudflare Access (JWT/JWKS). This token is legacy
+ * and is only relevant for local API-only development in token/hybrid auth modes.
  */
 
 import { randomBytes } from "crypto";
@@ -45,23 +48,15 @@ function main() {
   console.log("   - Run: cd apps/api-worker");
   console.log(`   - Run: echo "${token}" | wrangler secret put API_TOKEN\n`);
 
-  console.log("3. Cloudflare Pages (Frontend Build):");
-  console.log(
-    "   - Recommended: deploy via GitHub Actions so the build injects VITE_AUTH_TOKEN from the GitHub secret API_TOKEN.",
-  );
-  console.log(
-    "   - Avoid also setting VITE_AUTH_TOKEN in the Pages dashboard unless you do manual dashboard deployments.\n",
-  );
-
-  console.log("4. Local Development:");
-  console.log("   - Add to .env file:");
-  console.log(`   VITE_AUTH_TOKEN=${token}\n`);
+  console.log("3. Local API-only development (optional legacy token):");
+  console.log("   - Add to .env file for scripts/curl:");
+  console.log(`   AUTH_TOKEN=${token}\n`);
 
   console.log("⚠️  Security Notes:");
   console.log("   - Keep this token secret and secure");
   console.log("   - Never commit it to version control");
   console.log("   - Rotate periodically for security");
-  console.log("   - All environments must use the same token value\n");
+  console.log("   - This token is not used by the web UI in production\n");
 
   console.log("🔄 Token Rotation:");
   console.log("   - Generate a new token using this script");

@@ -18,6 +18,26 @@ id = "212d43171f574b06b22f6fa4f24ca8a1"
 
 [vars]
 # API_TOKEN will be set via secrets
+#
+# Config drift contract (validated by scripts/guard-config-drift.*):
+#
+# required_vars:
+# - APERION_AUTH_MODE
+# - CF_ACCESS_TEAM_DOMAIN
+# - CF_ACCESS_AUD
+#
+# optional_vars:
+# - APERION_AUTH_LOG_OUTCOMES
+# - CF_ACCESS_JWKS_TTL_MS
+# - CF_ACCESS_JWT_CLOCK_SKEW_SECONDS
+# - CF_ACCESS_SERVICE_TOKEN_ID
+# - CF_ACCESS_SERVICE_TOKEN_SECRET
+# - GOOGLE_APPLICATION_CREDENTIALS_JSON
+# - GEMINI_API_KEY
+# - GEMINI_MODEL
+# - APERION_ENV
+# - ENVIRONMENT
+# - NODE_ENV
 
 [[vectorize]]
 binding = "MEMORY_VECTORS"
@@ -134,6 +154,11 @@ routes = []
 
 [env.preview.vars]
 # API_TOKEN will be set via secrets
+#
+# required_vars:
+# - APERION_AUTH_MODE
+# - CF_ACCESS_TEAM_DOMAIN
+# - CF_ACCESS_AUD
 
 [[env.preview.d1_databases]]
 binding = "MEMORY_DB"

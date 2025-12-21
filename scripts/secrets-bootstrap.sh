@@ -41,34 +41,35 @@ if [ -n "$cf_token" ]; then
     echo "✅ CLOUDFLARE_API_TOKEN updated in .env"
 fi
 
-# 2. Application Token (VITE_AUTH_TOKEN / Worker API_TOKEN)
+# 2. Legacy Token Auth (optional; API-only)
 echo ""
 echo "--- 2. Application Secrets ---"
-echo "We use a single shared bearer token for API authentication."
-echo "- Local/CLI/Web build: VITE_AUTH_TOKEN"
-echo "- Cloudflare Worker secret: API_TOKEN"
-read -s -p "Enter VITE_AUTH_TOKEN (leave blank to generate random or use existing): " auth_token
+echo "Production auth is Cloudflare Access (JWT/JWKS). The web UI is Access-session-only and does not use bearer tokens."
+echo "Optionally, for local API-only development you can set a legacy bearer token:"
+echo "- Local scripts/curl: AUTH_TOKEN"
+echo "- Worker secret (only in token/hybrid mode): API_TOKEN"
+read -s -p "Enter AUTH_TOKEN (leave blank to skip or generate/use existing): " auth_token
 echo ""
 
 if [ -z "$auth_token" ]; then
-    if grep -q "^VITE_AUTH_TOKEN=" .env; then
-        auth_token=$(grep "^VITE_AUTH_TOKEN=" .env | cut -d '=' -f2)
-        echo "Using existing VITE_AUTH_TOKEN from .env"
+    if grep -q "^AUTH_TOKEN=" .env; then
+        auth_token=$(grep "^AUTH_TOKEN=" .env | cut -d '=' -f2)
+        echo "Using existing AUTH_TOKEN from .env"
     else
         auth_token=$(openssl rand -hex 32)
-        echo "🔑 Generated random VITE_AUTH_TOKEN"
+        echo "🔑 Generated random AUTH_TOKEN"
     fi
 fi
 
 if [ -n "$auth_token" ]; then
-    # Remove legacy AUTH_TOKEN if present to avoid ambiguity
-    sed -i '/^AUTH_TOKEN=/d' .env
+    # Remove legacy VITE_AUTH_TOKEN if present to avoid drift.
+    sed -i '/^VITE_AUTH_TOKEN=/d' .env
 
-    # Set VITE_AUTH_TOKEN for web app and CLI
-    if grep -q "^VITE_AUTH_TOKEN=" .env; then
-        sed -i "s|^VITE_AUTH_TOKEN=.*|VITE_AUTH_TOKEN=$auth_token|" .env
+    # Set AUTH_TOKEN for local scripts/curl (optional)
+    if grep -q "^AUTH_TOKEN=" .env; then
+        sed -i "s|^AUTH_TOKEN=.*|AUTH_TOKEN=$auth_token|" .env
     else
-        echo "VITE_AUTH_TOKEN=$auth_token" >> .env
+        echo "AUTH_TOKEN=$auth_token" >> .env
     fi
 
     # Set default VITE_API_BASE_URL if not present
@@ -76,7 +77,7 @@ if [ -n "$auth_token" ]; then
         echo "VITE_API_BASE_URL=http://127.0.0.1:8787" >> .env
     fi
 
-    echo "✅ VITE_AUTH_TOKEN updated in .env"
+    echo "✅ AUTH_TOKEN updated in .env"
 
     # Offer to push to Cloudflare
     echo ""

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Authentication Setup Verification Script
-# Verifies that authentication is properly configured across all environments
+# Verifies that the Cloudflare Access-based auth model is not accidentally drifting back
+# toward client-baked bearer tokens.
 
 set -e
 
@@ -39,20 +40,15 @@ if [ -f .env ]; then
     print_status "ok" ".env file exists"
 
     if grep -q "VITE_AUTH_TOKEN=" .env; then
-        TOKEN_VALUE=$(grep "VITE_AUTH_TOKEN=" .env | cut -d'=' -f2)
-        if [ -n "$TOKEN_VALUE" ] && [ "$TOKEN_VALUE" != "your-secure-token-here" ]; then
-            print_status "ok" "VITE_AUTH_TOKEN is set"
-            TOKEN_LENGTH=${#TOKEN_VALUE}
-            if [ $TOKEN_LENGTH -ge 32 ]; then
-                print_status "ok" "Token length is adequate ($TOKEN_LENGTH characters)"
-            else
-                print_status "warn" "Token is short ($TOKEN_LENGTH characters). Consider using a longer token."
-            fi
-        else
-            print_status "error" "VITE_AUTH_TOKEN is not set or using placeholder value"
-        fi
+        print_status "error" "VITE_AUTH_TOKEN found in .env (not used; remove it)"
     else
-        print_status "error" "VITE_AUTH_TOKEN not found in .env"
+        print_status "ok" "No VITE_AUTH_TOKEN in .env"
+    fi
+
+    if grep -q "^AUTH_TOKEN=" .env; then
+        print_status "warn" "AUTH_TOKEN is set (legacy token auth; API-only, not used by web UI)"
+    else
+        print_status "ok" "AUTH_TOKEN not set (ok)"
     fi
 
     if grep -q "VITE_API_BASE_URL=" .env; then
@@ -88,13 +84,12 @@ fi
 if command -v wrangler &> /dev/null; then
     print_status "ok" "Wrangler CLI is installed"
 
-    # Try to list secrets (requires authentication)
-    echo "   Checking Worker secrets..."
+    echo "   Checking Worker secrets (optional)..."
     if wrangler secret list --name aperion-api-worker &> /dev/null; then
         if wrangler secret list --name aperion-api-worker 2>/dev/null | grep -q "API_TOKEN"; then
-            print_status "ok" "API_TOKEN secret is set in Worker"
+            print_status "warn" "API_TOKEN secret is set in Worker (legacy token/hybrid mode only; not required in access mode)"
         else
-            print_status "error" "API_TOKEN secret not found in Worker. Run: wrangler secret put API_TOKEN"
+            print_status "ok" "API_TOKEN secret not present (ok for access-mode production)"
         fi
     else
         print_status "warn" "Cannot verify Worker secrets (authentication may be required)"
@@ -112,27 +107,21 @@ echo "--------------------------------"
 if [ -f .env ]; then
     source .env
 
-    # Check if local worker is running
     if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/v1/identity > /dev/null 2>&1; then
         STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/v1/identity)
-
-        if [ "$STATUS_CODE" = "401" ]; then
-            print_status "ok" "Worker is running and requires authentication"
-
-            # Test with token
-            if [ -n "$VITE_AUTH_TOKEN" ]; then
-                AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $VITE_AUTH_TOKEN" http://127.0.0.1:8787/v1/identity)
-
-                if [ "$AUTH_STATUS" = "200" ]; then
-                    print_status "ok" "Authentication successful with local token"
-                elif [ "$AUTH_STATUS" = "403" ]; then
-                    print_status "error" "Authentication failed: Invalid token"
-                else
-                    print_status "warn" "Unexpected response code: $AUTH_STATUS"
-                fi
-            fi
+        if [ "$STATUS_CODE" = "401" ] || [ "$STATUS_CODE" = "403" ] || [ "$STATUS_CODE" = "200" ]; then
+            print_status "ok" "Worker is running (status $STATUS_CODE)"
         else
             print_status "warn" "Worker returned unexpected status: $STATUS_CODE"
+        fi
+
+        if [ -n "${AUTH_TOKEN:-}" ]; then
+            AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${AUTH_TOKEN}" http://127.0.0.1:8787/v1/identity)
+            if [ "$AUTH_STATUS" = "200" ]; then
+                print_status "ok" "Legacy token auth succeeded (AUTH_TOKEN)"
+            else
+                print_status "warn" "Legacy token auth did not succeed (got $AUTH_STATUS). This may be expected in access mode."
+            fi
         fi
     else
         print_status "warn" "Local worker not running. Start with: pnpm --filter @aperion/api-worker dev"
@@ -143,19 +132,16 @@ fi
 
 echo ""
 
-# Check 4: Production API (if accessible)
+# Check 4: Production API (Optional)
 echo "4. Testing Production API (Optional)"
 echo "-------------------------------------"
 
 if curl -s -o /dev/null -w "%{http_code}" https://api.aperion.cc/v1/identity > /dev/null 2>&1; then
     PROD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.aperion.cc/v1/identity)
-
-    if [ "$PROD_STATUS" = "401" ]; then
-        print_status "ok" "Production API is accessible and requires authentication"
-    elif [ "$PROD_STATUS" = "200" ]; then
-        print_status "warn" "Production API is accessible without authentication (security issue!)"
+    if [ "$PROD_STATUS" = "200" ]; then
+        print_status "warn" "Production API returned 200 without an Access service token (check Access policies!)"
     else
-        print_status "warn" "Production API returned status: $PROD_STATUS"
+        print_status "ok" "Production API appears protected (status $PROD_STATUS)"
     fi
 else
     print_status "warn" "Production API not accessible (may not be deployed yet)"
