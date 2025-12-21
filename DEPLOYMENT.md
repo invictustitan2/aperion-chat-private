@@ -34,7 +34,13 @@ Navigate to: **Repository → Settings → Secrets and variables → Actions**
 | ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
 | `CLOUDFLARE_API_TOKEN`  | Cloudflare API token with required permissions | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID                     | Cloudflare Dashboard → Workers & Pages → Overview                      |
-| `API_TOKEN`             | Shared authentication token for API requests   | Generate with `npx tsx scripts/generate-api-token.ts`                  |
+
+Optional (only if you want deploy-time smoke tests to call the API through Access without a browser session):
+
+| Secret Name                      | Description                                   |
+| -------------------------------- | --------------------------------------------- |
+| `CF_ACCESS_SERVICE_TOKEN_ID`     | Cloudflare Access service token client id     |
+| `CF_ACCESS_SERVICE_TOKEN_SECRET` | Cloudflare Access service token client secret |
 
 ### Cloudflare API Token Permissions
 
@@ -88,20 +94,14 @@ Configure in Cloudflare Dashboard:
 
 ## Cloudflare Worker Secrets
 
-The API Worker requires the `API_TOKEN` secret to be set in Cloudflare.
+Production auth is Cloudflare Access (JWT/JWKS). The API Worker does **not** require an `API_TOKEN` secret in production.
 
-### Set Worker Secret
+If you choose to enable optional service-token-based smoke tests, set these Worker secrets:
 
 ```bash
 cd apps/api-worker
-npx wrangler secret put API_TOKEN
-# Enter the same token value used in GitHub secrets
-```
-
-### Verify Secrets
-
-```bash
-npx wrangler secret list
+npx wrangler secret put CF_ACCESS_SERVICE_TOKEN_ID
+npx wrangler secret put CF_ACCESS_SERVICE_TOKEN_SECRET
 ```
 
 ## Cloudflare Pages Environment Variables
@@ -113,12 +113,11 @@ The web app needs environment variables for build-time configuration.
 1. Go to **Pages → aperion-chat-private → Settings → Environment variables**
 2. Add the following variables for **Production**:
 
-| Variable Name       | Value                    | Description                             |
-| ------------------- | ------------------------ | --------------------------------------- |
-| `VITE_API_BASE_URL` | `https://api.aperion.cc` | API endpoint URL                        |
-| `VITE_AUTH_TOKEN`   | `<same-as-API_TOKEN>`    | Authentication token (baked into build) |
+| Variable Name       | Value                    | Description      |
+| ------------------- | ------------------------ | ---------------- |
+| `VITE_API_BASE_URL` | `https://api.aperion.cc` | API endpoint URL |
 
-**Note:** The Pages deployment workflow also injects these at build time, but setting them in the dashboard ensures they're used for manual deployments.
+The web UI is **Access-session-only** and must not ship any `VITE_AUTH_TOKEN` references.
 
 ## Cloudflare Resources Setup
 
@@ -269,11 +268,10 @@ Each workflow specifies minimal required permissions:
 
 ### Authentication Verification
 
-The API deployment workflow includes post-deployment verification:
+The API deployment workflow includes optional post-deployment verification.
 
-1. Test without auth (expects 401)
-2. Test with auth (expects 200)
-3. Fails deployment if authentication is broken
+- If Access service token secrets are configured in GitHub, it performs a service-token-authenticated check.
+- Otherwise it skips (production API is still protected by Access).
 
 ## Environment Variables Reference
 
@@ -285,32 +283,35 @@ cp .env.example .env
 
 # Edit with your values:
 VITE_API_BASE_URL=http://127.0.0.1:8787
-VITE_AUTH_TOKEN=<your-token>
 CLOUDFLARE_API_TOKEN=<your-cloudflare-token>
 CLOUDFLARE_ACCOUNT_ID=<your-account-id>
+
+# Optional: legacy bearer token for local API-only dev (web UI does not use this)
+AUTH_TOKEN=<your-token>
 ```
 
 ### GitHub Actions (Secrets)
 
-| Secret                  | Used In       | Description                     |
-| ----------------------- | ------------- | ------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | All workflows | Cloudflare API authentication   |
-| `CLOUDFLARE_ACCOUNT_ID` | All workflows | Cloudflare account identifier   |
-| `API_TOKEN`             | deploy-web    | Shared API authentication token |
-| `GITHUB_TOKEN`          | Automatic     | GitHub Actions automatic token  |
+| Secret                           | Used In               | Description                                  |
+| -------------------------------- | --------------------- | -------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`           | All workflows         | Cloudflare API authentication                |
+| `CLOUDFLARE_ACCOUNT_ID`          | All workflows         | Cloudflare account identifier                |
+| `CF_ACCESS_SERVICE_TOKEN_ID`     | deploy-api (optional) | Access service token id for smoke checks     |
+| `CF_ACCESS_SERVICE_TOKEN_SECRET` | deploy-api (optional) | Access service token secret for smoke checks |
+| `GITHUB_TOKEN`                   | Automatic             | GitHub Actions automatic token               |
 
 ### Cloudflare Worker (Secrets)
 
-| Secret      | Description                                     |
-| ----------- | ----------------------------------------------- |
-| `API_TOKEN` | Validates Bearer tokens in Authorization header |
+| Secret                           | Description                                                                |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `CF_ACCESS_SERVICE_TOKEN_ID`     | (Optional) expected `CF-Access-Client-Id` value for service-token auth     |
+| `CF_ACCESS_SERVICE_TOKEN_SECRET` | (Optional) expected `CF-Access-Client-Secret` value for service-token auth |
 
 ### Cloudflare Pages (Environment Variables)
 
 | Variable            | Value                    | Environment |
 | ------------------- | ------------------------ | ----------- |
 | `VITE_API_BASE_URL` | `https://api.aperion.cc` | Production  |
-| `VITE_AUTH_TOKEN`   | `<token>`                | Production  |
 
 ## Deployment Commands
 
@@ -359,23 +360,19 @@ npx wrangler d1 migrations apply aperion-memory --remote
 
 **Solution:**
 
-1. Set Worker secret: `npx wrangler secret put API_TOKEN`
-2. Set Pages env vars in Cloudflare Dashboard
+1. Set required Worker secrets/vars (see [docs/DEPLOY_PROD.md](docs/DEPLOY_PROD.md))
+2. Set Pages env vars in Cloudflare Dashboard (only `VITE_API_BASE_URL`)
 3. Set GitHub secrets in repository settings
 
 ### Authentication Fails After Deployment
 
-**Problem:** Token mismatch between frontend and backend.
+**Problem:** API calls fail with 401/403 or redirects.
 
 **Solution:**
 
-1. Verify tokens match:
-   - GitHub secret `API_TOKEN`
-   - Worker secret `API_TOKEN` (via `wrangler secret list`)
-   - Pages env var `VITE_AUTH_TOKEN`
-2. Regenerate token: `npx tsx scripts/generate-api-token.ts`
-3. Update all three locations
-4. Redeploy
+1. Verify Cloudflare Access policies protect both `chat.aperion.cc` and `api.aperion.cc`.
+2. If you use service-token smoke tests, ensure `CF_ACCESS_SERVICE_TOKEN_ID` and `CF_ACCESS_SERVICE_TOKEN_SECRET` are set in both GitHub Secrets and Worker secrets.
+3. Redeploy API Worker and web.
 
 ### Custom Domain Not Working
 
@@ -436,31 +433,21 @@ npx wrangler d1 migrations apply aperion-memory --remote
 
 # Or manually test
 curl https://api.aperion.cc/v1/episodic
-# Should return 401 (requires auth)
+# Should return 403/302 (Access protected) unless you have an Access session
 
-curl -H "Authorization: Bearer $API_TOKEN" https://api.aperion.cc/v1/episodic
-# Should return 200 with data
+# Optional: service-token-authenticated request
+curl \
+  -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
+  -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
+  https://api.aperion.cc/v1/episodic
 ```
 
 ## Security Best Practices
 
-### Token Management
+### Access Policy Management
 
-1. **Never commit tokens** to version control
-2. **Rotate tokens every 90 days** (recommended)
-3. **Use different tokens** for dev/prod (optional but recommended)
-4. **Audit token access** regularly
-
-### Secrets Rotation
-
-When rotating the API token:
-
-1. Generate new token: `npx tsx scripts/generate-api-token.ts`
-2. Update GitHub secret `API_TOKEN`
-3. Update Worker secret: `npx wrangler secret put API_TOKEN`
-4. Update Pages env var `VITE_AUTH_TOKEN`
-5. Trigger new deployments for both API and Web
-6. Verify with test requests
+1. Keep Access policies least-privilege (allow only your identity).
+2. If you use an Access service token, rotate it periodically and update both GitHub and Worker secrets.
 
 ### CORS Configuration
 

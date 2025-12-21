@@ -1,16 +1,20 @@
 # Rotate Secrets
 
-## Generate New Keys
-1. Run `openssl rand -hex 32` to generate a new API token.
-2. Run `openssl rand -hex 32` to generate a new JWT secret.
+## Access Service Token (Optional)
 
-## Update Cloudflare Secrets
-1. Run `wrangler secret put API_TOKEN` and paste the new token.
-2. Run `wrangler secret put JWT_SECRET` and paste the new secret.
+If you use an Access service token for automation/smoke tests:
+
+1. Create a new service token in Cloudflare Zero Trust.
+2. Update Worker secrets:
+   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_ID`
+   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_SECRET`
+
+3. Update GitHub Actions secrets with the same values.
 
 ## Update Local Environment
-1. Update `.env` with the new keys.
-2. Run `./scripts/keys-check.sh` to verify.
+
+1. Run `./scripts/keys-check.sh` to verify.
 
 ## Redeploy
-1. Run `npm run deploy` to push changes.
+
+1. Redeploy the API Worker and web app.

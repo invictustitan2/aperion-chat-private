@@ -2,7 +2,7 @@
 
 Replace the current static bearer-token and WS query-token auth with a single, shared “auth truth” based on **Cloudflare Zero Trust Access** identity for both HTTP and WebSocket traffic. Implement **real Access JWT verification (JWKS)** and ensure the **Durable Object re-verifies** auth at WS accept time (the DO must not trust an unsigned userId).
 
-Keep legacy bearer token auth only for local/dev/test behind an explicit `APERION_AUTH_MODE` contract that **fails closed in prod** when Access config is missing. Then add prod-safe WS close-code logging + spam reduction, make preferences return defaults for known keys, and strip/gate Settings debug/token info in production. Update unit + e2e tests to keep `pnpm test` and `pnpm test:e2e` green.
+Keep legacy bearer token auth only for local/dev/test behind an explicit `APERION_AUTH_MODE` contract that **fails closed in prod** when Access config is missing. Note: the shipped web UI is Access-session-only (it does not send browser bearer tokens). Then add prod-safe WS close-code logging + spam reduction, make preferences return defaults for known keys, and strip/gate Settings debug/token info in production. Update unit + e2e tests to keep `pnpm test` and `pnpm test:e2e` green.
 
 ### Current Status (2025-12-21)
 
@@ -12,9 +12,11 @@ Keep legacy bearer token auth only for local/dev/test behind an explicit `APERIO
 - **Durable Object boundary secured:** the DO re-verifies auth before accepting WebSocket upgrades and closes unauthenticated sockets with a policy code.
 - **Request log hardening:** redacts sensitive query params (e.g. `?token=`) so legacy token fallbacks don’t leak into logs.
 - **Preferences contract stabilized:** known keys (currently `ai.tone`) never 404; missing returns defaults; invalid values rejected; unknown keys remain 404.
-- **Web client cutover:** prod/test rely on Access session (no bearer headers / no WS `?token=`); dev can still use token mode.
+- **Web client cutover:** prod/test rely on Access session (no bearer headers / no WS `?token=`). The shipped web UI does **not** use browser bearer tokens.
 - **WS UX improvements:** close-code logging + reconnect backoff and reduced warning spam.
-- **Settings production safety:** debug/auth token UI gated to dev only; no `VITE_AUTH_TOKEN` leak strings in prod UI; added Playwright guardrails.
+- **Settings production safety:** DEV-only auth debug UI; no token values or token/env-var hint strings shipped.
+- **Post-ready observability:** low-noise auth outcomes + WS upgrade outcomes (deny-only by default; optionally log accepts).
+- **CI guardrail:** `pnpm guard:prod-secrets` runs in CI to ensure no `VITE_AUTH_TOKEN` / “Ensure VITE_AUTH_TOKEN” strings exist in built web assets.
 
 **Tests:**
 
@@ -33,6 +35,45 @@ Recent Playwright stability fixes:
 
 - (Optional) Do a manual smoke test in a real Access-protected environment (`api.aperion.cc` + `/v1/ws`) to validate dashboard config and cookie/header behavior.
 
+### Manual Steps You Must Do (Cloudflare + validation)
+
+1. **Configure Cloudflare Access applications**
+   - Zero Trust → Access → Applications
+   - Create Self-hosted app for `chat.aperion.cc` (UI)
+   - Create Self-hosted app for `api.aperion.cc` with paths:
+     - `api.aperion.cc/v1/*`
+     - `api.aperion.cc/v1/ws`
+   - Add strict Allow policy (email / IdP group)
+
+2. **Capture the Access AUD for the API app**
+   - From the `api.aperion.cc` Access application settings.
+
+3. **Set API Worker environment variables (production)**
+   - Ensure the deployed Worker has:
+     - `APERION_AUTH_MODE=access`
+     - `CF_ACCESS_TEAM_DOMAIN=<team slug or full *.cloudflareaccess.com>`
+     - `CF_ACCESS_AUD=<AUD from Access app>`
+   - Optional:
+     - `APERION_AUTH_LOG_OUTCOMES=deny` (default behavior)
+     - `APERION_AUTH_LOG_OUTCOMES=all` (adds accept logs; higher volume)
+     - Service token for automation:
+       - `CF_ACCESS_SERVICE_TOKEN_ID`
+       - `CF_ACCESS_SERVICE_TOKEN_SECRET`
+
+4. **Deploy and validate**
+   - Visit `https://chat.aperion.cc/chat` and confirm Access prompts and the UI loads.
+   - Confirm HTTP works under Access:
+     - `GET https://api.aperion.cc/v1/identity` returns `200` when logged in.
+     - Without Access, it should be `401`.
+   - Confirm WS works:
+     - UI connects.
+     - Unauthenticated upgrades must policy-close with code `1008`.
+
+5. **(Optional) Run the prod-bundle guard locally**
+   - `pnpm -r build`
+   - `pnpm guard:prod-secrets`
+   - This must pass before shipping; CI enforces it.
+
 ### Readiness Deliverables (Final)
 
 #### A) Current Behavior Summary (short)
@@ -41,6 +82,7 @@ Recent Playwright stability fixes:
 - **WS auth path:** `/v1/ws` is routed through the Worker to the Durable Object, and the Durable Object re-verifies auth before accepting the upgrade (fail-closed). Unauthenticated sockets are closed with policy close code `1008`.
 - **Preferences behavior:** known preference keys never 404. Missing values return defaults (currently `ai.tone = "default"`). Invalid values are rejected; unknown keys remain 404.
 - **Settings debug gating:** Settings debug/auth token UI is DEV-only (no token leak strings in production UI).
+- **Prod bundle invariant:** production build output must not contain `VITE_AUTH_TOKEN` or “Ensure VITE_AUTH_TOKEN” strings (guarded by `pnpm guard:prod-secrets`).
 
 #### B) Cloudflare Dashboard Checklist (Access)
 
@@ -84,6 +126,8 @@ Recent Playwright stability fixes:
    - Call `GET https://api.aperion.cc/v1/preferences/ai.tone` and confirm it returns `200` with default when unset.
 5. **Settings is production-safe**
    - Visit Settings and confirm no token values or “set VITE_AUTH_TOKEN” hints are shown in production.
+6. **CI guardrail sanity**
+   - Confirm CI includes “Guard (no prod auth-token hints)” and it passes.
 
 #### D) What Changed (file list)
 
@@ -95,6 +139,7 @@ Recent Playwright stability fixes:
 - `apps/web/src/components/MessageBubble.tsx` (stable message bubble test ids)
 - `apps/web/test/e2e/qa_evidence.spec.ts` (drawer geometry-based scrim dismiss; episodic GET/POST mock; screenshots dir creation; stable selectors)
 - `apps/web/test/e2e/chat.spec.ts` (strict-mode selector hardening)
+- `scripts/guard-prod-secrets.mjs` + root `package.json` + `.github/workflows/ci.yml` (prod bundle guardrail)
 
 ### Post-Ready Hardening & Observability (append-only)
 
@@ -130,7 +175,7 @@ Recent Playwright stability fixes:
 4. **Apply to HTTP first (stabilize):** update middleware/router so all `/v1/*` handlers use the auth resolver; add/adjust tests.
 5. **WS + Durable Object boundary (explicit rule):** re-run `getAuthContext()` inside the DO before accepting the WebSocket.
    - Deny unauthenticated upgrades; close with meaningful code (e.g., `1008` policy violation).
-6. **Web client cutover (prod-safe):** remove reliance on `VITE_AUTH_TOKEN` for browser HTTP/WS in prod; keep dev-only token support.
+6. **Web client cutover (prod-safe):** remove reliance on `VITE_AUTH_TOKEN` for browser HTTP/WS in prod (Access-session-only). Keep legacy token auth for non-browser tools/local testing only.
 7. **WS close-code logging + spam reduction:** log one `onclose` line (code/reason/wasClean), add backoff+jitter reconnect, and throttle “cannot send” warnings.
 8. **Preferences registry defaults:** known keys never 404; return defaults on missing. Canonical: `ai.tone="default"`.
 9. **Prod Settings sanitization:** ensure no token values or “Ensure VITE_AUTH_TOKEN…” hints render in prod; DEV-only debug blocks allowed.

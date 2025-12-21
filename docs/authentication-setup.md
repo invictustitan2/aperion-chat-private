@@ -1,25 +1,27 @@
 # Authentication Setup Guide
 
-This guide covers the complete authentication system for Aperion Chat, including token generation, secrets management, and deployment configuration.
+This guide covers the authentication model for Aperion Chat.
 
 ## Architecture Overview
 
-Aperion Chat uses a **Bearer token authentication** system:
+Aperion Chat uses **Cloudflare Zero Trust Access** as the production authentication boundary:
 
-- **Frontend (Web App)**: Includes the token at build time via `VITE_AUTH_TOKEN`
-- **Backend (API Worker)**: Validates the token from the `Authorization` header against `API_TOKEN` secret
-- **Token Format**: 256-bit cryptographically secure random token, base64url encoded
+- **Frontend (Web App)**: protected by Access; browser carries an Access session.
+- **Backend (API Worker)**: verifies Access identity via `CF-Access-Jwt-Assertion` (or `CF_Authorization` cookie) using JWKS.
+- **Web UI**: does not bake any bearer token into the client build.
 
 ### Security Model
 
-- **Single-user system**: One shared token for all requests
-- **Token rotation**: Supported by regenerating and updating across all environments
+- **Single-user system**: Access policy limits who can reach the app/API
+- **Rotation**: Access keys rotate automatically; service tokens can be rotated when needed
 - **CORS protection**: Environment-aware origin restrictions
 - **HTTPS only**: Production endpoints enforce TLS
 
-## Token Generation
+## Optional: Legacy Token Auth (API-only)
 
-### Generate a New Token
+Legacy bearer-token auth still exists for local API-only development and test scenarios (auth modes `token` / `hybrid`). The web UI does not use this.
+
+### Generate a New Token (Legacy)
 
 ```bash
 node scripts/generate-api-token.ts
@@ -50,19 +52,21 @@ This generates a 256-bit secure random token and provides setup instructions.
 4. **Store securely** in secret management systems
 5. **Limit token exposure** - only set where needed
 
-## Where The Token Lives (And Why You Might Not Know It)
+## Where Auth Lives (And Why You Might Not Know It)
 
-In the “Cloudflare-first + GitHub Actions” setup, the production token typically exists only in:
+In the “Cloudflare-first + GitHub Actions” setup, production authentication is primarily managed by Cloudflare Access policies.
 
-- **GitHub Actions Secret**: `API_TOKEN` (used at deploy time)
-- **Cloudflare Worker Secret**: `API_TOKEN` (used at runtime)
+If you enable optional deploy-time smoke tests through Access, the service token exists only in:
+
+- **GitHub Actions Secrets**: `CF_ACCESS_SERVICE_TOKEN_ID` + `CF_ACCESS_SERVICE_TOKEN_SECRET`
+- **Cloudflare Worker Secrets**: `CF_ACCESS_SERVICE_TOKEN_ID` + `CF_ACCESS_SERVICE_TOKEN_SECRET` (for header matching)
 
 Important operational detail:
 
 - **GitHub Actions secrets are not readable after being set** (they can be used by workflows, but not retrieved).
 - **Cloudflare Worker secrets are not retrievable** (you can list that a secret exists, but cannot fetch its value).
 
-If you do not have the token value stored anywhere else (password manager, encrypted vault, etc.), the correct remedy is **rotation** (generate a new token and update GitHub + Worker + redeploy the web build).
+If you do not have the service token stored anywhere else, the correct remedy is **rotation** (create a new service token and update secrets).
 
 ## Environment Configuration
 
@@ -74,9 +78,9 @@ If you do not have the token value stored anywhere else (password manager, encry
 # Copy template
 cp .env.example .env
 
-# Edit .env and add your token
+# For API-only local dev (legacy token mode)
 VITE_API_BASE_URL=http://127.0.0.1:8787
-VITE_AUTH_TOKEN=<your-generated-token>
+AUTH_TOKEN=<your-generated-token>
 ```
 
 **Restart dev servers** after changing `.env`:
@@ -95,29 +99,13 @@ Required for automated deployments.
 
 **Navigate to:** Repository → Settings → Secrets and variables → Actions
 
-**Add secret:**
-
-- **Name:** `API_TOKEN`
-- **Value:** `<your-generated-token>`
-
-This secret is used by both deployment workflows:
-
-- `deploy-api.yml` - Sets Worker secret and verifies deployment
-- `deploy-web.yml` - Injects into build as `VITE_AUTH_TOKEN`
+Optional: set `CF_ACCESS_SERVICE_TOKEN_ID` and `CF_ACCESS_SERVICE_TOKEN_SECRET` if you want deploy-time smoke tests to call the API through Access.
 
 ### 3. Cloudflare Worker (Backend)
 
-The Worker needs the token as a **secret** (not a variable) for security.
+In production, the Worker verifies Cloudflare Access identity via JWKS.
 
-```bash
-cd apps/api-worker
-
-# Set the secret (will prompt for value)
-wrangler secret put API_TOKEN
-
-# Or pipe from command
-echo "<your-generated-token>" | wrangler secret put API_TOKEN
-```
+Optional: for legacy token mode (API-only dev/test), set `API_TOKEN`.
 
 **Verify it's set:**
 
@@ -127,19 +115,9 @@ wrangler secret list --name aperion-api-worker
 
 ### 4. Cloudflare Pages (Frontend)
 
-The frontend needs the token baked into the build.
+The web UI is Access-session-only. It must not bake bearer tokens into the build.
 
-**Recommended:** Deploy the web app via GitHub Actions so the build injects `VITE_AUTH_TOKEN` from the GitHub secret `API_TOKEN`. This avoids having multiple competing sources of truth (GitHub vs Pages dashboard).
-
-**Optional (only for manual dashboard deployments):** Cloudflare Dashboard → Pages → aperion-chat-private → Settings → Environment variables
-
-**Add variable:**
-
-- **Variable name:** `VITE_AUTH_TOKEN`
-- **Value:** `<your-generated-token>`
-- **Environment:** Production (and Preview if needed)
-
-**Also add:**
+Configure only:
 
 - **Variable name:** `VITE_API_BASE_URL`
 - **Value:** `https://api.aperion.cc`
@@ -249,43 +227,19 @@ When rotating tokens (recommended every 90 days):
 
 ### Step-by-Step Process
 
-1. **Generate new token**
+If you use a Cloudflare Access service token (optional, for automation/smoke tests):
 
-   ```bash
-   node scripts/generate-api-token.ts
-   ```
+1. Create a new service token in Cloudflare Zero Trust.
+2. Update GitHub Secrets:
+   - `CF_ACCESS_SERVICE_TOKEN_ID`
+   - `CF_ACCESS_SERVICE_TOKEN_SECRET`
 
-2. **Update all environments** (in this order to minimize downtime):
+3. Update Worker secrets:
+   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_ID`
+   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_SECRET`
 
-   a. **GitHub Secret** (for future deployments)
+4. Verify using the repo script:
 
-   ```
-   Repository → Settings → Secrets → Edit API_TOKEN
-   ```
-
-   b. **Cloudflare Worker** (backend)
-
-   ```bash
-   echo "<new-token>" | wrangler secret put API_TOKEN
-   ```
-
-   c. **Redeploy** to rebuild the frontend with the new token
-
-   ```bash
-   git commit --allow-empty -m "chore: trigger redeploy for token rotation"
-   git push
-   ```
-
-   d. **Update local `.env`**
-
-   ```bash
-   # Edit .env file
-   VITE_AUTH_TOKEN=<new-token>
-
-   # Restart dev servers
-   ```
-
-3. **Verify** new token works
    ```bash
    ./scripts/verify-auth-setup.sh
    ```
@@ -300,35 +254,17 @@ For production systems, implement a grace period:
 
 ## Troubleshooting
 
-### "VITE_AUTH_TOKEN is missing" in browser console
+### Access login redirects / 403s
 
-**Cause:** Token not injected at build time
-
-**Solutions:**
-
-- **Local:** Check `.env` file exists and has `VITE_AUTH_TOKEN` set
-- **Production:** Ensure your CI deploy injected `VITE_AUTH_TOKEN` during the build, then redeploy
-- **After changes:** Restart dev server or redeploy
+**Cause:** Missing/invalid Cloudflare Access session or Access policy misconfiguration.
 
 ### 401 Unauthorized errors
 
-**Cause:** Token not sent, token scheme is invalid, or Worker secret not set
-
-**Solutions:**
-
-- Verify Worker secret: `wrangler secret list`
-- Check browser Network tab for `Authorization` header
-- Verify token matches between frontend and backend
+**Cause:** Request reached the Worker but did not include a valid Access assertion.
 
 ### 403 Forbidden errors
 
-**Cause:** Token sent but doesn't match the Worker secret
-
-**Solutions:**
-
-- Ensure same token in all environments
-- Check for extra whitespace or encoding issues
-- Regenerate token and update everywhere
+**Cause:** Cloudflare Access blocked the request at the edge, or legacy bearer token auth rejected credentials.
 
 ### CORS errors in browser
 
@@ -345,17 +281,16 @@ For production systems, implement a grace period:
 
 **Possible causes:**
 
-1. **Different tokens** - Verify tokens match
-2. **Worker secret not set** - Run `wrangler secret list`
-3. **Pages env var not set** - Check Cloudflare Pages settings
-4. **Build cache** - Redeploy Pages to rebuild
+1. Access app/policy misconfigured for production domains
+2. Missing/incorrect Worker vars: `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD`
+3. Service token mismatch (if you use service tokens)
 
 ## Security Considerations
 
 ### Current Model
 
-- **Single shared token**: Suitable for single-user system
-- **Token in frontend build**: Acceptable for private deployment
+- **Cloudflare Access boundary**: Suitable for single-user system
+- **No token in frontend build**: web is Access-session-only
 - **HTTPS enforcement**: Required for production
 
 ### Future Enhancements

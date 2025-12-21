@@ -73,8 +73,8 @@ The web frontend is a Vite React app.
 
 This repo deploys the web app from GitHub Actions and uploads the built `apps/web/dist` to Pages.
 
-- `VITE_API_BASE_URL` and `VITE_AUTH_TOKEN` are injected at build time by the workflow.
-- If you deploy via GitHub Actions, Pages dashboard environment variables are not used for the build.
+- `VITE_API_BASE_URL` is injected at build time by the workflow.
+- The web UI is Access-session-only and must not inject or reference `VITE_AUTH_TOKEN`.
 
 Operational note: GitHub Actions secrets and Cloudflare Worker secrets are effectively write-only. You can use them in workflows/runtime, but you generally cannot retrieve the plaintext value later. Keep the token in a secure vault/password manager, or rotate it if it’s lost.
 
@@ -84,17 +84,16 @@ In the Pages project settings > Custom Domains, add `chat.aperion.cc`.
 
 ## 4. Cloudflare Access (Zero Trust)
 
-For a single-user system, **Cloudflare Access is highly recommended** to protect your API and Frontend without implementing complex auth logic in the app itself.
+For a single-user system, **Cloudflare Access is required** in production to protect your API and Frontend.
 
 ### Strategy
 
 1.  **Protect the Frontend**: Put `chat.aperion.cc` behind Access.
     - Policy: Allow specific email (you).
 2.  **Protect the API**: Put `api.aperion.cc` behind Access.
-    - **Service Token**: Create a Service Token in Zero Trust.
-    - **Policy**: Allow "Service Token" OR "Email" (so you can curl it, and the frontend can call it).
-    - **Frontend Integration**: The frontend needs to pass `CF-Access-Client-Id` and `CF-Access-Client-Secret` headers if calling from server-side, or rely on the browser cookie if calling from the browser (same domain/subdomain).
-    - _Simpler Alternative_: If Frontend and API are on the same root domain (`aperion.cc`), the Access cookie set on `chat.aperion.cc` can be valid for `api.aperion.cc` if configured correctly (Allow "Same Domain" settings).
+    - **Policy**: Allow your identity (email) for interactive access.
+    - **Optional Service Token**: Create a service token for automation/smoke tests.
+    - **Worker auth**: The Worker validates Access identity via `CF-Access-Jwt-Assertion` / `CF_Authorization` cookie using JWKS.
 
 ## 5. No Footguns (Security Best Practices)
 
