@@ -1257,11 +1257,11 @@ export function Chat() {
             isRecording={isRecording}
             isProcessingVoice={isProcessingVoice}
             error={
-              sendMessage.error instanceof Error
-                ? sendMessage.error.message
-                : typeof sendMessage.error === "string"
-                  ? sendMessage.error
-                  : null
+              sendMessage.error
+                ? (sendMessage.error as unknown) instanceof Error
+                  ? (sendMessage.error as unknown as Error).message
+                  : String(sendMessage.error)
+                : null
             }
             voiceError={voiceError}
             disabled={
