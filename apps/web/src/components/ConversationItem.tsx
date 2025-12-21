@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
-import { KeyboardEvent, useState } from "react";
+import { KeyboardEvent, useEffect, useState } from "react";
 
 /**
  * ConversationItem Component - Aperion Chat
@@ -52,6 +52,11 @@ export function ConversationItem({
   isRenamePending = false,
 }: ConversationItemProps) {
   const [localDraft, setLocalDraft] = useState(renameDraft);
+
+  // Sync local draft with prop when it changes (e.g., when rename starts)
+  useEffect(() => {
+    setLocalDraft(renameDraft);
+  }, [renameDraft]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -126,7 +131,7 @@ export function ConversationItem({
 
       {/* Actions */}
       {!isRenaming && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100group-focus-within:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <button
             onClick={() => onStartRename(conversation.id, conversation.title)}
             className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all focus-ring-visible"

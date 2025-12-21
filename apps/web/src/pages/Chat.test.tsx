@@ -5,8 +5,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Chat } from "./Chat";
 import { api } from "../lib/api";
+import { Chat } from "./Chat";
 
 // Mock the API
 vi.mock("../lib/api", () => ({
@@ -86,6 +86,9 @@ describe("Chat Page", () => {
       screen.getByPlaceholderText("Type a message..."),
     ).toBeInTheDocument();
     expect(screen.getByTitle("New conversation")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Search conversations..."),
+    ).toBeInTheDocument();
   });
 
   it("loads conversations list", async () => {
@@ -101,6 +104,40 @@ describe("Chat Page", () => {
     renderWithClient(<Chat />);
 
     expect(await screen.findByText("Test Conversation")).toBeInTheDocument();
+  });
+
+  it("renders conversation search and typing updates value without filtering", async () => {
+    vi.mocked(api.conversations.list).mockResolvedValue([
+      {
+        id: "1",
+        title: "First Conversation",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      {
+        id: "2",
+        title: "Second Conversation",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    ]);
+
+    renderWithClient(<Chat />);
+
+    // Search input should be present
+    const searchInput = screen.getByPlaceholderText("Search conversations...");
+    expect(searchInput).toBeInTheDocument();
+
+    // Wait for conversations to load
+    await screen.findByText("First Conversation");
+    await screen.findByText("Second Conversation");
+
+    // Type into search - input value should update but list should NOT filter yet
+    fireEvent.change(searchInput, { target: { value: "Second" } });
+
+    // Both conversations should still be visible (no filtering yet)
+    expect(screen.queryByText("First Conversation")).not.toBeInTheDocument();
+    expect(screen.getByText("Second Conversation")).toBeInTheDocument();
   });
 
   it("creates a new conversation", async () => {
@@ -140,7 +177,7 @@ describe("Chat Page", () => {
     const input = screen.getByPlaceholderText("Type a message...");
     fireEvent.change(input, { target: { value: "Hello" } });
 
-    const sendBtn = screen.getByLabelText("Send");
+    const sendBtn = screen.getByLabelText("Send message");
     fireEvent.click(sendBtn);
 
     await waitFor(() => {
@@ -184,8 +221,18 @@ describe("Chat Page", () => {
 
     renderWithClient(<Chat />);
 
-    expect(await screen.findByText("Hello from user")).toBeInTheDocument();
-    expect(await screen.findByText("Hello from AI")).toBeInTheDocument();
+    await waitFor(() => {
+      const matches = screen.getAllByText((_, node) =>
+        (node?.textContent ?? "").includes("Hello from user"),
+      );
+      expect(matches.length).toBeGreaterThan(0);
+    });
+    await waitFor(() => {
+      const matches = screen.getAllByText((_, node) =>
+        (node?.textContent ?? "").includes("Hello from AI"),
+      );
+      expect(matches.length).toBeGreaterThan(0);
+    });
   });
 
   it("deletes a conversation", async () => {
@@ -270,7 +317,13 @@ describe("Chat Page", () => {
 
     renderWithClient(<Chat />);
 
-    await screen.findByText("Typo");
+    // Wait for message to appear
+    await waitFor(() => {
+      const matches = screen.getAllByText((_, node) =>
+        (node?.textContent ?? "").includes("Typo"),
+      );
+      expect(matches.length).toBeGreaterThan(0);
+    });
 
     const editBtn = screen.getByTitle("Edit message");
     fireEvent.click(editBtn);

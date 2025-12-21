@@ -3,31 +3,34 @@ import { clsx } from "clsx";
 import {
   AlertCircle,
   CheckCircle,
-  Copy,
-  Share2,
-  Plus,
   Download,
-  ImageIcon,
   Loader2,
-  Mic,
-  MicOff,
-  Pencil,
+  Plus,
   RotateCcw,
-  Send,
-  Trash2,
-  ThumbsDown,
-  ThumbsUp,
+  Share2,
   ToggleLeft,
   ToggleRight,
   Wifi,
   WifiOff,
-  X,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChatInput } from "../components/ChatInput";
+import { ConversationItem } from "../components/ConversationItem";
+import { ConversationSearch } from "../components/ConversationSearch";
+import {
+  AllMessagesEmptyState,
+  EmptyConversationState,
+  NoConversationsState,
+} from "../components/EmptyStates";
+import { MessageBubble } from "../components/MessageBubble";
+import { MessageContent } from "../components/MessageContent";
+import {
+  ConversationListSkeleton,
+  MessageSkeleton,
+} from "../components/ui/Skeleton";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
-import { MessageContent } from "../components/MessageContent";
 
 function formatDayLabel(ts: number) {
   return new Date(ts).toLocaleDateString([], {
@@ -78,7 +81,7 @@ export function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const queryClient = useQueryClient();
@@ -103,6 +106,10 @@ export function Chat() {
     string | null
   >(null);
   const [conversationTitleDraft, setConversationTitleDraft] = useState("");
+  const [deletingConversationId, setDeletingConversationId] = useState<
+    string | null
+  >(null);
+  const [conversationSearchQuery, setConversationSearchQuery] = useState("");
 
   // Load tone preference (best-effort)
   useEffect(() => {
@@ -177,26 +184,6 @@ export function Chat() {
     if (msg) setHighlightMessageId(msg);
   }, []);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const { key } = await api.media.upload(file);
-      const url = api.media.getUrl(key);
-      const markdown = `![${file.name}](${url})`;
-
-      setInput((prev) => (prev ? `${prev}\n${markdown}` : markdown));
-    } catch (err) {
-      console.error("Upload failed", err);
-      // alert('Failed to upload image'); // Avoid alert in production?
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
   // Fetch recent episodic memories as "chat history"
   const {
     data: history,
@@ -216,6 +203,20 @@ export function Chat() {
     queryFn: () => api.conversations.list(50, 0),
     refetchInterval: 5000,
   });
+
+  // Filter conversations based on search query
+  const filteredConversations = useMemo(() => {
+    const conversations = conversationsQuery.data ?? [];
+    const query = conversationSearchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return conversations;
+    }
+
+    return conversations.filter((c) =>
+      (c.title ?? "").toLowerCase().includes(query),
+    );
+  }, [conversationsQuery.data, conversationSearchQuery]);
 
   const createConversation = useMutation({
     mutationFn: async () => {
@@ -241,6 +242,7 @@ export function Chat() {
 
   const deleteConversation = useMutation({
     mutationFn: async (id: string) => {
+      setDeletingConversationId(id);
       return api.conversations.delete(id);
     },
     onSuccess: (_res, id) => {
@@ -248,6 +250,9 @@ export function Chat() {
       if (activeConversationId === id) {
         setActiveConversationId(null);
       }
+    },
+    onSettled: () => {
+      setDeletingConversationId(null);
     },
   });
 
@@ -554,15 +559,6 @@ export function Chat() {
     return () => window.clearInterval(t);
   }, [isStreaming]);
 
-  // Auto-grow textarea
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    const next = Math.min(el.scrollHeight, 200);
-    el.style.height = `${next}px`;
-  }, [input]);
-
   // Mobile viewport changes (address bar / keyboard) can change available height.
   // If the user is already near the bottom, keep the chat pinned.
   useEffect(() => {
@@ -848,6 +844,12 @@ export function Chat() {
           </button>
         </div>
 
+        {/* Conversation Search */}
+        <ConversationSearch
+          onSearchChange={setConversationSearchQuery}
+          placeholder="Search conversations..."
+        />
+
         <div className="px-2 pb-3 space-y-1 max-h-56 md:max-h-none flex-1 min-h-0 overflow-y-auto no-scrollbar">
           <button
             onClick={() => setActiveConversationId(null)}
@@ -863,84 +865,50 @@ export function Chat() {
           </button>
 
           {conversationsQuery.isLoading ? (
-            <div className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading…
-            </div>
+            <ConversationListSkeleton count={5} />
           ) : conversationsQuery.error ? (
             <div className="px-3 py-2 text-sm text-red-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" /> Failed to load
             </div>
+          ) : conversationsQuery.data?.length === 0 ? (
+            <NoConversationsState
+              onCreate={() => createConversation.mutate()}
+            />
+          ) : filteredConversations.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-500 text-center">
+              No matches found
+            </div>
           ) : (
-            conversationsQuery.data?.map((c) => {
-              const isActive = activeConversationId === c.id;
-              const isRenaming = renamingConversationId === c.id;
-              return (
-                <div
-                  key={c.id}
-                  className={clsx(
-                    "group flex items-center gap-2 px-2 py-1 rounded-lg",
-                    isActive ? "bg-white/5" : "hover:bg-white/5",
-                  )}
-                >
-                  <button
-                    onClick={() => setActiveConversationId(c.id)}
-                    className={clsx(
-                      "flex-1 min-w-0 text-left px-2 py-2 rounded-md text-sm transition-colors",
-                      isActive ? "text-emerald-300" : "text-gray-300",
-                    )}
-                    title={c.title}
-                  >
-                    {isRenaming ? (
-                      <input
-                        value={conversationTitleDraft}
-                        onChange={(e) =>
-                          setConversationTitleDraft(e.target.value)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            renameConversation.mutate({
-                              id: c.id,
-                              title: conversationTitleDraft,
-                            });
-                          }
-                          if (e.key === "Escape") {
-                            setRenamingConversationId(null);
-                            setConversationTitleDraft("");
-                          }
-                        }}
-                        className="w-full bg-black/20 border border-white/10 rounded-md px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                        autoFocus
-                        disabled={renameConversation.isPending}
-                      />
-                    ) : (
-                      <span className="block truncate">{c.title}</span>
-                    )}
-                  </button>
-
-                  {!isRenaming && (
-                    <button
-                      onClick={() => {
-                        setRenamingConversationId(c.id);
-                        setConversationTitleDraft(c.title);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                      title="Rename"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => deleteConversation.mutate(c.id)}
-                    className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                    title="Delete"
-                    disabled={deleteConversation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })
+            filteredConversations.map((c) => (
+              <ConversationItem
+                key={c.id}
+                conversation={c}
+                isActive={activeConversationId === c.id}
+                isRenaming={renamingConversationId === c.id}
+                renameDraft={conversationTitleDraft}
+                onClick={() => setActiveConversationId(c.id)}
+                onRename={(id, title) =>
+                  renameConversation.mutate({ id, title })
+                }
+                onDelete={(id) => deleteConversation.mutate(id)}
+                onStartRename={(id, title) => {
+                  setRenamingConversationId(id);
+                  setConversationTitleDraft(title);
+                }}
+                onCancelRename={() => {
+                  setRenamingConversationId(null);
+                  setConversationTitleDraft("");
+                }}
+                isDeleting={
+                  deleteConversation.isPending &&
+                  deletingConversationId === c.id
+                }
+                isRenamePending={
+                  renameConversation.isPending &&
+                  renamingConversationId === c.id
+                }
+              />
+            ))
           )}
         </div>
       </aside>
@@ -1106,32 +1074,34 @@ export function Chat() {
           ref={scrollRef}
         >
           {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-            </div>
+            <>
+              <MessageSkeleton />
+              <MessageSkeleton isUser />
+              <MessageSkeleton />
+            </>
           ) : error ? (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
               <AlertCircle className="w-5 h-5" />
               <span>Error loading history: {error.message}</span>
             </div>
+          ) : history?.length === 0 ? (
+            !activeConversationId ? (
+              <AllMessagesEmptyState />
+            ) : (
+              <EmptyConversationState />
+            )
           ) : (
             history?.map((msg, idx) => {
               const prev = idx > 0 ? history[idx - 1] : null;
               const showDaySeparator =
                 !prev || !isSameDay(prev.createdAt, msg.createdAt);
               const isUser = String(msg.provenance?.source_type) === "user";
-              const isEditing = editingMessageId === msg.id;
 
-              const derivedFrom = Array.isArray(msg.provenance?.derived_from)
+              const responseMs = Array.isArray(msg.provenance?.derived_from)
                 ? msg.provenance.derived_from
-                : [];
-              const modelVersion =
-                typeof msg.provenance?.model_version === "string"
-                  ? msg.provenance.model_version
-                  : "";
-              const responseMs = derivedFrom
-                .map((id) => responseTimeMsByUserMessageId[id])
-                .find((v) => typeof v === "number");
+                    .map((id) => responseTimeMsByUserMessageId[id])
+                    .find((v) => typeof v === "number")
+                : undefined;
 
               return (
                 <React.Fragment key={msg.id}>
@@ -1143,192 +1113,29 @@ export function Chat() {
                     </div>
                   )}
 
-                  <div
-                    data-message-id={msg.id}
-                    className={clsx(
-                      "group flex flex-col gap-1 max-w-[85%] md:max-w-2xl animate-in fade-in slide-in-from-bottom-2",
-                      isUser ? "self-end items-end" : "self-start items-start",
-                    )}
-                  >
-                    <div className="flex items-baseline gap-2 px-1">
-                      <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                        {isUser ? "You" : "Aperion"}
-                      </span>
-                      <span className="text-[10px] font-mono text-white/20">
-                        {new Date(msg.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    <div
-                      className={clsx(
-                        "p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm backdrop-blur-sm border",
-                        highlightMessageId === msg.id &&
-                          "ring-1 ring-white/20 border-white/20",
-                        isUser
-                          ? "bg-emerald-600/20 border-emerald-500/20 text-emerald-100 rounded-tr-sm"
-                          : "bg-white/5 border-white/5 text-gray-200 rounded-tl-sm",
-                      )}
-                    >
-                      {isEditing ? (
-                        <div className="space-y-2">
-                          <textarea
-                            value={editingContent}
-                            onChange={(e) => setEditingContent(e.target.value)}
-                            rows={3}
-                            className={clsx(
-                              "w-full resize-y bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all",
-                            )}
-                            disabled={updateMessage.isPending}
-                          />
-                          {editError && (
-                            <div className="text-xs text-red-400 flex items-center gap-2">
-                              <AlertCircle className="w-3 h-3" />
-                              {editError}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <MessageContent content={msg.content} />
-                          {!isUser &&
-                            (modelVersion ||
-                              derivedFrom.length > 0 ||
-                              typeof responseMs === "number") && (
-                              <div className="mt-2 text-[10px] font-mono text-white/30 flex flex-wrap gap-x-3 gap-y-1">
-                                {modelVersion && (
-                                  <span>model: {modelVersion}</span>
-                                )}
-                                {derivedFrom.length > 0 && (
-                                  <span>
-                                    derived: {derivedFrom.length}{" "}
-                                    {derivedFrom.length === 1
-                                      ? "memory"
-                                      : "memories"}
-                                  </span>
-                                )}
-                                {typeof responseMs === "number" && (
-                                  <span>
-                                    response: {(responseMs / 1000).toFixed(1)}s
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                        </>
-                      )}
-                    </div>
-
-                    {/* Message Actions */}
-                    <div
-                      className={clsx(
-                        "flex items-center gap-1 px-1 transition-opacity duration-200",
-                        "opacity-0 group-hover:opacity-100",
-                        isUser ? "flex-row-reverse" : "flex-row",
-                      )}
-                    >
-                      {/* Share Link */}
-                      <button
-                        onClick={() => shareMessageLink(msg.id)}
-                        className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                        title="Copy shareable message link"
-                        disabled={isEditing}
-                      >
-                        {copiedId === `share:${msg.id}` ? (
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Share2 className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      {/* Copy Button */}
-                      <button
-                        onClick={() => handleCopy(msg.id, msg.content)}
-                        className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                        title="Copy to clipboard"
-                        disabled={isEditing}
-                      >
-                        {copiedId === msg.id ? (
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      {/* Edit Buttons (user messages only) */}
-                      {isUser && (
-                        <>
-                          {isEditing ? (
-                            <>
-                              <button
-                                onClick={saveEditing}
-                                className={clsx(
-                                  "p-1.5 rounded-md transition-all",
-                                  updateMessage.isPending
-                                    ? "text-gray-600 bg-white/5"
-                                    : "text-emerald-400 bg-emerald-500/20 hover:bg-emerald-500/30",
-                                )}
-                                title="Save edit"
-                                disabled={updateMessage.isPending}
-                              >
-                                {updateMessage.isPending ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                              <button
-                                onClick={cancelEditing}
-                                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-all"
-                                title="Cancel edit"
-                                disabled={updateMessage.isPending}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => startEditing(msg.id, msg.content)}
-                              className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6"
-                              title="Edit message"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </>
-                      )}
-
-                      {/* Rating Buttons (AI messages only) */}
-                      {!isUser && (
-                        <>
-                          <button
-                            onClick={() => handleRate(msg.id, "up")}
-                            className={clsx(
-                              "p-1.5 rounded-md transition-all",
-                              ratedMessages[msg.id] === "up"
-                                ? "text-emerald-400 bg-emerald-500/20"
-                                : "text-gray-500 hover:text-white hover:bg-white/10",
-                            )}
-                            title="Good response"
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleRate(msg.id, "down")}
-                            className={clsx(
-                              "p-1.5 rounded-md transition-all",
-                              ratedMessages[msg.id] === "down"
-                                ? "text-red-400 bg-red-500/20"
-                                : "text-gray-500 hover:text-white hover:bg-white/10",
-                            )}
-                            title="Poor response"
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <MessageBubble
+                    message={msg}
+                    isUser={isUser}
+                    isHighlighted={highlightMessageId === msg.id}
+                    isEditing={editingMessageId === msg.id}
+                    editingContent={editingContent}
+                    editError={editError}
+                    copiedId={copiedId}
+                    rating={ratedMessages[msg.id]}
+                    responseTimeMs={responseMs}
+                    onCopy={handleCopy}
+                    onShare={shareMessageLink}
+                    onEdit={startEditing}
+                    onCancelEdit={cancelEditing}
+                    onSaveEdit={saveEditing}
+                    onRate={handleRate}
+                    onEditingContentChange={(content) =>
+                      setEditingContent(content)
+                    }
+                    isSavingEdit={
+                      updateMessage.isPending && editingMessageId === msg.id
+                    }
+                  />
                 </React.Fragment>
               );
             })
@@ -1414,172 +1221,73 @@ export function Chat() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-white/10 glass-dark pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0">
-          {sendMessage.isError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              Failed to send: {sendMessage.error.message}
-            </div>
-          )}
-
-          <form
+        <div className="shrink-0">
+          <ChatInput
+            value={input}
+            onChange={(value: string) => {
+              setSlashIndex(0);
+              setInput(value);
+              if (value) sendTyping();
+            }}
             onSubmit={handleSubmit}
-            className="flex gap-2 md:gap-3 items-end"
-          >
-            {/* Image Upload */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileSelect}
-            />
-            <button
-              type="button"
-              className="p-3 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10"
-              onClick={() => fileInputRef.current?.click()}
-              title="Attach Image"
-              aria-label="Attach image"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <ImageIcon className="w-5 h-5" />
-              )}
-            </button>
-
-            {/* Voice Recording */}
-            <button
-              type="button"
-              className={clsx(
-                "p-3 transition-all rounded-full",
-                isRecording
-                  ? "bg-red-500/80 text-white animate-pulse shadow-lg shadow-red-500/40"
-                  : isProcessingVoice
-                    ? "bg-purple-500/20 text-purple-400"
-                    : "bg-white/5 text-gray-400 hover:text-purple-400 hover:bg-white/10",
-              )}
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isProcessingVoice}
-              title={isRecording ? "Stop Recording" : "Voice Chat"}
-              aria-label={isRecording ? "Stop recording" : "Voice chat"}
-            >
-              {isProcessingVoice ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : isRecording ? (
-                <MicOff className="w-5 h-5" />
-              ) : (
-                <Mic className="w-5 h-5" />
-              )}
-            </button>
-
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => {
-                  setSlashIndex(0);
-                  setInput(e.target.value);
-                  if (e.target.value) {
-                    sendTyping();
-                  }
-                }}
-                onFocus={() => {
-                  window.setTimeout(() => scrollToBottom("auto"), 0);
-                }}
-                onKeyDown={(e) => {
-                  if (showSlashAutocomplete && slashMatches.length > 0) {
-                    if (e.key === "ArrowDown") {
-                      e.preventDefault();
-                      setSlashIndex((i) => (i + 1) % slashMatches.length);
-                      return;
-                    }
-                    if (e.key === "ArrowUp") {
-                      e.preventDefault();
-                      setSlashIndex(
-                        (i) =>
-                          (i - 1 + slashMatches.length) % slashMatches.length,
-                      );
-                      return;
-                    }
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      if (slashQuery && slashMatches[slashIndex]) {
-                        e.preventDefault();
-                        setInput(slashMatches[slashIndex].command);
-                        return;
-                      }
-                    }
-                  }
-
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    (
-                      e.currentTarget.form as HTMLFormElement | null
-                    )?.requestSubmit();
-                  }
-                }}
-                placeholder="Type a message..."
-                rows={1}
-                className="w-full resize-none bg-black/20 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
-                disabled={sendMessage.isPending || clearAll.isPending}
-              />
-
-              {showSlashAutocomplete && (
-                <div className="absolute left-0 right-0 bottom-full mb-2 bg-black/60 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
-                  {slashMatches.map((c, i) => (
-                    <button
-                      key={c.command}
-                      type="button"
-                      onClick={() => setInput(c.command)}
-                      className={clsx(
-                        "w-full text-left px-3 py-2 text-xs font-mono flex items-center justify-between",
-                        i === slashIndex
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/5",
-                      )}
-                    >
-                      <span>{c.command}</span>
-                      <span className="text-white/30">{c.description}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-1 px-2 flex justify-between text-[10px] font-mono text-white/20">
-                <span>
-                  {clearAll.isPending
-                    ? "Clearing…"
-                    : summarizeChat.isPending
-                      ? "Summarizing…"
-                      : ""}
-                </span>
-                <span>{input.length} chars</span>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              aria-label="Send"
-              disabled={
-                !input.trim() ||
-                sendMessage.isPending ||
-                clearAll.isPending ||
-                summarizeChat.isPending
+            onFileSelect={async (file: File) => {
+              setIsUploading(true);
+              try {
+                const { key } = await api.media.upload(file);
+                const url = api.media.getUrl(key);
+                setInput((prev) =>
+                  prev
+                    ? `${prev}\n![${file.name}](${url})`
+                    : `![${file.name}](${url})`,
+                );
+              } catch (err) {
+                console.error("Upload failed", err);
+              } finally {
+                setIsUploading(false);
               }
-              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full font-medium transition-all shadow-lg shadow-emerald-900/40"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
-
-          {/* Voice Error */}
-          {voiceError && (
-            <div className="mt-2 text-red-400 text-xs flex items-center gap-2 px-2">
-              <AlertCircle className="w-3 h-3" />
-              {voiceError}
-            </div>
-          )}
+            }}
+            onVoiceRecord={startRecording}
+            onVoiceStop={stopRecording}
+            isSubmitting={
+              sendMessage.isPending ||
+              clearAll.isPending ||
+              summarizeChat.isPending
+            }
+            isUploading={isUploading}
+            isRecording={isRecording}
+            isProcessingVoice={isProcessingVoice}
+            error={
+              sendMessage.error instanceof Error
+                ? sendMessage.error.message
+                : typeof sendMessage.error === "string"
+                  ? sendMessage.error
+                  : null
+            }
+            voiceError={voiceError}
+            disabled={
+              sendMessage.isPending ||
+              clearAll.isPending ||
+              isUploading ||
+              isProcessingVoice
+            }
+            showCharCount={true}
+            placeholder="Type a message..."
+            slashAutocomplete={
+              showSlashAutocomplete
+                ? {
+                    matches: slashMatches,
+                    selectedIndex: slashIndex,
+                    onSelect: (cmd: string) => setInput(cmd),
+                    onNavigate: (dir: "up" | "down") =>
+                      setSlashIndex((i) =>
+                        dir === "down"
+                          ? (i + 1) % slashMatches.length
+                          : (i - 1 + slashMatches.length) % slashMatches.length,
+                      ),
+                  }
+                : undefined
+            }
+          />
         </div>
       </div>
     </div>
