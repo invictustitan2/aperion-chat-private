@@ -89,3 +89,16 @@ Interpretation:
 
 - Re-deploy previous known-good Worker version (via Cloudflare dashboard rollback or `wrangler` version history).
 - Re-deploy previous known-good Pages deployment.
+
+---
+
+## Appendix: keep `apps/web/dist` Vite-only
+
+`apps/web/dist` is the Cloudflare Pages deploy artifact. It must contain only the Vite build output.
+
+Why this matters:
+
+- CI runs `pnpm guard:prod-secrets`, which scans `apps/web/dist` for forbidden prod token hints (including the literal string `VITE_AUTH_TOKEN`).
+- TypeScript project builds (`pnpm typecheck` → `tsc -b`, and `apps/web`’s `pnpm build` → `tsc && vite build`) must never emit compiled files (especially tests) into `apps/web/dist`, or the guard will correctly fail.
+
+If you ever see `apps/web/dist/test/**` or `*.spec.js` appear under `dist`, fix the TypeScript config so its emit output is redirected elsewhere (e.g. `apps/web/.tsbuild`) or disabled, rather than weakening `guard:prod-secrets`.
