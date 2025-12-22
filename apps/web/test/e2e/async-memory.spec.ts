@@ -4,23 +4,45 @@ test.describe("Async Summarization", () => {
   test.beforeEach(async ({ page }) => {
     // Mock Identity for initial load
     await page.route("**/v1/identity", async (route) => {
-      const headers = { "Access-Control-Allow-Origin": "*" };
-      if (route.request().method() === "OPTIONS")
-        return route.fulfill({ headers });
-      await route.fulfill({ headers, json: [] });
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
+      const headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      };
+      if (route.request().method() === "OPTIONS") {
+        return route.fulfill({ status: 204, headers });
+      }
+      await route.fulfill({ status: 200, headers, json: [] });
     });
 
     await page.route("**/v1/episodic*", async (route) => {
-      const headers = { "Access-Control-Allow-Origin": "*" };
-      if (route.request().method() === "OPTIONS")
-        return route.fulfill({ headers });
-      await route.fulfill({ headers, json: [] });
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
+      const headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      };
+      if (route.request().method() === "OPTIONS") {
+        return route.fulfill({ status: 204, headers });
+      }
+      await route.fulfill({ status: 200, headers, json: [] });
     });
 
     // Mock Search Results
     await page.route("**/v1/semantic/search*", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -49,8 +71,12 @@ test.describe("Async Summarization", () => {
 
     // Mock Summarize Start -> Queue
     await page.route("**/v1/semantic/summarize", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -67,20 +93,31 @@ test.describe("Async Summarization", () => {
     // Mock Job Status Polling
     let pollCount = 0;
     await page.route("**/v1/jobs/job-123", async (route) => {
-      const headers = { "Access-Control-Allow-Origin": "*" };
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
+      const headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      };
       pollCount++;
       if (pollCount === 1) {
         await route.fulfill({
+          status: 200,
           headers,
           json: { id: "job-123", status: "queued" },
         });
       } else if (pollCount === 2) {
         await route.fulfill({
+          status: 200,
           headers,
           json: { id: "job-123", status: "processing" },
         });
       } else {
         await route.fulfill({
+          status: 200,
           headers,
           json: {
             id: "job-123",

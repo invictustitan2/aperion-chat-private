@@ -4,8 +4,12 @@ test.describe("Identity Preferences", () => {
   test.beforeEach(async ({ page }) => {
     // Mock GET /v1/identity with user_preferences
     await page.route("**/v1/identity", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };

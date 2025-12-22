@@ -21,8 +21,12 @@ test("chat flow with dynamic mock", async ({ page }) => {
 
   // Chat page loads preferences on mount; keep it from logging API errors.
   await page.route("**/v1/preferences/*", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
@@ -53,8 +57,12 @@ test("chat flow with dynamic mock", async ({ page }) => {
 
   // Chat page also polls conversations.
   await page.route("**/v1/conversations*", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
@@ -87,8 +95,12 @@ test("chat flow with dynamic mock", async ({ page }) => {
   });
 
   await page.route("**/v1/episodic*", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
@@ -120,8 +132,12 @@ test("chat flow with dynamic mock", async ({ page }) => {
   // Mock streaming chat response (SSE) so sendMessage completes quickly and
   // triggers the episodic query invalidation.
   await page.route("**/v1/chat/stream", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Content-Type": "text/event-stream",
@@ -159,8 +175,12 @@ test("chat flow with dynamic mock", async ({ page }) => {
 test("export button generates PDF", async ({ page }) => {
   // Mock episodic messages
   await page.route("**/v1/episodic*", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
@@ -184,8 +204,12 @@ test("export button generates PDF", async ({ page }) => {
 
   // Mock export endpoint - return a fake PDF blob
   await page.route("**/v1/chat/export", async (route) => {
+    const origin =
+      route.request().headers()["origin"] ?? "http://localhost:5173";
     const headers = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Content-Type": "application/pdf",
@@ -229,7 +253,9 @@ test("mobile layout with glassmorphism", async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 852 });
 
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "Origin",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };

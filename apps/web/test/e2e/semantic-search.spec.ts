@@ -4,8 +4,12 @@ test.describe("Semantic Search", () => {
   test("search tab displays search form", async ({ page }) => {
     // Mock API endpoints
     await page.route("**/v1/**", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -34,8 +38,12 @@ test.describe("Semantic Search", () => {
   test("displays search results with scores", async ({ page }) => {
     // Mock search results
     await page.route("**/v1/semantic/search*", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -68,8 +76,12 @@ test.describe("Semantic Search", () => {
 
     // Mock identity endpoint
     await page.route("**/v1/identity*", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -113,8 +125,12 @@ test.describe("Semantic Search", () => {
   test("summarization works and shows AI summary", async ({ page }) => {
     // Mock search results
     await page.route("**/v1/semantic/search*", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -139,8 +155,12 @@ test.describe("Semantic Search", () => {
 
     // Mock summarize endpoint
     await page.route("**/v1/semantic/summarize", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
@@ -158,8 +178,12 @@ test.describe("Semantic Search", () => {
 
     // Mock identity endpoint
     await page.route("**/v1/identity*", async (route) => {
+      const origin =
+        route.request().headers()["origin"] ?? "http://localhost:5173";
       const headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       };
