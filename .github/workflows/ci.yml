@@ -72,8 +72,13 @@ jobs:
         run: pnpm guard:config-drift
 
       - name: Smoke (prod Access + CORS, service token)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CF_ACCESS_SERVICE_TOKEN_ID != '' && secrets.CF_ACCESS_SERVICE_TOKEN_SECRET != ''
-        run: node scripts/smoke-prod-access-cors.mjs
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          if [ -z "${CF_ACCESS_SERVICE_TOKEN_ID}" ] || [ -z "${CF_ACCESS_SERVICE_TOKEN_SECRET}" ]; then
+            echo "Skipping prod smoke: CF Access service token secrets not configured."
+            exit 0
+          fi
+          node scripts/smoke-prod-access-cors.mjs
         env:
           CF_ACCESS_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_ID }}
           CF_ACCESS_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_SECRET }}
@@ -81,10 +86,15 @@ jobs:
           SMOKE_ALLOWED_ORIGIN: https://chat.aperion.cc
 
       - name: Smoke (chat static bypass, optional)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CF_ACCESS_SERVICE_TOKEN_ID != '' && secrets.CF_ACCESS_SERVICE_TOKEN_SECRET != '' && vars.RUN_ACCESS_BYPASS_SMOKE == '1'
-        run: node scripts/smoke-prod-access-cors.mjs
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          if [ "${RUN_ACCESS_BYPASS_SMOKE}" != "1" ]; then
+            echo "Skipping static bypass smoke: RUN_ACCESS_BYPASS_SMOKE != 1."
+            exit 0
+          fi
+          node scripts/smoke-prod-access-cors.mjs
         env:
-          RUN_ACCESS_BYPASS_SMOKE: "1"
+          RUN_ACCESS_BYPASS_SMOKE: ${{ vars.RUN_ACCESS_BYPASS_SMOKE }}
           SMOKE_CHAT_BASE_URL: https://chat.aperion.cc
 
       - name: Get installed Playwright version
