@@ -151,7 +151,11 @@ async function fetchJson<T>(
   const method = (init?.method ?? "GET").toUpperCase();
 
   try {
-    const res = await fetch(url, init);
+    const res = await fetch(url, {
+      ...init,
+      // Required for Cloudflare Access session cookies in the browser.
+      credentials: init?.credentials ?? "include",
+    });
     if (!res.ok) {
       const bodyText = await res.text().catch(() => "");
       logApiError({

@@ -105,6 +105,22 @@ What to verify in Cloudflare Zero Trust:
   - Expected: Access prompts you to authenticate.
   - Expected after auth: UI loads and can fetch `/v1/identity` successfully.
 
+Note: Any browser-visible custom headers must be namespaced under `X-Aperion-*` to remain compatible with strict credentialed CORS preflight.
+
+#### 4.2.1 Access bypass for static assets (recommended)
+
+Browsers fetch some assets (PWA manifest + icons, favicon) very early and may do so before an Access session exists.
+If these requests get redirected to Access, you can see noisy console errors and failed PWA installs.
+
+In Cloudflare Zero Trust, add an Access policy (or separate Access application) to bypass Access for these exact paths on `https://chat.aperion.cc`:
+
+- `/manifest.json`
+- `/icon-192.png`
+- `/icon-512.png`
+- `/favicon.ico`
+
+Keep the main application routes protected by Access.
+
 ### 4.3 WebSocket
 
 Run the included smoke script:

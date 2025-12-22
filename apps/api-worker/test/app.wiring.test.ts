@@ -55,11 +55,57 @@ describe("API Worker wiring (in-process coverage)", () => {
       headers: {
         Origin: "http://localhost:5173",
         "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers":
+          "content-type, x-aperion-client-version",
       },
     });
     const resp = await app.fetch(req, mockEnv, ctx);
     expect(resp.status).toBe(204);
-    expect(resp.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
+    expect(resp.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:5173",
+    );
+    expect(resp.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+    expect(resp.headers.get("Vary")).toBe(
+      "Origin, Access-Control-Request-Headers",
+    );
+    expect(
+      resp.headers.get("Access-Control-Allow-Headers")?.toLowerCase(),
+    ).toContain("content-type");
+    expect(
+      resp.headers.get("Access-Control-Allow-Headers")?.toLowerCase(),
+    ).toContain("x-aperion-client-version");
+  });
+
+  it("GET -> includes strict CORS headers for allowed origin", async () => {
+    const app = createApp();
+    const req = new Request("http://local.test/v1/nope", {
+      headers: {
+        Origin: "https://chat.aperion.cc",
+        Authorization: "Bearer test-token",
+      },
+    });
+    const resp = await app.fetch(req, mockEnv, ctx);
+    expect(resp.status).toBe(404);
+    expect(resp.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://chat.aperion.cc",
+    );
+    expect(resp.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+    expect(resp.headers.get("Vary")).toBe("Origin");
+  });
+
+  it("GET -> does not include allow-origin for unknown origin", async () => {
+    const app = createApp();
+    const req = new Request("http://local.test/v1/nope", {
+      headers: {
+        Origin: "https://evil.com",
+        Authorization: "Bearer test-token",
+      },
+    });
+    const resp = await app.fetch(req, mockEnv, ctx);
+    expect(resp.status).toBe(404);
+    expect(resp.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(resp.headers.get("Access-Control-Allow-Credentials")).toBeNull();
+    expect(resp.headers.get("Vary")).toBeNull();
   });
 
   it("Unknown route -> 404", async () => {

@@ -71,6 +71,22 @@ jobs:
       - name: Guard (config drift)
         run: pnpm guard:config-drift
 
+      - name: Smoke (prod Access + CORS, service token)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CF_ACCESS_SERVICE_TOKEN_ID != '' && secrets.CF_ACCESS_SERVICE_TOKEN_SECRET != ''
+        run: node scripts/smoke-prod-access-cors.mjs
+        env:
+          CF_ACCESS_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_ID }}
+          CF_ACCESS_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_SECRET }}
+          SMOKE_API_IDENTITY_URL: https://api.aperion.cc/v1/identity
+          SMOKE_ALLOWED_ORIGIN: https://chat.aperion.cc
+
+      - name: Smoke (chat static bypass, optional)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CF_ACCESS_SERVICE_TOKEN_ID != '' && secrets.CF_ACCESS_SERVICE_TOKEN_SECRET != '' && vars.RUN_ACCESS_BYPASS_SMOKE == '1'
+        run: node scripts/smoke-prod-access-cors.mjs
+        env:
+          RUN_ACCESS_BYPASS_SMOKE: "1"
+          SMOKE_CHAT_BASE_URL: https://chat.aperion.cc
+
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test | grep @playwright/test | sed 's/.*@playwright\/test //')" >> $GITHUB_ENV
