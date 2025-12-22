@@ -31,6 +31,18 @@ first_status_line() {
   awk 'NR==1 {print; exit}'
 }
 
+headers_only() {
+  # Given a curl -i response, return only the header block (status line + headers).
+  # Stops at the first empty line.
+  awk '{print} /^\r?$/ {exit}'
+}
+
+first_header_line() {
+  # $1 = header name (case-insensitive, no trailing colon)
+  local header_name="$1"
+  grep -i -m 1 "^${header_name}:" || true
+}
+
 require_http_200() {
   local label="$1"
   local status_line="$2"
@@ -166,7 +178,22 @@ main() {
   local auth_identity_raw auth_identity_status
   auth_identity_raw=$(curl_auth "${API_BASE_URL}/v1/identity" "$token_id" "$token_secret")
   auth_identity_status=$(printf '%s\n' "$auth_identity_raw" | first_status_line)
-  require_http_200 "auth identity" "$auth_identity_status"
+  if ! printf '%s' "$auth_identity_status" | grep -qE 'HTTP/[0-9.]+\s+200(\s|$)'; then
+    local auth_identity_headers auth_identity_location auth_identity_cf_ray
+    auth_identity_headers=$(printf '%s\n' "$auth_identity_raw" | headers_only)
+    auth_identity_location=$(printf '%s\n' "$auth_identity_headers" | first_header_line "location")
+    auth_identity_cf_ray=$(printf '%s\n' "$auth_identity_headers" | first_header_line "cf-ray")
+
+    echo "ERROR: auth identity expected 200, got: ${auth_identity_status}" >&2
+    if [ -n "$auth_identity_location" ]; then
+      echo "ERROR: ${auth_identity_location}" >&2
+    fi
+    if [ -n "$auth_identity_cf_ray" ]; then
+      echo "ERROR: ${auth_identity_cf_ray}" >&2
+    fi
+    echo "HINT: Auth 302 means Access rejected the service token for this app/hostname/path; verify Access Application + service token policy association." >&2
+    exit 3
+  fi
 
   local auth_pref_raw auth_pref_status
   auth_pref_raw=$(curl_auth "${API_BASE_URL}/v1/preferences/ai.tone" "$token_id" "$token_secret")

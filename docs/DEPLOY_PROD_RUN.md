@@ -8,6 +8,27 @@ This runbook is meant to be executed top-to-bottom when deploying production.
 - Worker production vars are set (at minimum: `APERION_AUTH_MODE=access`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`).
 - Pages production env var is set: `VITE_API_BASE_URL=https://api.aperion.cc`.
 
+### Required configuration (where each value lives)
+
+Cloudflare Worker production vars (required):
+
+- `APERION_AUTH_MODE=access`
+- `CF_ACCESS_TEAM_DOMAIN`
+- `CF_ACCESS_AUD`
+- `NODE_ENV=production`
+- `API_TOKEN` (secret)
+
+Cloudflare Pages production env vars (required):
+
+- `VITE_API_BASE_URL=https://api.aperion.cc`
+
+GitHub Actions secrets (required for deploy + post-deploy authenticated checks):
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `CF_ACCESS_SERVICE_TOKEN_ID`
+- `CF_ACCESS_SERVICE_TOKEN_SECRET`
+
 ## 1) Local preflight (must be green)
 
 Run from repo root:
@@ -63,6 +84,21 @@ With an Access service token (expected: `200`):
 -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
 https://api.aperion.cc/v1/identity`
 
+### 4.1.1 Diagnosing `302` with a service token
+
+If a request _with_ `CF-Access-Client-Id` / `CF-Access-Client-Secret` still returns `302`, Cloudflare Access rejected the service token for this application/hostname/path.
+
+First local check (prints only status + `Location` + `cf-ray`, never prints secrets):
+
+- `bash scripts/access-token-diagnose.sh`
+
+What to verify in Cloudflare Zero Trust:
+
+- Access Application domain/path matches `api.aperion.cc` and the `v1` API paths (e.g. `https://api.aperion.cc/v1/*`).
+- The Access policy for that application explicitly includes the intended service token.
+- The service token belongs to the same Zero Trust account as the application.
+- There is no second Access application that also matches `api.aperion.cc` (conflicting precedence can yield unexpected `302`).
+
 ### 4.2 Web
 
 - Open `https://chat.aperion.cc` in a fresh browser session.
@@ -76,8 +112,13 @@ Run the included smoke script:
 - Unauthenticated (expected to fail behind Access):
   - `node scripts/smoke-ws.mjs`
 
-- Authenticated via Access service token headers (expected to open then close cleanly):
-  - `CF_ACCESS_SERVICE_TOKEN_ID=... CF_ACCESS_SERVICE_TOKEN_SECRET=... node scripts/smoke-ws.mjs`
+- Authenticated (recommended):
+  - `pnpm smoke:prod:interactive`
+
+Notes:
+
+- A direct `node scripts/smoke-ws.mjs` invocation will only work for authenticated smoke if that script explicitly supports adding Cloudflare Access headers during the WebSocket handshake.
+- The interactive smoke runner uses an `undici` WebSocket shim and supplies Access headers for the authenticated WS check.
 
 Interpretation:
 
