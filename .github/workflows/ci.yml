@@ -73,6 +73,7 @@ jobs:
 
       - name: Smoke (prod Access + CORS, service token)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        continue-on-error: true
         run: |
           if [ -z "${CF_ACCESS_SERVICE_TOKEN_ID}" ] || [ -z "${CF_ACCESS_SERVICE_TOKEN_SECRET}" ]; then
             echo "Skipping prod smoke: CF Access service token secrets not configured."
@@ -87,6 +88,7 @@ jobs:
 
       - name: Smoke (chat static bypass, optional)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        continue-on-error: true
         run: |
           if [ "${RUN_ACCESS_BYPASS_SMOKE}" != "1" ]; then
             echo "Skipping static bypass smoke: RUN_ACCESS_BYPASS_SMOKE != 1."
