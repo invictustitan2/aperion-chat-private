@@ -22,6 +22,7 @@
     "test:e2e": "playwright test",
     "guard:prod-secrets": "node ./scripts/guard-prod-secrets.mjs",
     "guard:config-drift": "node ./scripts/guard-config-drift.mjs",
+    "smoke:prod:interactive": "bash scripts/prod-smoke-interactive.sh",
     "ship": "echo '🚀 Running verification pipeline...'; pnpm typecheck && pnpm lint && pnpm test && echo '✅ Ready to Ship!'",
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
     "prepare": "husky"
