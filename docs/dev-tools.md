@@ -39,6 +39,7 @@ Located at `/errors` in the Web App, the Debug Console is a unified view of:
 ## 🧪 Testing Strategy
 
 See [RELIABILITY_PLAN.md](./RELIABILITY_PLAN.md) for the full architecture.
+See [E2E_SELECTOR_CONTRACT.md](./E2E_SELECTOR_CONTRACT.md) for Playwright selector guidelines.
 
 ### Quick Reference
 

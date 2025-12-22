@@ -90,7 +90,12 @@ When adding new features or changing UI:
 1.  **Locate Test**: Check `apps/web/test/e2e/`.
 2.  **Add/Update Spec**:
     - Use `page.route` to mock API responses (keeps tests fast and deterministic).
-    - Use `getByRole` for accessibility-first selectors.
-    - Use `test.step` to group logical actions.
+
+- Use `getByRole` for accessibility-first selectors **when the role+name is unique**.
+- For **composite widgets** (rows/cards that contain multiple buttons like “open/rename/delete”), avoid “click any button/text”. Prefer stable `data-testid` selectors instead.
+- For **visual effects** (glass/blur), prefer asserting computed style (e.g. `backdrop-filter`) over Tailwind class chaining.
+- Selector guidance: see `docs/E2E_SELECTOR_CONTRACT.md`.
+  - Use `test.step` to group logical actions.
+
 3.  **Run Locally**: `pnpm test:e2e` (runs all) or `pnpm test:e2e -g "search"` (runs specific test).
 4.  **Debug**: Use `pnpm test:e2e --ui` to open the interactive Playwright UI runner.
