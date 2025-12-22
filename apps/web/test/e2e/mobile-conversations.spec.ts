@@ -141,8 +141,9 @@ test("mobile conversations drawer can create/select conversation", async ({
   await createReq;
 
   // Newly created conversation shows up and can be selected.
-  await expect(page.getByText("New Chat")).toBeVisible();
-  await page.getByText("New Chat").click();
+  const firstConversation = page.getByTestId("conversation-item").first();
+  await expect(firstConversation).toBeVisible();
+  await firstConversation.getByTestId("conversation-item-open").click();
 
   // Drawer closes on selection.
   await expect(page.getByTestId("conversations-drawer")).toHaveCount(0);

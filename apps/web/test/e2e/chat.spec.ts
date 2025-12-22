@@ -260,6 +260,27 @@ test("mobile layout with glassmorphism", async ({ page }) => {
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
 
+  // Chat layout reads theme preference via preferences API.
+  await page.route("**/v1/preferences/*", async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+
+    if (route.request().method() === "GET") {
+      const key = route.request().url().split("/v1/preferences/")[1] || "";
+      await route.fulfill({
+        status: 200,
+        headers,
+        contentType: "application/json",
+        body: JSON.stringify({ key, value: "system", updatedAt: Date.now() }),
+      });
+      return;
+    }
+
+    await route.fulfill({ status: 200, headers, body: "{}" });
+  });
+
   // Create a conversation so mobile switches to detail view.
   await page.route("**/v1/conversations*", async (route) => {
     if (route.request().method() === "OPTIONS") {
@@ -339,15 +360,20 @@ test("mobile layout with glassmorphism", async ({ page }) => {
   // Hard mobile mode is chat-first; the composer should be visible immediately.
   await expect(page.getByPlaceholder("Type a message...")).toBeVisible();
 
-  const bubble = page.getByText("Glass message");
+  // Ensure mocked message is rendered.
+  const bubble = page.locator(
+    '[data-testid="message-bubble"][data-message-id="epi-1"]',
+  );
   await expect(bubble).toBeVisible();
 
-  // Check for glassmorphism utility class 'backdrop-blur-md' or 'bg-white/10' (depending on exact implementation)
-  // We check for the presence of the class on the message container
-  // The message container is the parent of the text content "Glass message"
-  // But strictly, we can just check if *any* element with backdrop-blur is visible in the bubble
-  const bubbleElement = page
-    .locator(".backdrop-blur-sm")
-    .filter({ hasText: "Glass message" });
-  await expect(bubbleElement).toBeVisible();
+  // Glassmorphism: Message bubble content uses backdrop blur.
+  const bubbleContent = bubble.getByTestId("message-bubble-content");
+  await expect(bubbleContent).toBeVisible();
+  const backdropFilter = await bubbleContent.evaluate((el) => {
+    const style = getComputedStyle(el) as CSSStyleDeclaration & {
+      webkitBackdropFilter?: string;
+    };
+    return style.backdropFilter || style.webkitBackdropFilter || "";
+  });
+  expect(backdropFilter).toMatch(/blur\(/);
 });

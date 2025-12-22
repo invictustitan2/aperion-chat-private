@@ -85,6 +85,9 @@ export function ConversationItem({
 
   return (
     <div
+      data-testid="conversation-item"
+      data-conversation-id={conversation.id}
+      data-conversation-title={conversation.title}
       className={clsx(
         "group flex flex-col p-3 md:p-2 cursor-pointer motion-base mb-2 relative overflow-hidden", // Mobile p-3, Desktop p-2
         "mx-2 radius-md border",
@@ -96,6 +99,7 @@ export function ConversationItem({
       {/* Main Content */}
       <button
         onClick={onClick}
+        data-testid="conversation-item-open"
         className={clsx(
           "flex-1 min-w-0 text-left px-2 py-2 rounded-md text-sm transition-colors focus-ring-visible",
           isActive ? "text-emerald-300" : "text-gray-300",
