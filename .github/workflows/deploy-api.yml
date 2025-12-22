@@ -95,6 +95,7 @@ jobs:
           command: 'deploy --env=""'
 
       - name: Verify Authentication Setup (optional)
+        continue-on-error: true
         env:
           API_URL: https://api.aperion.cc
           CF_ACCESS_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_SERVICE_TOKEN_ID }}
@@ -109,14 +110,22 @@ jobs:
             exit 0
           fi
 
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          HEADERS=$(curl -sS -D - -o /dev/null \
             -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
             -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
-            "$API_URL/v1/identity")
+            "$API_URL/v1/identity" || true)
 
-          if [ "$STATUS" != "200" ]; then
-            echo "❌ Authenticated request failed (expected 200, got $STATUS)."
-            echo "   Confirm: (1) Access policy allows the service token, and (2) Worker vars CF_ACCESS_SERVICE_TOKEN_ID/SECRET match."
+          STATUS_LINE=$(printf '%s\n' "$HEADERS" | awk 'NR==1 {print; exit}')
+          LOCATION=$(printf '%s\n' "$HEADERS" | grep -i -m 1 '^location:' || true)
+          CF_RAY=$(printf '%s\n' "$HEADERS" | grep -i -m 1 '^cf-ray:' || true)
+
+          echo "$STATUS_LINE"
+          if [ -n "$LOCATION" ]; then echo "$LOCATION"; fi
+          if [ -n "$CF_RAY" ]; then echo "$CF_RAY"; fi
+
+          if ! printf '%s' "$STATUS_LINE" | grep -qE '\s200(\s|$)'; then
+            echo "❌ Authenticated request did not return 200 (non-blocking)."
+            echo "   If status is 302: Access rejected the service token for this app/hostname/path; verify Access Application + policy association."
             exit 1
           fi
 
