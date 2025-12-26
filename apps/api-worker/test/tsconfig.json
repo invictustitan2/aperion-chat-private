@@ -4,5 +4,6 @@
     "noEmit": true,
     "rootDir": ".."
   },
-  "include": ["./**/*", "../src/**/*", "../worker-configuration.d.ts"]
+  "include": ["./**/*", "../src/**/*", "../worker-configuration.d.ts"],
+  "exclude": [".ref", "**/.ref/**"]
 }
