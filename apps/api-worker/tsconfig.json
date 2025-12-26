@@ -6,8 +6,15 @@
   },
   "include": ["src/**/*", "worker-configuration.d.ts"],
   "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/memory-core" },
-    { "path": "../../packages/policy" }
-  ]
+    {
+      "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/memory-core"
+    },
+    {
+      "path": "../../packages/policy"
+    }
+  ],
+  "exclude": [".ref", "**/.ref/**"]
 }

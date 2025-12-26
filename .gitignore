@@ -25,3 +25,6 @@ vitetoken.txt
 
 # Wrangler may generate a repo-root wrangler.toml for Pages; this repo tracks app-specific configs instead
 /wrangler.toml
+
+# local reference mounts (NOT COMMITTED)
+.ref/
