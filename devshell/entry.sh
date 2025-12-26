@@ -26,8 +26,8 @@ Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
-  ide:status         Print IDE/environment context status (WIP)
-  secrets:status     Print redacted secret status (WIP)
+  ide:status         Print IDE/environment context status
+  secrets:status     Print redacted secret status
 
 Notes:
   - Repo-root-only: run from the directory containing ./dev
@@ -66,11 +66,11 @@ devshell_dispatch() {
       ;;
 
     ide:status)
-      devshell_die "ide:status: not implemented yet"
+      "${repo_root}/devshell/commands/ide_status.sh" "$repo_root" "$@"
       ;;
 
     secrets:status)
-      devshell_die "secrets:status: not implemented yet"
+      "${repo_root}/devshell/commands/secrets_status.sh" "$repo_root" "$@"
       ;;
 
     *)
