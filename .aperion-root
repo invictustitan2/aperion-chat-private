@@ -1,0 +1,2 @@
+# Aperion repo root sentinel (devshell)
+# Used by ./dev to ensure repo-root-only invocation.
