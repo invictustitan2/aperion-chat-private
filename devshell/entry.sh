@@ -26,6 +26,7 @@ Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
+  cf:doctor          Run Cloudflare preflight checks (read-only)
   ide:status         Print IDE/environment context status
   secrets:status     Print redacted secret status
 
@@ -63,6 +64,10 @@ devshell_dispatch() {
 
     shell)
       "${repo_root}/devshell/commands/shell.sh" "$repo_root" "$@"
+      ;;
+
+    cf:doctor)
+      "${repo_root}/devshell/commands/cf_doctor.sh" "$repo_root" "$@"
       ;;
 
     ide:status)
