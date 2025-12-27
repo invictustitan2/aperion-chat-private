@@ -60,6 +60,7 @@ jobs:
       - name: Verify (CI gate)
         run: ./dev verify:ci
         env:
+          CI: "true"
           # Increase Node memory for worker bundling and tests
           NODE_OPTIONS: --max-old-space-size=4096
           # Reduce wrangler log noise
