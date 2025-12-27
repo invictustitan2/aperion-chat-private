@@ -57,19 +57,16 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
-      - name: Verify (Lint, Typecheck, Unit Tests)
-        run: pnpm verify
+      - name: Verify (CI gate)
+        run: ./dev verify:ci
         env:
           # Increase Node memory for worker bundling and tests
           NODE_OPTIONS: --max-old-space-size=4096
           # Reduce wrangler log noise
           WRANGLER_LOG: none
-
-      - name: Guard (no prod auth-token hints)
-        run: pnpm guard:prod-secrets
-
-      - name: Guard (config drift)
-        run: pnpm guard:config-drift
+          # Required for strict Cloudflare preflight
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Smoke (prod Access + CORS, service token)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
