@@ -85,7 +85,39 @@ esac
 }
 
 describe("verify:ci", () => {
-  it("fails with clear remediation when Cloudflare CI vars are missing", async () => {
+  it("local mode does not hard-fail when Cloudflare account id is missing", async () => {
+    const repoRoot = path.resolve(__dirname, "..");
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "verify-ci-"));
+
+    try {
+      await makeFakeWranglerBin(tempDir);
+      await makeFakePnpmBin(tempDir);
+
+      const env = {
+        ...process.env,
+        PATH: `${tempDir}:${process.env.PATH ?? ""}`,
+        CI: "",
+        GITHUB_ACTIONS: "",
+        CLOUDFLARE_API_TOKEN: "",
+        CLOUDFLARE_ACCOUNT_ID: "",
+      };
+
+      const { stdout, stderr } = await execFileAsync(
+        path.join(repoRoot, "dev"),
+        ["verify:ci"],
+        { cwd: repoRoot, env },
+      );
+
+      expect(stdout).toContain(
+        "Local mode: not enforcing CI Cloudflare env vars (set CI=true to enforce).",
+      );
+      expect(stdout + stderr).not.toContain(".ref");
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("CI mode fails fast with clear remediation when Cloudflare CI vars are missing", async () => {
     const repoRoot = path.resolve(__dirname, "..");
 
     try {
@@ -93,6 +125,7 @@ describe("verify:ci", () => {
         cwd: repoRoot,
         env: {
           ...process.env,
+          CI: "true",
           CLOUDFLARE_API_TOKEN: "token-set",
           CLOUDFLARE_ACCOUNT_ID: "",
         },
@@ -108,7 +141,7 @@ describe("verify:ci", () => {
     }
   });
 
-  it("passes with PATH stubs and Cloudflare vars set", async () => {
+  it("passes in CI mode with PATH stubs and Cloudflare vars set", async () => {
     const repoRoot = path.resolve(__dirname, "..");
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "verify-ci-"));
 
@@ -119,6 +152,7 @@ describe("verify:ci", () => {
       const env = {
         ...process.env,
         PATH: `${tempDir}:${process.env.PATH ?? ""}`,
+        CI: "true",
         CLOUDFLARE_API_TOKEN: "token-set",
         CLOUDFLARE_ACCOUNT_ID: "account-set",
       };
