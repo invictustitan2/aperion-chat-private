@@ -25,6 +25,7 @@ Usage:
 Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
+  verify:ci          Run the CI-grade verification gate (strict)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
   ide:status         Print IDE/environment context status
@@ -60,6 +61,10 @@ devshell_dispatch() {
 
     verify)
       "${repo_root}/devshell/commands/verify.sh" "$repo_root" "$@"
+      ;;
+
+    verify:ci)
+      "${repo_root}/devshell/commands/verify_ci.sh" "$repo_root" "$@"
       ;;
 
     shell)
