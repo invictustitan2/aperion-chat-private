@@ -296,10 +296,23 @@ cf_account_set='no'
 if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then cf_token_set='yes'; fi
 if [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then cf_account_set='yes'; fi
 
+cf_token_state="$([ "$cf_token_set" = 'yes' ] && echo set || echo unset)"
+cf_account_state="$([ "$cf_account_set" = 'yes' ] && echo set || echo unset)"
+
+cf_env_data_json="{\"CLOUDFLARE_API_TOKEN\":\"${cf_token_state}\",\"CLOUDFLARE_ACCOUNT_ID\":\"${cf_account_state}\",\"remediation\":\"Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in GitHub Actions (repo secrets or org/repo vars, depending on your policy).\"}"
+
 if [ "$cf_token_set" = 'yes' ] && [ "$cf_account_set" = 'yes' ]; then
-  add_check "secrets.env.cloudflare" "PASS" "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set" "{\"CLOUDFLARE_API_TOKEN\":\"set\",\"CLOUDFLARE_ACCOUNT_ID\":\"set\"}"
+  add_check "secrets.env.cloudflare" "PASS" "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set" "$cf_env_data_json"
 else
-  add_check "secrets.env.cloudflare" "WARN" "Cloudflare deploy env vars missing (set for CI)" "{\"CLOUDFLARE_API_TOKEN\":\"$([ "$cf_token_set" = 'yes' ] && echo set || echo unset)\",\"CLOUDFLARE_ACCOUNT_ID\":\"$([ "$cf_account_set" = 'yes' ] && echo set || echo unset)\"}"
+  missing_cf_vars=()
+  if [ "$cf_token_set" != 'yes' ]; then missing_cf_vars+=("CLOUDFLARE_API_TOKEN"); fi
+  if [ "$cf_account_set" != 'yes' ]; then missing_cf_vars+=("CLOUDFLARE_ACCOUNT_ID"); fi
+
+  if [ "${#missing_cf_vars[@]}" -eq 1 ]; then
+    add_check "secrets.env.cloudflare" "WARN" "${missing_cf_vars[0]} is unset (required for CI deploy workflows)" "$cf_env_data_json"
+  else
+    add_check "secrets.env.cloudflare" "WARN" "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are unset (required for CI deploy workflows)" "$cf_env_data_json"
+  fi
 fi
 
 # Secrets posture: ensure .env/.dev.vars are not tracked
