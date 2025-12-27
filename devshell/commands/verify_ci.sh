@@ -22,20 +22,30 @@ Behavior:
   - pnpm guard:config-drift
 
 Notes:
-- Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to be set in CI.
+- In CI (CI=true or GITHUB_ACTIONS=true), requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+- Locally, does not enforce CI Cloudflare env vars.
 - Does not deploy or mutate Cloudflare resources.
 HELP
   exit 0
 fi
 
-missing=()
-if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then missing+=("CLOUDFLARE_API_TOKEN"); fi
-if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then missing+=("CLOUDFLARE_ACCOUNT_ID"); fi
+ci_mode="false"
+if [ "${CI:-}" = "true" ] || [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+  ci_mode="true"
+fi
 
-if [ "${#missing[@]}" -gt 0 ]; then
-  printf 'ERROR: missing required CI Cloudflare env var(s): %s\n' "${missing[*]}" >&2
-  printf '%s\n' "Remediation: set them in GitHub Actions (repo secrets or org/repo vars per policy)." >&2
-  exit 2
+missing=()
+if [ "${ci_mode}" = "true" ]; then
+  if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then missing+=("CLOUDFLARE_API_TOKEN"); fi
+  if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then missing+=("CLOUDFLARE_ACCOUNT_ID"); fi
+
+  if [ "${#missing[@]}" -gt 0 ]; then
+    printf 'ERROR: missing required CI Cloudflare env var(s): %s\n' "${missing[*]}" >&2
+    printf '%s\n' "Remediation: set them in GitHub Actions (repo secrets or org/repo vars per policy)." >&2
+    exit 2
+  fi
+else
+  printf '%s\n' "Local mode: not enforcing CI Cloudflare env vars (set CI=true to enforce)."
 fi
 
 devshell_require_cmd pnpm
@@ -53,7 +63,11 @@ if [ -d "${repo_root}/node_modules/.bin" ]; then
 fi
 
 # Strict Cloudflare preflight (read-only).
-"${repo_root}/dev" cf:doctor --json --fail-on-warn
+if [ "${ci_mode}" = "true" ]; then
+  "${repo_root}/dev" cf:doctor --json --fail-on-warn
+else
+  "${repo_root}/dev" cf:doctor
+fi
 
 # Match CI's verification/guards.
 pnpm verify
