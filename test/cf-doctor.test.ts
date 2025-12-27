@@ -139,6 +139,19 @@ describe("cf:doctor", () => {
         (c) => c.id === "tooling.wrangler",
       );
       expect(wranglerCheck?.data?.version).toBe("9.9.9");
+
+      const cloudflareEnvCheck = json.checks.find(
+        (c) => c.id === "secrets.env.cloudflare",
+      );
+
+      expect(cloudflareEnvCheck).toBeTruthy();
+      expect(cloudflareEnvCheck?.status).toBe("WARN");
+      expect(cloudflareEnvCheck?.data).toMatchObject({
+        CLOUDFLARE_API_TOKEN: "unset",
+        CLOUDFLARE_ACCOUNT_ID: "unset",
+      });
+      expect(cloudflareEnvCheck?.message).toContain("CLOUDFLARE_API_TOKEN");
+      expect(cloudflareEnvCheck?.message).toContain("CLOUDFLARE_ACCOUNT_ID");
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
