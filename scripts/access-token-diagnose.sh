@@ -34,10 +34,12 @@ main() {
 
   # Capture headers only (no body) for stable parsing.
   local headers
-  headers=$(curl -sS -D - -o /dev/null \
-    -H "CF-Access-Client-Id: ${token_id}" \
-    -H "CF-Access-Client-Secret: ${token_secret}" \
-    "$URL")
+  headers=$(cat <<EOF | curl -sS -D - -o /dev/null -K -
+url = "${URL}"
+header = "CF-Access-Client-Id: ${token_id}"
+header = "CF-Access-Client-Secret: ${token_secret}"
+EOF
+)
 
   local status_line
   status_line=$(printf '%s\n' "$headers" | first_status_line)

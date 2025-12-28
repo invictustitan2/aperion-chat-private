@@ -79,10 +79,13 @@ Without an Access service token (expected: protected):
 
 With an Access service token (expected: `200`):
 
-- `curl -i \
--H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
--H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
-https://api.aperion.cc/v1/identity`
+```bash
+cat <<EOF | curl -i -K -
+url = "https://api.aperion.cc/v1/identity"
+header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+EOF
+```
 
 ### 4.1.1 Diagnosing `302` with a service token
 

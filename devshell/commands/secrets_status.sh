@@ -6,6 +6,21 @@ shift || true
 
 cd "$repo_root"
 
+secrets_default_path() {
+  printf '%s' "${HOME}/.config/aperion/cf_access.env"
+}
+
+secrets_path() {
+  printf '%s' "${APERION_SECRETS_FILE:-$(secrets_default_path)}"
+}
+
+file_has_key() {
+  local file="$1"
+  local key="$2"
+  [[ -f "$file" ]] || return 1
+  grep -Eq "^(export[[:space:]]+)?${key}=" "$file" 2>/dev/null
+}
+
 dotenv_get() {
   local file="$1"
   local key="$2"
@@ -49,12 +64,40 @@ key_is_set_somewhere() {
   [[ -n "$v" ]]
 }
 
+key_is_set_in_env() {
+  local key="$1"
+  [[ -n "${!key-}" ]]
+}
+
+key_is_set_in_secrets_file() {
+  local key="$1"
+  local secrets_file
+  secrets_file="$(secrets_path)"
+  file_has_key "$secrets_file" "$key"
+}
+
 print_set_unset() {
   local key="$1"
   if key_is_set_somewhere "$key"; then
     printf '%s: set\n' "$key"
   else
     printf '%s: unset\n' "$key"
+  fi
+}
+
+print_set_unset_env_and_secrets_file() {
+  local key="$1"
+
+  if key_is_set_in_env "$key"; then
+    printf '%s (env): set\n' "$key"
+  else
+    printf '%s (env): unset\n' "$key"
+  fi
+
+  if key_is_set_in_secrets_file "$key"; then
+    printf '%s (secrets-file): set\n' "$key"
+  else
+    printf '%s (secrets-file): unset\n' "$key"
   fi
 }
 
@@ -71,6 +114,14 @@ else
   printf '.dev.vars: missing\n'
 fi
 
+secrets_file="$(secrets_path)"
+printf 'APERION_SECRETS_FILE: %s\n' "$secrets_file"
+if [[ -f "$secrets_file" ]]; then
+  printf 'Secrets file: present\n'
+else
+  printf 'Secrets file: missing\n'
+fi
+
 printf '\n'
 printf 'Required/primary (Private):\n'
 print_set_unset 'CLOUDFLARE_API_TOKEN'
@@ -82,8 +133,8 @@ print_set_unset 'CF_ACCESS_AUD'
 printf '\n'
 printf 'Worker secrets / optional (Private):\n'
 print_set_unset 'API_TOKEN'
-print_set_unset 'CF_ACCESS_SERVICE_TOKEN_ID'
-print_set_unset 'CF_ACCESS_SERVICE_TOKEN_SECRET'
+print_set_unset_env_and_secrets_file 'CF_ACCESS_SERVICE_TOKEN_ID'
+print_set_unset_env_and_secrets_file 'CF_ACCESS_SERVICE_TOKEN_SECRET'
 print_set_unset 'CF_ACCESS_JWKS_TTL_MS'
 print_set_unset 'CF_ACCESS_JWT_CLOCK_SKEW_SECONDS'
 

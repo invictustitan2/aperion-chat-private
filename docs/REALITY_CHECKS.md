@@ -11,14 +11,17 @@ Non-negotiables for this document:
 
 ## Receipt Index
 
-- [Phase 0A — Repo Hygiene (receipts)](#phase-0a-repo-hygiene-receipts)
-- [Phase 0B — Toolchain + cf:doctor + verify run (pre-verify receipts)](#phase-0b-toolchain-cfdoctor-verify-run-pre-verify-receipts)
-- [Phase 0B — verify snapshot metadata (receipts; log not inlined)](#phase-0b-verify-snapshot-metadata-receipts-log-not-inlined)
-- [Phase 0C — Deployment Surface Excerpts (receipts)](#phase-0c-deployment-surface-excerpts-receipts)
-- [Phase 1.1 — Wrangler Auth + Account (receipts; email redacted)](#phase-11-wrangler-auth-account-receipts-email-redacted)
-- [Phase 1.2 — Cloudflare Read-Only Probing (receipts)](#phase-12-cloudflare-read-only-probing-receipts)
-- [Phase 1.2 (cont) — Pages + Worker Deployment Lists (receipts; emails redacted)](#phase-12-cont-pages-worker-deployment-lists-receipts-emails-redacted)
-- [Phase 1.3 — DNS + Edge Headers (post custom-domain route; receipts)](#phase-13-dns-edge-headers-post-custom-domain-route-receipts)
+- [Reality Checks (Receipts-First)](#reality-checks-receipts-first)
+  - [Receipt Index](#receipt-index)
+  - [Phase 0A — Repo Hygiene (receipts)](#phase-0a--repo-hygiene-receipts)
+  - [Phase 0B — Toolchain + cf:doctor + verify run (pre-verify receipts)](#phase-0b--toolchain--cfdoctor--verify-run-pre-verify-receipts)
+  - [Phase 0B — verify snapshot metadata (receipts; log not inlined)](#phase-0b--verify-snapshot-metadata-receipts-log-not-inlined)
+  - [Phase 0C — Deployment Surface Excerpts (receipts)](#phase-0c--deployment-surface-excerpts-receipts)
+  - [Phase 1.1 — Wrangler Auth + Account (receipts; email redacted)](#phase-11--wrangler-auth--account-receipts-email-redacted)
+  - [Phase 1.2 — Cloudflare Read-Only Probing (receipts)](#phase-12--cloudflare-read-only-probing-receipts)
+  - [Phase 1.2 (cont) — Pages + Worker Deployment Lists (receipts; emails redacted)](#phase-12-cont--pages--worker-deployment-lists-receipts-emails-redacted)
+  - [Phase 1.3 — DNS + Edge Headers (post custom-domain route; receipts)](#phase-13--dns--edge-headers-post-custom-domain-route-receipts)
+  - [Reality Verdict (Evidence Only)](#reality-verdict-evidence-only)
 
 ## Phase 0A — Repo Hygiene (receipts)
 
@@ -716,10 +719,12 @@ jobs:
             exit 0
           fi
 
-          HEADERS=$(curl -sS -D - -o /dev/null \
-            -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
-            -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
-            "$API_URL/v1/identity" || true)
+          HEADERS=$(cat <<EOF | curl -sS -D - -o /dev/null -K - || true
+          url = "${API_URL}/v1/identity"
+          header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+          header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+          EOF
+          )
 
           STATUS_LINE=$(printf '%s\n' "$HEADERS" | awk 'NR==1 {print; exit}')
           LOCATION=$(printf '%s\n' "$HEADERS" | grep -i -m 1 '^location:' || true)

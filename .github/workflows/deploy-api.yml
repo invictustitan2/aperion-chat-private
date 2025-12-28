@@ -113,10 +113,12 @@ jobs:
             exit 0
           fi
 
-          HEADERS=$(curl -sS -D - -o /dev/null \
-            -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
-            -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
-            "$API_URL/v1/identity" || true)
+          HEADERS=$(cat <<EOF | curl -sS -D - -o /dev/null -K - || true
+          url = "${API_URL}/v1/identity"
+          header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+          header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+          EOF
+          )
 
           STATUS_LINE=$(printf '%s\n' "$HEADERS" | awk 'NR==1 {print; exit}')
           LOCATION=$(printf '%s\n' "$HEADERS" | grep -i -m 1 '^location:' || true)

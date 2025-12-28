@@ -3,7 +3,7 @@
 ## One-liner
 
 ```bash
-./scripts/bootstrap-dev.sh && ./devshell/devshell enter
+./scripts/bootstrap-dev.sh && ./dev shell
 ```
 
 ## Secrets
@@ -11,6 +11,11 @@
 Default secrets file:
 
 - `~/.config/aperion/cf_access.env`
+
+You can provide Cloudflare Access credentials via either:
+
+- Environment variables: `CF_ACCESS_SERVICE_TOKEN_ID`, `CF_ACCESS_SERVICE_TOKEN_SECRET`
+- The secrets file (loaded only if the env vars are missing/invalid)
 
 Override:
 
@@ -31,6 +36,8 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 
 ## Commands
 
+- `./dev shell` (preferred entrypoint)
+- `./dev secrets:status`
 - `./devshell/devshell enter`
 - `./devshell/devshell doctor`
 - `./devshell/devshell secrets path`

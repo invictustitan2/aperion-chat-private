@@ -26,16 +26,19 @@ For authentication and CORS troubleshooting, see [`docs/auth-debugging.md`](./do
 One-liner:
 
 ```bash
-./scripts/bootstrap-dev.sh && ./devshell/devshell enter
+./scripts/bootstrap-dev.sh && ./dev shell
 ```
 
 Secrets:
 
 - Default file: `~/.config/aperion/cf_access.env`
+- The devshell will use `CF_ACCESS_SERVICE_TOKEN_ID` / `CF_ACCESS_SERVICE_TOKEN_SECRET` from the environment if present/valid, otherwise it will load the secrets file.
 - Override: `APERION_SECRETS_FILE=/path/to/cf_access.env ./devshell/devshell secrets check`
 
 Core commands:
 
+- `./dev shell` (preferred)
+- `./dev secrets:status`
 - `./devshell/devshell doctor`
 - `./devshell/devshell secrets path`
 - `./devshell/devshell secrets check`

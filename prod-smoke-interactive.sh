@@ -107,10 +107,11 @@ curl_auth() {
   local token_secret="$3"
 
   # Intentionally avoid -v. Do not echo headers.
-  curl -sS -i \
-    -H "CF-Access-Client-Id: ${token_id}" \
-    -H "CF-Access-Client-Secret: ${token_secret}" \
-    "$url"
+  cat <<EOF | curl -sS -i -K -
+url = "${url}"
+header = "CF-Access-Client-Id: ${token_id}"
+header = "CF-Access-Client-Secret: ${token_secret}"
+EOF
 }
 
 run_ws_smoke() {

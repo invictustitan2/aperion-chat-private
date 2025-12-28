@@ -6,6 +6,10 @@ setup() {
   export DEV_SHELL="${REPO_ROOT}/devshell/devshell"
   export TMPDIR_WORK
   TMPDIR_WORK="$(mktemp -d)"
+
+  # Avoid flakiness if the developer running tests already has these exported.
+  unset CF_ACCESS_SERVICE_TOKEN_ID
+  unset CF_ACCESS_SERVICE_TOKEN_SECRET
 }
 
 teardown() {
@@ -24,6 +28,20 @@ teardown() {
   [[ "$output" == *"chmod 600"* ]]
   [[ "$output" == *"CF_ACCESS_SERVICE_TOKEN_ID"* ]]
   [[ "$output" == *"CF_ACCESS_SERVICE_TOKEN_SECRET"* ]]
+}
+
+@test "env-only secrets pass even when secrets file is missing" {
+  export APERION_SECRETS_FILE="${TMPDIR_WORK}/missing.env"
+  export CF_ACCESS_SERVICE_TOKEN_ID="dummy-token-id-12345"
+  export CF_ACCESS_SERVICE_TOKEN_SECRET="dummy-token-secret-12345"
+
+  run "${DEV_SHELL}" secrets check
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK: CF Access service token present (ID len="* ]]
+  [[ "$output" != *"dummy-token-id-12345"* ]]
+  [[ "$output" != *"dummy-token-secret-12345"* ]]
+  [[ "$output" != *"Missing secrets file:"* ]]
 }
 
 @test "missing vars fails with list" {

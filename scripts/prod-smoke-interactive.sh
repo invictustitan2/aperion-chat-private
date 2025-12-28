@@ -96,10 +96,11 @@ curl_auth() {
   local url="$1"
 
   # Intentionally avoid -v. Do not echo headers.
-  curl -sS -i \
-    -H "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}" \
-    -H "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}" \
-    "$url"
+  cat <<EOF | curl -sS -i -K -
+url = "${url}"
+header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+EOF
 }
 
 curl_unauth() {

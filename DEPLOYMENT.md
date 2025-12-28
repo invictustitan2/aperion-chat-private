@@ -436,10 +436,11 @@ curl https://api.aperion.cc/v1/episodic
 # Should return 403/302 (Access protected) unless you have an Access session
 
 # Optional: service-token-authenticated request
-curl \
-  -H "CF-Access-Client-Id: $CF_ACCESS_SERVICE_TOKEN_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_SERVICE_TOKEN_SECRET" \
-  https://api.aperion.cc/v1/episodic
+cat <<EOF | curl -K -
+url = "https://api.aperion.cc/v1/episodic"
+header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+EOF
 ```
 
 ## Security Best Practices

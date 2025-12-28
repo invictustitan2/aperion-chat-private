@@ -68,9 +68,31 @@ Override path example:
 EOF
 }
 
+aperion__secrets_env_is_valid() {
+  local id secret
+  id="${CF_ACCESS_SERVICE_TOKEN_ID-}"
+  secret="${CF_ACCESS_SERVICE_TOKEN_SECRET-}"
+
+  [[ -n "$id" ]] || return 1
+  [[ -n "$secret" ]] || return 1
+
+  aperion__secrets_is_placeholder "$id" && return 1
+  aperion__secrets_is_placeholder "$secret" && return 1
+
+  [[ ${#id} -gt 10 ]] || return 1
+  [[ ${#secret} -gt 10 ]] || return 1
+
+  return 0
+}
+
 aperion_secrets_load() {
   local secrets_file
   secrets_file="$(aperion_secrets_path)"
+
+  # Prefer environment if already valid; do not require a file.
+  if aperion__secrets_env_is_valid; then
+    return 0
+  fi
 
   if [[ ! -f "$secrets_file" ]]; then
     aperion__secrets_print_create_file_instructions "$secrets_file"
@@ -120,33 +142,33 @@ aperion_secrets_validate() {
   fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
-    printf 'ERROR: required variables are missing/empty after loading secrets file:\n' >&2
+    printf 'ERROR: required variables are missing/empty after checking environment and secrets file (if needed):\n' >&2
     printf '  - %s\n' "${missing[@]}" >&2
-    printf 'File: %s\n' "$secrets_file" >&2
+    printf 'Secrets file (if used): %s\n' "$secrets_file" >&2
     return 1
   fi
 
   if aperion__secrets_is_placeholder "$id"; then
     printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_ID looks like a placeholder/redaction.\n' >&2
-    printf 'File: %s\n' "$secrets_file" >&2
+    printf 'Hint: set env vars or update secrets file: %s\n' "$secrets_file" >&2
     return 1
   fi
 
   if aperion__secrets_is_placeholder "$secret"; then
     printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_SECRET looks like a placeholder/redaction.\n' >&2
-    printf 'File: %s\n' "$secrets_file" >&2
+    printf 'Hint: set env vars or update secrets file: %s\n' "$secrets_file" >&2
     return 1
   fi
 
   if [[ ${#id} -le 10 ]]; then
     printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_ID is too short (len=%s); must be > 10.\n' "${#id}" >&2
-    printf 'File: %s\n' "$secrets_file" >&2
+    printf 'Hint: set env vars or update secrets file: %s\n' "$secrets_file" >&2
     return 1
   fi
 
   if [[ ${#secret} -le 10 ]]; then
     printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_SECRET is too short (len=%s); must be > 10.\n' "${#secret}" >&2
-    printf 'File: %s\n' "$secrets_file" >&2
+    printf 'Hint: set env vars or update secrets file: %s\n' "$secrets_file" >&2
     return 1
   fi
 
