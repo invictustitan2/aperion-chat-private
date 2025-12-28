@@ -37,6 +37,15 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 - `./devshell/devshell secrets check`
 - `./devshell/devshell access test`
 
+## Shell tooling (fmt/lint)
+
+The `pnpm` scripts for shell formatting/linting use a NUL-separated file list and pipes (to avoid filename escaping issues):
+
+```bash
+./scripts/shell-files.sh shfmt | xargs -0 shfmt -d
+./scripts/shell-files.sh shellcheck | xargs -0 shellcheck
+```
+
 ## Notes
 
 - Secrets are never printed; only lengths and HTTP status codes.

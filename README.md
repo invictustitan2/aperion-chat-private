@@ -41,6 +41,10 @@ Core commands:
 - `./devshell/devshell secrets check`
 - `./devshell/devshell access test` (prints HTTP status only)
 
+Shell tooling:
+
+- `pnpm -s run verify:devshell`
+
 Docs:
 
 - See `docs/devshell.md`
