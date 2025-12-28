@@ -114,3 +114,28 @@ jobs:
 
       - name: E2E Tests
         run: pnpm test:e2e
+
+  devshell:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Bootstrap devshell tools (apt)
+        run: ./scripts/bootstrap-dev.sh
+
+      - name: Verify devshell (no network)
+        run: pnpm -s run verify:devshell

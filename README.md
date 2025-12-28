@@ -21,6 +21,30 @@ See `./scripts/bootstrap.sh` to get started.
 
 For authentication and CORS troubleshooting, see [`docs/auth-debugging.md`](./docs/auth-debugging.md).
 
+## Dev Shell
+
+One-liner:
+
+```bash
+./scripts/bootstrap-dev.sh && ./devshell/devshell enter
+```
+
+Secrets:
+
+- Default file: `~/.config/aperion/cf_access.env`
+- Override: `APERION_SECRETS_FILE=/path/to/cf_access.env ./devshell/devshell secrets check`
+
+Core commands:
+
+- `./devshell/devshell doctor`
+- `./devshell/devshell secrets path`
+- `./devshell/devshell secrets check`
+- `./devshell/devshell access test` (prints HTTP status only)
+
+Docs:
+
+- See `docs/devshell.md`
+
 ## Deployments
 
 - **Production API:** [api.aperion.cc](https://api.aperion.cc) (Cloudflare Workers)

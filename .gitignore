@@ -17,6 +17,7 @@ coverage_report.txt
 # Logs and Secrets
 *.log
 .dev.vars
+cf_access.env
 *.csv
 *.tsbuildinfo
 

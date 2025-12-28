@@ -1,0 +1,363 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Aperion Dev Shell (first-class CLI)
+# Works from any current working directory.
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+repo_root="$(cd "${script_dir}/.." && pwd -P)"
+
+# shellcheck source=devshell/lib/secrets.sh
+source "${repo_root}/devshell/lib/secrets.sh"
+
+usage() {
+  cat <<'HELP'
+Aperion Dev Shell
+
+Usage:
+  ./devshell/devshell <command>
+
+Commands:
+  enter                 Enter the dev shell (loads env, prints banner)
+  doctor                Run diagnostics (deps, secrets, wrangler, access)
+
+  secrets path           Print the secrets file path that will be used
+  secrets check          Load + validate secrets (never prints values)
+
+  access test            Make authenticated request to identity endpoint; prints HTTP status only
+
+Environment:
+  APERION_SECRETS_FILE   Override secrets file path (default: ~/.config/aperion/cf_access.env)
+
+Notes:
+  - No secrets are ever printed; only lengths and status codes.
+HELP
+}
+
+note() { printf '%s\n' "$*"; }
+warn() { printf 'WARN: %s\n' "$*" >&2; }
+err() { printf 'ERROR: %s\n' "$*" >&2; }
+
+need_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    err "missing required command: ${cmd}"
+    err "Fix: ${repo_root}/scripts/bootstrap-dev.sh"
+    return 1
+  fi
+}
+
+print_banner() {
+  note "Aperion Dev Shell"
+  note "================================================================"
+  note "Repo: ${repo_root}"
+  note "Secrets: $(aperion_secrets_path)"
+  note "================================================================"
+}
+
+load_repo_dotenv_if_present() {
+  local dotenv_file="${repo_root}/.env"
+  if [[ -f "$dotenv_file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$dotenv_file"
+    set +a
+  fi
+}
+
+export_helper_functions() {
+  ship() {
+    echo '🚀 Running verification pipeline...'
+    (cd "${repo_root}" && pnpm typecheck && pnpm lint && pnpm test) && echo '✅ Ready to Ship!'
+  }
+
+  verify() {
+    (cd "${repo_root}" && pnpm typecheck && pnpm lint && pnpm test)
+  }
+
+  test_suite() {
+    (cd "${repo_root}" && pnpm test)
+  }
+
+  e2e() {
+    (cd "${repo_root}" && pnpm test:e2e)
+  }
+
+  logs() {
+    (cd "${repo_root}" && wrangler tail --name aperion-api-worker)
+  }
+
+  db_local() {
+    (cd "${repo_root}" && wrangler d1 execute aperion-memory --local --command "$@")
+  }
+
+  plan() {
+    cat "${repo_root}/docs/RELIABILITY_PLAN.md"
+  }
+
+  ci_watch() {
+    gh run watch
+  }
+
+  ci_list() {
+    gh run list
+  }
+
+  prev_url() {
+    gh pr view --json comments --jq '.comments[].body' | grep -o 'https://.*\.pages\.dev' | tail -n 1
+  }
+
+  help_dev() {
+    echo "🛠️  Dev Shell Commands:"
+    echo "  verify      - Run typecheck, lint, and unit tests"
+    echo "  ship        - Full verification before git push"
+    echo "  e2e         - Run Playwright E2E tests"
+    echo "  logs        - Tail production logs (requires login)"
+    echo "  plan        - View Reliability Plan"
+    echo "  test_suite  - Run Vitest"
+    echo "  ci_watch    - Watch current GitHub Action run"
+    echo "  ci_list     - List recent GitHub Action runs"
+    echo "  prev_url    - Get latest Preview Deployment URL from PR"
+  }
+
+  export -f ship verify test_suite e2e logs db_local plan ci_watch ci_list prev_url help_dev
+}
+
+devshell_enter() {
+  load_repo_dotenv_if_present
+
+  aperion_secrets_load
+  aperion_secrets_validate
+
+  export PATH="${repo_root}/scripts:${PATH}"
+
+  print_banner
+
+  note -n "📦 Node: "
+  if command -v node >/dev/null 2>&1; then node --version; else note "Not found"; fi
+
+  note -n "📦 PNPM: "
+  if command -v pnpm >/dev/null 2>&1; then pnpm --version; else note "Not found"; fi
+
+  note -n "🔥 Wrangler: "
+  if command -v wrangler >/dev/null 2>&1; then wrangler --version; else note "Not found (install via pnpm)"; fi
+
+  note "================================================================"
+  note "✅ Environment loaded."
+  note "ℹ️  Type 'help_dev' to see available commands."
+  note "🐚 Spawning shell..."
+  note ""
+
+  export_helper_functions
+
+  exec "${SHELL:-bash}"
+}
+
+devshell_secrets_path() {
+  aperion_secrets_path
+}
+
+devshell_secrets_check() {
+  aperion_secrets_load
+  aperion_secrets_validate
+}
+
+devshell_access_test() {
+  need_cmd curl
+
+  aperion_secrets_load
+  aperion_secrets_validate
+
+  local status
+  status="$(
+    cat <<EOF | curl -sS -o /dev/null -w '%{http_code}' -K -
+url = "https://api.aperion.cc/v1/identity"
+header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+EOF
+  )"
+
+  note "$status"
+
+  if [[ "$status" != "200" ]]; then
+    err "access test failed (status=${status})"
+    err "Next: ${repo_root}/devshell/devshell doctor"
+    return 1
+  fi
+}
+
+find_bats_cmd() {
+  if command -v bats >/dev/null 2>&1; then
+    printf '%s' bats
+    return 0
+  fi
+  if command -v bats-core >/dev/null 2>&1; then
+    printf '%s' bats-core
+    return 0
+  fi
+  return 1
+}
+
+print_cmd_version() {
+  local label="$1"
+  local cmd="$2"
+
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local version
+  version="$($cmd --version 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$version" ]]; then
+    note "PASS: ${label} (${version})"
+  else
+    note "PASS: ${label}"
+  fi
+}
+
+devshell_doctor() {
+  local failures=0
+  local bats_cmd=''
+  bats_cmd="$(find_bats_cmd 2>/dev/null || true)"
+
+  note "Aperion Dev Shell: Doctor"
+  note "================================================================"
+
+  note "[Deps]"
+  for cmd in bash curl jq rg; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      note "PASS: $cmd"
+    else
+      err "FAIL: missing $cmd"
+      err "Fix: ${repo_root}/scripts/bootstrap-dev.sh"
+      failures=$((failures + 1))
+    fi
+  done
+
+  if ! print_cmd_version shellcheck shellcheck; then
+    err "FAIL: missing shellcheck"
+    err "Fix: ${repo_root}/scripts/bootstrap-dev.sh"
+    failures=$((failures + 1))
+  fi
+
+  if ! print_cmd_version shfmt shfmt; then
+    err "FAIL: missing shfmt"
+    err "Fix: ${repo_root}/scripts/bootstrap-dev.sh"
+    failures=$((failures + 1))
+  fi
+
+  if [[ -n "$bats_cmd" ]]; then
+    print_cmd_version bats "$bats_cmd" || true
+  else
+    err "FAIL: missing bats (or bats-core)"
+    err "Fix: ${repo_root}/scripts/bootstrap-dev.sh"
+    failures=$((failures + 1))
+  fi
+
+  note ""
+  note "[Secrets]"
+  if aperion_secrets_load >/dev/null 2>&1 && aperion_secrets_validate >/dev/null 2>&1; then
+    note "PASS: secrets loaded and validated (ID len=${#CF_ACCESS_SERVICE_TOKEN_ID}, SECRET len=${#CF_ACCESS_SERVICE_TOKEN_SECRET})"
+  else
+    err "FAIL: secrets invalid"
+    err "Fix: ${repo_root}/devshell/devshell secrets check"
+    failures=$((failures + 1))
+  fi
+
+  note ""
+  note "[Wrangler]"
+  if command -v wrangler >/dev/null 2>&1; then
+    note "PASS: wrangler present ($(wrangler --version 2>/dev/null | head -n 1 || true))"
+    if wrangler whoami >/dev/null 2>&1; then
+      note "PASS: wrangler whoami"
+    else
+      warn "wrangler whoami failed (not logged in or missing token)"
+      warn "Fix: pnpm exec wrangler login  (or set CLOUDFLARE_API_TOKEN)"
+    fi
+  else
+    warn "wrangler not found (install via pnpm)"
+    warn "Fix: (cd ${repo_root} && pnpm install)"
+  fi
+
+  note ""
+  note "[Access Test]"
+  if [[ "${RUN_NETWORK_TESTS:-0}" == "1" ]]; then
+    if devshell_access_test >/dev/null 2>&1; then
+      note "PASS: access test"
+    else
+      err "FAIL: access test"
+      err "Fix: ${repo_root}/devshell/devshell access test"
+      failures=$((failures + 1))
+    fi
+  else
+    note "SKIP: network tests disabled (set RUN_NETWORK_TESTS=1)"
+  fi
+
+  note "================================================================"
+  if [[ "$failures" -eq 0 ]]; then
+    note "OK: doctor checks passed"
+  else
+    err "doctor found ${failures} issue(s)"
+    return 1
+  fi
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+
+  case "$cmd" in
+  help | -h | --help)
+    usage
+    ;;
+
+  enter)
+    devshell_enter "$@"
+    ;;
+
+  doctor)
+    devshell_doctor "$@"
+    ;;
+
+  secrets)
+    local sub="${1:-}"
+    shift || true
+    case "$sub" in
+    path)
+      devshell_secrets_path
+      ;;
+    check)
+      devshell_secrets_check
+      ;;
+    *)
+      err "unknown secrets subcommand: ${sub:-<missing>}"
+      err "Try: ${repo_root}/devshell/devshell secrets path"
+      return 1
+      ;;
+    esac
+    ;;
+
+  access)
+    local sub="${1:-}"
+    shift || true
+    case "$sub" in
+    test)
+      devshell_access_test
+      ;;
+    *)
+      err "unknown access subcommand: ${sub:-<missing>}"
+      err "Try: ${repo_root}/devshell/devshell access test"
+      return 1
+      ;;
+    esac
+    ;;
+
+  *)
+    err "unknown command: $cmd"
+    err "Try: ${repo_root}/devshell/devshell help"
+    return 1
+    ;;
+  esac
+}
+
+main "$@"
