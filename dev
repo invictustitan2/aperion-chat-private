@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ./dev — the ONLY entrypoint to the aperion-chat-private dev shell.
+#
+# This stays small; implementation lives in devshell/.
+
+DEV_ENTRY_FILE="${BASH_SOURCE[0]}"
+
+# If invoked without a slash (e.g., via PATH as `dev`), resolve to an actual filesystem path.
+if [[ "$DEV_ENTRY_FILE" != /* && "$DEV_ENTRY_FILE" != */* ]]; then
+	DEV_ENTRY_FILE="$(command -v -- "$DEV_ENTRY_FILE" || true)"
+fi
+if [[ -z "$DEV_ENTRY_FILE" ]]; then
+	echo "ERROR: unable to resolve dev entrypoint path" >&2
+	exit 1
+fi
+
+DEV_ENTRY_ABS_DIR="$(cd -- "$(dirname -- "$DEV_ENTRY_FILE")" >/dev/null 2>&1 && pwd -P)"
+
+DEV_SHELL_LIB_DIR="$DEV_ENTRY_ABS_DIR/devshell/lib"
+export DEV_SHELL_LIB_DIR
+
+# shellcheck source=devshell/lib/common.sh
+source "$DEV_SHELL_LIB_DIR/common.sh"
+# shellcheck source=devshell/lib/sentinel.sh
+source "$DEV_SHELL_LIB_DIR/sentinel.sh"
+
+REPO_ROOT="$(devshell_detect_repo_root "$DEV_ENTRY_FILE")"
+devshell_assert_repo_root_is_valid "$REPO_ROOT" || exit 1
+
+# Repo-root-only contract: must be invoked from the root.
+devshell_assert_invoked_from_repo_root "$REPO_ROOT" || exit 1
+
+# shellcheck source=devshell/entry.sh
+source "$DEV_ENTRY_ABS_DIR/devshell/entry.sh"
+
+assert_common_preconditions "$REPO_ROOT" || exit 1
+
+set +e
+devshell_dispatch "$REPO_ROOT" "$@"
+status=$?
+set -e
+exit "$status"

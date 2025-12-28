@@ -12,5 +12,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["node", "vitest/globals"]
-  }
+  },
+  "exclude": [".ref", "**/.ref/**"]
 }

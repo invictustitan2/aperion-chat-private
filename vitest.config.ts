@@ -27,6 +27,7 @@ export default defineConfig({
       "**/apps/web/test/e2e/**",
       "**/apps/web/test-results/**",
       "**/apps/web/playwright-report/**",
+      "**/.ref/**",
     ],
     coverage: {
       provider: "v8",

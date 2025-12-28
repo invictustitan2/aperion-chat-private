@@ -17,6 +17,7 @@ coverage_report.txt
 # Logs and Secrets
 *.log
 .dev.vars
+cf_access.env
 *.csv
 *.tsbuildinfo
 
@@ -25,3 +26,6 @@ vitetoken.txt
 
 # Wrangler may generate a repo-root wrangler.toml for Pages; this repo tracks app-specific configs instead
 /wrangler.toml
+
+# local reference mounts (NOT COMMITTED)
+.ref/
