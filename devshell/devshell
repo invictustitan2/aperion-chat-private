@@ -10,6 +10,9 @@ repo_root="$(cd "${script_dir}/.." && pwd -P)"
 # shellcheck source=devshell/lib/secrets.sh
 source "${repo_root}/devshell/lib/secrets.sh"
 
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+
 usage() {
   cat <<'HELP'
 Aperion Dev Shell
@@ -56,13 +59,7 @@ print_banner() {
 }
 
 load_repo_dotenv_if_present() {
-  local dotenv_file="${repo_root}/.env"
-  if [[ -f "$dotenv_file" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$dotenv_file"
-    set +a
-  fi
+  devshell_load_repo_dotenv "$repo_root"
 }
 
 export_helper_functions() {

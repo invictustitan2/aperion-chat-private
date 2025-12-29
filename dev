@@ -32,6 +32,12 @@ devshell_assert_repo_root_is_valid "$REPO_ROOT" || exit 1
 # Repo-root-only contract: must be invoked from the root.
 devshell_assert_invoked_from_repo_root "$REPO_ROOT" || exit 1
 
+# Load repo-local env files (safe parser; does not execute arbitrary code).
+# This makes vars from .dev.vars/.env available to ./dev subcommands.
+if [[ "${DEV_LOAD_DOTENV:-1}" != "0" ]]; then
+	devshell_load_repo_dotenv "$REPO_ROOT" || true
+fi
+
 # shellcheck source=devshell/entry.sh
 source "$DEV_ENTRY_ABS_DIR/devshell/entry.sh"
 

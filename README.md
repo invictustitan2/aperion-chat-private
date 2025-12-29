@@ -39,6 +39,8 @@ Core commands:
 
 - `./dev shell` (preferred)
 - `./dev secrets:status`
+- `./dev cf:access:audit` (Access config audit; safe)
+- `RUN_NETWORK_TESTS=1 ./dev access:probe` (status-only probe)
 - `./devshell/devshell doctor`
 - `./devshell/devshell secrets path`
 - `./devshell/devshell secrets check`
@@ -51,6 +53,36 @@ Shell tooling:
 Docs:
 
 - See `docs/devshell.md`
+
+## Dev Telemetry (VS Code logs)
+
+Capture redacted VS Code logs into `.ref/receipts/` for debugging local editor/agent behavior:
+
+- Start: `./dev vscode:logs:start`
+- Status: `./dev vscode:logs:status`
+- Stop: `./dev vscode:logs:stop`
+
+### Bootstrap Cloudflare Access IDs
+
+Populate the non-secret Access vars used by the worker/auth layer:
+
+```bash
+./dev cf:access:bootstrap
+```
+
+This prints a safe, ready-to-copy `.dev.vars` block for:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CF_ACCESS_TEAM_DOMAIN`
+- `CF_ACCESS_AUD`
+
+### Debug Access redirect (302)
+
+```bash
+./dev access:debug
+```
+
+Prints only HTTP status + Location (no querystring) and a short checklist.
 
 ## Deployments
 

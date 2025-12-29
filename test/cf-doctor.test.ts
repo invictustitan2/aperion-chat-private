@@ -92,6 +92,7 @@ describe("cf:doctor", () => {
       const env = {
         ...process.env,
         PATH: `${tempDir}:${process.env.PATH ?? ""}`,
+        DEV_LOAD_DOTENV: "0",
         CLOUDFLARE_API_TOKEN: "",
         CLOUDFLARE_ACCOUNT_ID: "",
       };

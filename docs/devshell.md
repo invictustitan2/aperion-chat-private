@@ -37,12 +37,35 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 ## Commands
 
 - `./dev shell` (preferred entrypoint)
+- `./dev cf:access:bootstrap` (populate Access IDs; safe)
+- `./dev cf:access:audit` (audit Access apps/policies; safe)
 - `./dev secrets:status`
+- `./dev access:debug` (diagnose 302/401 for service-token calls)
+- `RUN_NETWORK_TESTS=1 ./dev access:probe` (status-only probe; safe)
+- `./dev vscode:logs:start` (capture redacted VS Code logs into `.ref/receipts/`)
+- `./dev vscode:logs:status`
+- `./dev vscode:logs:stop`
 - `./devshell/devshell enter`
 - `./devshell/devshell doctor`
 - `./devshell/devshell secrets path`
 - `./devshell/devshell secrets check`
 - `./devshell/devshell access test`
+
+## Bootstrap Cloudflare Access IDs
+
+```bash
+./dev cf:access:bootstrap
+```
+
+Requires `CLOUDFLARE_API_TOKEN` in the environment. Prints safe values you can paste into `.dev.vars`.
+
+## Debug Access redirect (302)
+
+```bash
+./dev access:debug
+```
+
+Runs a single authenticated request to `https://api.aperion.cc/v1/identity` using your service token (env-or-file) and prints only status + Location hostname/path.
 
 ## Shell tooling (fmt/lint)
 

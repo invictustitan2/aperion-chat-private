@@ -18,6 +18,9 @@
     },
     {
       "path": "./tools/cli"
+    },
+    {
+      "path": "./tools/mcp/aperion"
     }
   ],
   "exclude": [".ref", "**/.ref/**"]

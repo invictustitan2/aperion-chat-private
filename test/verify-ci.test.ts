@@ -96,6 +96,7 @@ describe("verify:ci", () => {
       const env = {
         ...process.env,
         PATH: `${tempDir}:${process.env.PATH ?? ""}`,
+        DEV_LOAD_DOTENV: "0",
         CI: "",
         GITHUB_ACTIONS: "",
         CLOUDFLARE_API_TOKEN: "",
@@ -125,6 +126,7 @@ describe("verify:ci", () => {
         cwd: repoRoot,
         env: {
           ...process.env,
+          DEV_LOAD_DOTENV: "0",
           CI: "true",
           CLOUDFLARE_API_TOKEN: "token-set",
           CLOUDFLARE_ACCOUNT_ID: "",
@@ -152,6 +154,7 @@ describe("verify:ci", () => {
       const env = {
         ...process.env,
         PATH: `${tempDir}:${process.env.PATH ?? ""}`,
+        DEV_LOAD_DOTENV: "0",
         CI: "true",
         CLOUDFLARE_API_TOKEN: "token-set",
         CLOUDFLARE_ACCOUNT_ID: "account-set",

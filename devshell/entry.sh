@@ -28,8 +28,17 @@ Commands:
   verify:ci          Run the CI-grade verification gate (strict)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
+  cf:access:bootstrap Bootstrap Access IDs (safe; no secrets)
+  cf:access:audit    Audit Cloudflare Access apps/policies (safe; no secrets)
   ide:status         Print IDE/environment context status
   secrets:status     Print redacted secret status
+  secrets:where      Show where secrets are sourced (safe)
+  secrets:set        Interactively set repo-local secrets (safe)
+  access:debug       Debug Access service-token redirects (safe)
+  access:probe       Probe api.aperion.cc with/without service token headers (safe)
+  vscode:logs:start  Start VS Code log capture into receipts/
+  vscode:logs:stop   Stop VS Code log capture
+  vscode:logs:status Show VS Code log capture status
 
 Notes:
   - Repo-root-only: run from the directory containing ./dev
@@ -75,12 +84,48 @@ devshell_dispatch() {
       "${repo_root}/devshell/commands/cf_doctor.sh" "$repo_root" "$@"
       ;;
 
+    cf:access:bootstrap)
+      "${repo_root}/devshell/commands/cf_access_bootstrap.sh" "$repo_root" "$@"
+      ;;
+
+    cf:access:audit)
+      "${repo_root}/devshell/commands/cf_access_audit.sh" "$repo_root" "$@"
+      ;;
+
     ide:status)
       "${repo_root}/devshell/commands/ide_status.sh" "$repo_root" "$@"
       ;;
 
     secrets:status)
       "${repo_root}/devshell/commands/secrets_status.sh" "$repo_root" "$@"
+      ;;
+
+    secrets:where)
+      "${repo_root}/devshell/commands/secrets_where.sh" "$repo_root" "$@"
+      ;;
+
+    secrets:set)
+      "${repo_root}/devshell/commands/secrets_set.sh" "$repo_root" "$@"
+      ;;
+
+    access:debug)
+      "${repo_root}/devshell/commands/access_debug.sh" "$repo_root" "$@"
+      ;;
+
+    access:probe)
+      "${repo_root}/devshell/commands/access_probe.sh" "$repo_root" "$@"
+      ;;
+
+    vscode:logs:start)
+      "${repo_root}/devshell/commands/vscode_logs_start.sh" "$repo_root" "$@"
+      ;;
+
+    vscode:logs:stop)
+      "${repo_root}/devshell/commands/vscode_logs_stop.sh" "$repo_root" "$@"
+      ;;
+
+    vscode:logs:status)
+      "${repo_root}/devshell/commands/vscode_logs_status.sh" "$repo_root" "$@"
       ;;
 
     *)

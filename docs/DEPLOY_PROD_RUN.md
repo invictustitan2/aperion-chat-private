@@ -91,6 +91,38 @@ EOF
 
 If a request _with_ `CF-Access-Client-Id` / `CF-Access-Client-Secret` still returns `302`, Cloudflare Access rejected the service token for this application/hostname/path.
 
+#### Status Code Truth Table (API)
+
+| Request            |      Status | What it implies                                                                                                                                                                |
+| ------------------ | ----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No service token   |       `302` | Access intercepted and redirected to login (common default).                                                                                                                   |
+| No service token   |       `403` | Access intercepted and denied (policy deny / no session).                                                                                                                      |
+| No service token   |       `401` | Request reached Worker, and Worker denied (missing Access assertion / bearer).                                                                                                 |
+| With service token |       `302` | Access did **not** accept service auth for this hostname/path (missing SERVICE_AUTH policy, path mismatch, wrong token association, or Access set to redirect instead of 401). |
+| With service token | `401`/`403` | Request reached Access/Worker but was denied (token mismatch, policy mismatch, or Worker fail-closed).                                                                         |
+| With service token |       `200` | Service auth succeeded end-to-end.                                                                                                                                             |
+
+Notes:
+
+- A `302` for service auth is almost always an Access configuration issue, not a Worker bug.
+- If you enable “Return 401 Response for Service Auth policies”, service-auth failures become `401` instead of `302` redirects.
+
+#### Operator sequence (fastest path to resolve 302)
+
+1. Audit Access configuration (evidence, not vibes):
+
+- `./dev cf:access:audit`
+
+2. Probe API behavior with and without service token headers:
+
+- `RUN_NETWORK_TESTS=1 ./dev access:probe`
+
+3. Confirm requests are reaching origin when appropriate:
+
+- `wrangler tail --name aperion-api-worker`
+
+  You should see requests when Access allows through and the Worker is receiving traffic.
+
 First local check (prints only status + `Location` + `cf-ray`, never prints secrets):
 
 - `bash scripts/access-token-diagnose.sh`
