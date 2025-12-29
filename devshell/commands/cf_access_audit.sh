@@ -125,15 +125,28 @@ service_token_match_summary() {
   local body_file="$1"
   local configured_id="$2"
 
-  node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); const id=String(process.argv[2]||''); const list=Array.isArray(data&&data.result)?data.result:[];
-const toks=list.map(t=>({name:String(t&&t.name||''),clientId:String(t&&t.client_id||t.clientId||'')}));
-const hit=toks.find(t=>t.clientId && id && t.clientId===id);
+  node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); const configured=String(process.argv[2]||''); const list=Array.isArray(data&&data.result)?data.result:[];
+const toks=list.map(t=>({
+  name:String((t&&t.name)||''),
+  id:String((t&&t.id)||''),
+  clientId:String((t&&((t.client_id)||(t.clientId)||(t.credentials&&t.credentials.client_id)))||'')
+}));
+
+const hasClientId=toks.some(t=>Boolean(t.clientId));
+const hasId=toks.some(t=>Boolean(t.id));
+let hit=null;
+if(configured && hasClientId){
+  hit=toks.find(t=>t.clientId && t.clientId===configured) || null;
+}
+
 const out=[];
 out.push(['COUNT',String(list.length)]);
-out.push(['CONFIGURED_ID_PRESENT',id? 'yes':'no']);
-out.push(['CONFIGURED_ID_MATCHES_API',hit? 'yes':'no']);
-if(hit){ out.push(['CONFIGURED_ID_MATCH_NAME',hit.name]); }
-process.stdout.write(out.map(([k,v])=>k+': '+v).join('\n')+'\n');" "$body_file" "$configured_id" 2>/dev/null || true
+out.push(['TOKEN_LIST.HAS_CLIENT_ID',hasClientId? 'yes':'no']);
+out.push(['TOKEN_LIST.HAS_ID',hasId? 'yes':'no']);
+out.push(['CONFIGURED_CLIENT_ID_PRESENT',configured? 'yes':'no']);
+out.push(['CONFIGURED_CLIENT_ID_MATCHES_TOKEN',(!configured||!hasClientId)? 'unknown' : (hit? 'yes':'no')]);
+if(hit){ out.push(['CONFIGURED_CLIENT_ID_MATCH_NAME',hit.name]); }
+process.stdout.write(out.map(([k,v])=>k+': '+v).join('\\n')+'\\n');" "$body_file" "$configured_id" 2>/dev/null || true
 }
 
 apps_matches_tsv() {
@@ -218,8 +231,40 @@ policy_rows_tsv() {
 
   node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); const list=Array.isArray(data&&data.result)?data.result:[];
 function upper(s){ return String(s||'').toUpperCase(); }
-function hasServiceTokenRef(obj){ const seen=new Set(); function walk(v){ if(!v||typeof v!=='object') return false; if(seen.has(v)) return false; seen.add(v); if(Object.prototype.hasOwnProperty.call(v,'service_token')) return true; if(Object.prototype.hasOwnProperty.call(v,'serviceToken')) return true; for(const k of Object.keys(v)){ if(walk(v[k])) return true; } return false; } return walk(obj); }
-for(const p of list){ const id=p&&p.id?String(p.id):''; const name=p&&p.name?String(p.name):''; const decision=upper(p&&(p.decision||p.action||p.effect||'')); const hasRef=hasServiceTokenRef(p)?'yes':'no'; process.stdout.write([id,name,decision||'UNKNOWN',hasRef].join('\t')+'\n'); }
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function scan(obj){
+  const seen=new Set();
+  let hasRef=false;
+  let hasIdValue=false;
+
+  function walk(v){
+    if(!v||typeof v!=='object') return;
+    if(seen.has(v)) return;
+    seen.add(v);
+
+    if(Object.prototype.hasOwnProperty.call(v,'service_token') || Object.prototype.hasOwnProperty.call(v,'serviceToken')){
+      hasRef=true;
+      const st=v.service_token || v.serviceToken;
+      if(st && typeof st==='object'){
+        const id=String(st.id||'');
+        if(uuid.test(id)) hasIdValue=true;
+      }
+    }
+
+    for(const k of Object.keys(v)) walk(v[k]);
+  }
+  walk(obj);
+  return {hasRef,hasIdValue};
+}
+
+for(const p of list){
+  const id=p&&p.id?String(p.id):'';
+  const name=p&&p.name?String(p.name):'';
+  const decision=upper(p&&(p.decision||p.action||p.effect||''));
+  const s=scan(p);
+  process.stdout.write([id,name,decision||'UNKNOWN',s.hasRef?'yes':'no',s.hasIdValue?'yes':'no'].join('\t')+'\n');
+}
 " "$body_file" 2>/dev/null || true
 }
 
@@ -336,6 +381,7 @@ main_text() {
 
     local i=0
     local any_service_token_ref='no'
+    local any_service_token_ids='no'
     local any_service_auth_decision='no'
     local any_paths_cover_v1='unknown'
 
@@ -384,15 +430,19 @@ main_text() {
         local pidx=0
         local rows
         rows="$(policy_rows_tsv "$pol_body" || true)"
-        while IFS=$'\t' read -r pid pname pdecision phasref; do
+        while IFS=$'\t' read -r pid pname pdecision phasref phasidvals; do
           [[ -n "$pid" ]] || continue
           print_kv "APP.${label}.${i}.POLICY.${pidx}.ID" "$(redact_id "$pid")"
           print_kv "APP.${label}.${i}.POLICY.${pidx}.NAME" "${pname:-unknown}"
           print_kv "APP.${label}.${i}.POLICY.${pidx}.DECISION" "${pdecision:-UNKNOWN}"
           print_kv "APP.${label}.${i}.POLICY.${pidx}.HAS_SERVICE_TOKEN_REF" "$phasref"
+          print_kv "APP.${label}.${i}.POLICY.${pidx}.HAS_SERVICE_TOKEN_ID_VALUES" "${phasidvals:-no}"
 
           if [[ "$phasref" == 'yes' ]]; then
             any_service_token_ref='yes'
+          fi
+          if [[ "${phasidvals:-no}" == 'yes' ]]; then
+            any_service_token_ids='yes'
           fi
           if printf '%s' "$pdecision" | grep -Eq 'SERVICE|NON_IDENTITY'; then
             any_service_auth_decision='yes'
@@ -406,12 +456,20 @@ main_text() {
     done <<<"$matches"
 
     print_kv "EVIDENCE.${label}.HAS_ANY_SERVICE_TOKEN_REF" "$any_service_token_ref"
+    print_kv "EVIDENCE.${label}.POLICY_REFERENCES_SERVICE_TOKEN_IDS" "$any_service_token_ids"
     print_kv "EVIDENCE.${label}.HAS_ANY_SERVICE_AUTH_DECISION" "$any_service_auth_decision"
     print_kv "EVIDENCE.${label}.PATHS_COVER_V1" "$any_paths_cover_v1"
+
+    # Export for summary lines.
+    printf -v "policy_service_token_ids_${label}" '%s' "$any_service_token_ids"
   }
 
   audit_host "$HOST_API" 'API'
   audit_host "$HOST_CHAT" 'CHAT'
+
+  # Summary: policies commonly reference service tokens by UUID (not client_id).
+  # Keep this as an independent fact from CONFIGURED_CLIENT_ID_MATCHES_TOKEN.
+  print_kv 'SERVICE_TOKENS.POLICY_REFERENCES_SERVICE_TOKEN_IDS' "${policy_service_token_ids_API:-unknown}"
 
   # Conclusions grounded in what we can infer.
   print_kv 'CONCLUSION.302.REASON.NO_SERVICE_AUTH_POLICY' 'unknown'

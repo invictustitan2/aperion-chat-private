@@ -100,6 +100,7 @@ If a request _with_ `CF-Access-Client-Id` / `CF-Access-Client-Secret` still retu
 | No service token   |       `401` | Request reached Worker, and Worker denied (missing Access assertion / bearer).                                                                                                 |
 | With service token |       `302` | Access did **not** accept service auth for this hostname/path (missing SERVICE_AUTH policy, path mismatch, wrong token association, or Access set to redirect instead of 401). |
 | With service token | `401`/`403` | Request reached Access/Worker but was denied (token mismatch, policy mismatch, or Worker fail-closed).                                                                         |
+| With service token |       `404` | Service token likely accepted, but the hostname is bound to the wrong origin/Worker (or the origin does not serve `/v1/identity`).                                             |
 | With service token |       `200` | Service auth succeeded end-to-end.                                                                                                                                             |
 
 Notes:
@@ -116,6 +117,10 @@ Notes:
 2. Probe API behavior with and without service token headers:
 
 - `RUN_NETWORK_TESTS=1 ./dev access:probe`
+
+2b. If service-token requests return `404`, audit Worker binding for the hostname:
+
+- `RUN_NETWORK_TESTS=1 ./dev cf:worker:audit`
 
 3. Confirm requests are reaching origin when appropriate:
 

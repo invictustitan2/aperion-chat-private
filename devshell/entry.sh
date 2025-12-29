@@ -28,6 +28,9 @@ Commands:
   verify:ci          Run the CI-grade verification gate (strict)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
+  cf:worker:audit    Audit DNS + Worker binding for api.aperion.cc (safe; no secrets)
+  cf:worker:smoke    Probe prod endpoints via service token (safe; no secrets)
+  cf:worker:ensure-domain Ensure Worker custom domain is prepareable (dry-run by default)
   cf:access:bootstrap Bootstrap Access IDs (safe; no secrets)
   cf:access:audit    Audit Cloudflare Access apps/policies (safe; no secrets)
   ide:status         Print IDE/environment context status
@@ -84,6 +87,18 @@ devshell_dispatch() {
 
     cf:doctor)
       "${repo_root}/devshell/commands/cf_doctor.sh" "$repo_root" "$@"
+      ;;
+
+    cf:worker:audit)
+      "${repo_root}/devshell/commands/cf_worker_audit.sh" "$repo_root" "$@"
+      ;;
+
+    cf:worker:smoke)
+      "${repo_root}/devshell/commands/cf_worker_smoke.sh" "$repo_root" "$@"
+      ;;
+
+    cf:worker:ensure-domain)
+      "${repo_root}/devshell/commands/cf_worker_ensure_domain.sh" "$repo_root" "$@"
       ;;
 
     cf:access:bootstrap)
