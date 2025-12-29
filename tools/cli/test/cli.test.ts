@@ -60,15 +60,46 @@ Do something else.
   });
 
   describe("verify", () => {
-    it("should fail if VITE_AUTH_TOKEN is missing", async () => {
+    it("should fail if AUTH_TOKEN is missing in token mode", async () => {
       const originalEnv = process.env;
-      process.env = { ...originalEnv, VITE_AUTH_TOKEN: "" };
+      process.env = { ...originalEnv, VITE_AUTH_MODE: "token", AUTH_TOKEN: "" };
 
       await expect(verify()).rejects.toThrow("Process exit 1");
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining("VITE_AUTH_TOKEN is missing"),
+        expect.stringContaining("AUTH_TOKEN is missing"),
       );
 
+      process.env = originalEnv;
+    });
+
+    it("should not require AUTH_TOKEN in access mode", async () => {
+      const originalEnv = process.env;
+      process.env = {
+        ...originalEnv,
+        VITE_AUTH_MODE: "access",
+        AUTH_TOKEN: "",
+        VITE_API_BASE_URL: "http://127.0.0.1:8787",
+      };
+
+      // Minimal fetch mock: access mode typically returns 401.
+      const fakeResponse: Partial<Response> = {
+        ok: false,
+        status: 401,
+        statusText: "Unauthorized",
+        headers: new Headers(),
+      };
+
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(fakeResponse as Response);
+
+      await expect(verify()).resolves.toBeUndefined();
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/v1/identity"),
+        expect.objectContaining({ redirect: "manual" }),
+      );
+
+      fetchSpy.mockRestore();
       process.env = originalEnv;
     });
   });

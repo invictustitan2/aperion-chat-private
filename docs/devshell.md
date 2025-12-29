@@ -40,6 +40,10 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 - `./dev cf:access:bootstrap` (populate Access IDs; safe)
 - `./dev cf:access:audit` (audit Access apps/policies; safe)
 - `./dev secrets:status`
+- `./dev secrets:where` (show env/.env/.dev.vars/secrets-file sources; safe)
+- `./dev secrets:set CLOUDFLARE_API_TOKEN` (interactive; writes to .env)
+- `./dev secrets:wizard` (interactive; guided, ask-before-overwrite)
+- `./dev secrets:doctor` (non-interactive; detects overrides + separation)
 - `./dev access:debug` (diagnose 302/401 for service-token calls)
 - `RUN_NETWORK_TESTS=1 ./dev access:probe` (status-only probe; safe)
 - `./dev vscode:logs:start` (capture redacted VS Code logs into `.ref/receipts/`)

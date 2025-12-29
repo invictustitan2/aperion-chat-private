@@ -6,10 +6,15 @@ import path from "path";
 
 export async function seed(file: string, options: { confirm?: boolean }) {
   const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://127.0.0.1:8787";
-  const AUTH_TOKEN = process.env.VITE_AUTH_TOKEN;
+  const AUTH_TOKEN = process.env.AUTH_TOKEN || process.env.VITE_AUTH_TOKEN;
 
   if (!AUTH_TOKEN) {
-    console.error(chalk.red("❌ VITE_AUTH_TOKEN is missing in .env"));
+    console.error(
+      chalk.red(
+        "❌ AUTH_TOKEN is missing. Seeding requires token-mode credentials.\n" +
+          "   (VITE_AUTH_TOKEN is a deprecated fallback; prefer AUTH_TOKEN.)",
+      ),
+    );
     process.exit(1);
   }
 

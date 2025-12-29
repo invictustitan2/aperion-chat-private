@@ -117,9 +117,14 @@ main() {
   headers_with="$(curl_headers yes || true)"
   headers_without="$(curl_headers no || true)"
 
-  local status_with status_without
-  status_with="$(print_probe 'with_service_token' "$headers_with" | tee /dev/stderr | tail -n 1)"
-  status_without="$(print_probe 'without_service_token' "$headers_without" | tee /dev/stderr | tail -n 1)"
+  local out_with out_without status_with status_without
+  out_with="$(print_probe 'with_service_token' "$headers_with")"
+  printf '%s\n' "$out_with"
+  status_with="$(printf '%s\n' "$out_with" | tail -n 1)"
+
+  out_without="$(print_probe 'without_service_token' "$headers_without")"
+  printf '%s\n' "$out_without"
+  status_without="$(printf '%s\n' "$out_without" | tail -n 1)"
 
   # Deterministic next actions.
   if [[ "$status_with" == '302' ]]; then

@@ -23,6 +23,10 @@ ZONE_RESPONSE=$(curl -sS -X GET "https://api.cloudflare.com/client/v4/zones?name
 
 if [[ "$(echo "$ZONE_RESPONSE" | jq -r '.success')" != "true" ]]; then
   echo "❌ Failed to resolve Zone ID. Response:" >&2
+  if [[ "$(echo "$ZONE_RESPONSE" | jq -r '.errors[0].code // empty')" == "10000" ]]; then
+    echo "   Hint: CLOUDFLARE_API_TOKEN is not authorized for zone lookups." >&2
+    echo "   Ensure the token includes Zone:Read for ${WORKER_ZONE_NAME}." >&2
+  fi
   echo "$ZONE_RESPONSE" | jq '.' >&2 || echo "$ZONE_RESPONSE" >&2
   exit 1
 fi
@@ -37,6 +41,11 @@ DNS_RESPONSE=$(curl -sS -X GET "https://api.cloudflare.com/client/v4/zones/${ZON
 
 if [[ "$(echo "$DNS_RESPONSE" | jq -r '.success')" != "true" ]]; then
   echo "❌ Failed to list DNS records. Response:" >&2
+  if [[ "$(echo "$DNS_RESPONSE" | jq -r '.errors[0].code // empty')" == "10000" ]]; then
+    echo "   Hint: CLOUDFLARE_API_TOKEN is not authorized to read DNS records in this zone." >&2
+    echo "   Ensure the token includes DNS:Read for ${WORKER_ZONE_NAME}." >&2
+    echo "   If you want this script to delete conflicting records, also grant DNS:Edit." >&2
+  fi
   echo "$DNS_RESPONSE" | jq '.' >&2 || echo "$DNS_RESPONSE" >&2
   exit 1
 fi

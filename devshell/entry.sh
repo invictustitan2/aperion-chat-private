@@ -34,6 +34,8 @@ Commands:
   secrets:status     Print redacted secret status
   secrets:where      Show where secrets are sourced (safe)
   secrets:set        Interactively set repo-local secrets (safe)
+  secrets:wizard     Interactive secrets configurator (safe)
+  secrets:doctor     Diagnose secret overrides (safe)
   access:debug       Debug Access service-token redirects (safe)
   access:probe       Probe api.aperion.cc with/without service token headers (safe)
   vscode:logs:start  Start VS Code log capture into receipts/
@@ -106,6 +108,14 @@ devshell_dispatch() {
 
     secrets:set)
       "${repo_root}/devshell/commands/secrets_set.sh" "$repo_root" "$@"
+      ;;
+
+    secrets:wizard)
+      "${repo_root}/devshell/commands/secrets_wizard.sh" "$repo_root" "$@"
+      ;;
+
+    secrets:doctor)
+      "${repo_root}/devshell/commands/secrets_doctor.sh" "$repo_root" "$@"
       ;;
 
     access:debug)

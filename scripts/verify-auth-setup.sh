@@ -25,10 +25,10 @@ print_status() {
         echo -e "${GREEN}✓${NC} $2"
     elif [ "$1" = "warn" ]; then
         echo -e "${YELLOW}⚠${NC} $2"
-        ((WARNINGS++))
+        WARNINGS=$((WARNINGS + 1))
     else
         echo -e "${RED}✗${NC} $2"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
     fi
 }
 
@@ -153,11 +153,11 @@ echo ""
 echo "5. Checking CORS Configuration"
 echo "-------------------------------"
 
-if grep -q "Access-Control-Allow-Origin" apps/api-worker/src/index.ts; then
+if [ -f apps/api-worker/src/middleware/cors.ts ] && grep -q "Access-Control-Allow-Origin" apps/api-worker/src/middleware/cors.ts; then
     print_status "ok" "CORS headers configured in Worker"
 
     # Check if using wildcard (security issue)
-    if grep -q '"Access-Control-Allow-Origin": "\*"' apps/api-worker/src/index.ts; then
+    if grep -q '"Access-Control-Allow-Origin"\s*:\s*"\*"' apps/api-worker/src/middleware/cors.ts; then
         print_status "warn" "CORS allows all origins (*). Consider restricting to specific domains."
     else
         print_status "ok" "CORS is restricted to specific origins"

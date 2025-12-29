@@ -45,6 +45,21 @@ EOF
   printf '%s' "$headers"
 }
 
+curl_get_body_auth_tmp() {
+  local url="$1"
+  local tmp_body
+  tmp_body="$(mktemp)"
+
+  cat <<EOF | curl -sS -o "$tmp_body" -K -
+url = "${url}"
+request = "GET"
+header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
+header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"
+EOF
+
+  printf '%s' "$tmp_body"
+}
+
 main() {
   echo "== Access debug (safe; no secrets) =="
 
@@ -63,7 +78,14 @@ main() {
   local location_line
   location_line="$(printf '%s\n' "$headers" | first_header "location")"
 
+  local content_type_line
+  content_type_line="$(printf '%s\n' "$headers" | first_header "content-type")"
+
   echo "HTTP status: ${status_code:-unknown}"
+
+  if [[ -n "$content_type_line" ]]; then
+    echo "Content-Type: ${content_type_line#*: }" | sed 's/\r$//'
+  fi
 
   if [[ -n "$location_line" ]]; then
     echo "Location: $(strip_location_query "$location_line")"
@@ -86,8 +108,36 @@ main() {
       ;;
 
     401)
-      echo "Result: service auth reached but rejected (token/policy mismatch)."
+      if printf '%s' "$content_type_line" | grep -qi 'text/html'; then
+        echo "Result: denied by Cloudflare Access (HTML error page)."
+      elif printf '%s' "$content_type_line" | grep -qi 'application/json'; then
+        echo "Result: reached API Worker but request is unauthorized (JSON response)."
+      else
+        echo "Result: unauthorized (unknown upstream)."
+      fi
       exit 11
+      ;;
+
+    530)
+      # Often indicates Cloudflare edge could not reach origin / route for an allowed request.
+      # For Access-protected hostnames this frequently surfaces as 1033.
+      local body_file
+      body_file="$(curl_get_body_auth_tmp "$API_URL" || true)"
+      if [[ -n "${body_file:-}" && -f "$body_file" ]]; then
+        if grep -q 'error code: 1033' "$body_file" 2>/dev/null; then
+          echo "Result: Cloudflare edge error 1033 (route/origin unreachable)."
+          echo "Most common causes:"
+          echo "- Missing DNS record for api.aperion.cc (must exist and be proxied)"
+          echo "- Worker route/custom domain not attached to the Worker"
+          echo "- Leftover Tunnel/origin config expecting a tunnel-backed origin"
+        else
+          echo "Result: Cloudflare edge error (530)."
+        fi
+        rm -f "$body_file" >/dev/null 2>&1 || true
+      else
+        echo "Result: Cloudflare edge error (530)."
+      fi
+      exit 14
       ;;
 
     403)
