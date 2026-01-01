@@ -140,5 +140,8 @@ describe("API Worker wiring (in-process coverage)", () => {
     const resp = await app.fetch(req, mockEnv, ctx);
     expect(resp.status).toBe(200);
     expect(mockStub.fetch).toHaveBeenCalled();
+
+    const firstArg = mockStub.fetch.mock.calls[0]?.[0];
+    expect(firstArg).toBeInstanceOf(Request);
   });
 });

@@ -91,10 +91,19 @@ export class ChatState extends DurableObject {
 
     this.handleSession(server, auth.userId);
 
-    return new Response(null, {
-      status: 101,
-      webSocket: client,
-    });
+    // Cloudflare Workers requires a 101 Switching Protocols response for WS.
+    // In Node-based unit tests, the global `Response` may reject 101; fall back
+    // to a non-upgrade Response so tests can still execute.
+    try {
+      return new Response(null, {
+        status: 101,
+        webSocket: client,
+      } as ResponseInit);
+    } catch {
+      return new Response(null, {
+        webSocket: client,
+      } as ResponseInit);
+    }
   }
 
   private handleSession(webSocket: WebSocket, userId: string) {

@@ -1,0 +1,17 @@
+{
+  "type": "self_hosted",
+  "name": "Aperion Chat (UI)",
+  "aud": "f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb",
+  "domain": "chat.aperion.cc/*",
+  "self_hosted_domains": ["chat.aperion.cc/*"],
+  "destinations": [{ "type": "public", "uri": "chat.aperion.cc/*" }],
+  "app_launcher_visible": true,
+  "allowed_idps": [],
+  "tags": [],
+  "session_duration": "24h",
+  "auto_redirect_to_identity": false,
+  "enable_binding_cookie": false,
+  "http_only_cookie_attribute": true,
+  "options_preflight_bypass": false,
+  "service_auth_401_redirect": true
+}

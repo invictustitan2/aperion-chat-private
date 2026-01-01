@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { WebSocket } from "undici";
+
 const wsUrl = process.env.WS_URL || "wss://api.aperion.cc/v1/ws";
 
 const serviceTokenId =
@@ -29,13 +31,7 @@ async function main() {
     log("auth: none (expected to fail behind Access)");
   }
 
-  if (typeof WebSocket === "undefined") {
-    throw new Error(
-      "Global WebSocket is not available. Use Node.js 20+ (which provides WebSocket via undici).",
-    );
-  }
-
-  const ws = new WebSocket(wsUrl, { headers });
+  const ws = new WebSocket(wsUrl, [], { headers });
 
   const timeoutMs = Number(process.env.TIMEOUT_MS || 10_000);
   const timeout = setTimeout(() => {
@@ -66,8 +62,22 @@ async function main() {
   });
 
   ws.addEventListener("error", (evt) => {
-    // Node's WebSocket error object isn't standardized; print what we can.
-    log(`event: error ${String(evt?.message || evt)}`);
+    // ErrorEvent shape varies; try to surface something actionable.
+    const name = typeof evt?.name === "string" ? evt.name : "ErrorEvent";
+    const msg = typeof evt?.message === "string" ? evt.message : "";
+    const err = evt?.error;
+    const errMsg = err && typeof err.message === "string" ? err.message : "";
+    const errCode =
+      err && typeof err.code !== "undefined" ? String(err.code) : "";
+
+    const parts = [
+      `name=${name}`,
+      msg ? `message=${JSON.stringify(msg)}` : "",
+      errCode ? `code=${errCode}` : "",
+      errMsg ? `error=${JSON.stringify(errMsg)}` : "",
+    ].filter(Boolean);
+
+    log(`event: error ${parts.join(" ") || String(evt)}`);
   });
 }
 

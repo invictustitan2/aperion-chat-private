@@ -1,0 +1,207 @@
+{
+  "result": [
+    {
+      "id": "b6b814e9-25d0-4b86-bdab-45b66c863e5b",
+      "uid": "b6b814e9-25d0-4b86-bdab-45b66c863e5b",
+      "type": "self_hosted",
+      "name": "Aperion API",
+      "aud": "38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62",
+      "created_at": "2025-12-21T20:28:21Z",
+      "updated_at": "2025-12-28T19:24:56Z",
+      "domain": "api.aperion.cc/*",
+      "self_hosted_domains": ["api.aperion.cc/*"],
+      "destinations": [
+        {
+          "type": "public",
+          "uri": "api.aperion.cc/*"
+        }
+      ],
+      "app_launcher_visible": true,
+      "allowed_idps": [],
+      "tags": [],
+      "auto_redirect_to_identity": false,
+      "cors_headers": {
+        "allow_all_headers": true,
+        "allow_all_methods": true,
+        "allowed_origins": ["https://chat.aperion.cc"]
+      },
+      "policies": [
+        {
+          "created_at": "2025-12-16T09:51:40Z",
+          "decision": "allow",
+          "exclude": [],
+          "id": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "include": [
+            {
+              "email": {
+                "email": "invictustitan2@icloud.com"
+              }
+            }
+          ],
+          "name": "Allow emails: 12/16/2025",
+          "require": [],
+          "session_duration": "24h",
+          "uid": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "updated_at": "2025-12-30T21:27:00Z",
+          "reusable": true,
+          "precedence": 1
+        },
+        {
+          "created_at": "2025-12-21T23:56:03Z",
+          "decision": "non_identity",
+          "exclude": [],
+          "id": "5399b141-e7ba-45d2-b181-e9c44bf961ea",
+          "include": [
+            {
+              "service_token": {
+                "token_id": "85c654d4-7ced-4fe6-87d5-3d88646b2e90"
+              }
+            }
+          ],
+          "name": "Allow service token: aperion-api-prod-smoke",
+          "require": [],
+          "session_duration": "24h",
+          "uid": "5399b141-e7ba-45d2-b181-e9c44bf961ea",
+          "updated_at": "2025-12-28T15:45:10Z",
+          "reusable": true,
+          "precedence": 2
+        }
+      ],
+      "session_duration": "24h",
+      "service_auth_401_redirect": true,
+      "enable_binding_cookie": false,
+      "http_only_cookie_attribute": true,
+      "options_preflight_bypass": false
+    },
+    {
+      "id": "e7b24e44-1708-416d-9031-39df9792aa45",
+      "uid": "e7b24e44-1708-416d-9031-39df9792aa45",
+      "type": "app_launcher",
+      "name": "App Launcher",
+      "aud": "3e4082225e1f6eb4796f071253648cf83a27e3ee5e072b5cb2dea10316b682ec",
+      "created_at": "2025-12-21T23:49:38Z",
+      "updated_at": "2025-12-21T23:49:38Z",
+      "domain": "aperiondev.cloudflareaccess.com",
+      "allowed_idps": [],
+      "session_duration": "24h",
+      "auto_redirect_to_identity": false,
+      "policies": [
+        {
+          "created_at": "2025-12-16T09:51:40Z",
+          "decision": "allow",
+          "exclude": [],
+          "id": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "include": [
+            {
+              "email": {
+                "email": "invictustitan2@icloud.com"
+              }
+            }
+          ],
+          "name": "Allow emails: 12/16/2025",
+          "require": [],
+          "session_duration": "24h",
+          "uid": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "updated_at": "2025-12-30T21:27:00Z",
+          "reusable": true,
+          "precedence": 1
+        }
+      ],
+      "landing_page_design": {},
+      "skip_app_launcher_login_page": false
+    },
+    {
+      "id": "8a528ab5-baf0-4bc3-b375-62805722df06",
+      "uid": "8a528ab5-baf0-4bc3-b375-62805722df06",
+      "type": "self_hosted",
+      "name": "Aperion Chat (UI)",
+      "aud": "f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb",
+      "created_at": "2025-12-21T20:25:57Z",
+      "updated_at": "2025-12-21T20:25:57Z",
+      "domain": "chat.aperion.cc/*",
+      "self_hosted_domains": ["chat.aperion.cc/*"],
+      "destinations": [
+        {
+          "type": "public",
+          "uri": "chat.aperion.cc/*"
+        }
+      ],
+      "app_launcher_visible": true,
+      "allowed_idps": [],
+      "tags": [],
+      "auto_redirect_to_identity": false,
+      "policies": [
+        {
+          "created_at": "2025-12-16T09:51:40Z",
+          "decision": "allow",
+          "exclude": [],
+          "id": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "include": [
+            {
+              "email": {
+                "email": "invictustitan2@icloud.com"
+              }
+            }
+          ],
+          "name": "Allow emails: 12/16/2025",
+          "require": [],
+          "session_duration": "24h",
+          "uid": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "updated_at": "2025-12-30T21:27:00Z",
+          "reusable": true,
+          "precedence": 1
+        }
+      ],
+      "session_duration": "24h",
+      "enable_binding_cookie": false,
+      "http_only_cookie_attribute": true,
+      "options_preflight_bypass": false
+    },
+    {
+      "id": "f040f868-51c9-4d58-bf88-295bc40a05da",
+      "uid": "f040f868-51c9-4d58-bf88-295bc40a05da",
+      "type": "warp",
+      "name": "Warp Login App",
+      "aud": "fa62ab32dc7bc5563b14929c4adca0aa43ecc4b523fce5129adb4b09f3379f53",
+      "created_at": "2025-12-16T09:51:40Z",
+      "updated_at": "2025-12-16T09:51:40Z",
+      "domain": "aperiondev.cloudflareaccess.com/warp",
+      "allowed_idps": [],
+      "session_duration": "24h",
+      "auto_redirect_to_identity": false,
+      "policies": [
+        {
+          "created_at": "2025-12-16T09:51:40Z",
+          "decision": "allow",
+          "exclude": [],
+          "id": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "include": [
+            {
+              "email": {
+                "email": "invictustitan2@icloud.com"
+              }
+            }
+          ],
+          "name": "Allow emails: 12/16/2025",
+          "require": [],
+          "session_duration": "24h",
+          "uid": "b1c071c0-433d-47f5-9e08-903ee374eb3f",
+          "updated_at": "2025-12-30T21:27:00Z",
+          "reusable": true,
+          "precedence": 1
+        }
+      ],
+      "tags": []
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 1000,
+    "count": 4,
+    "total_count": 4,
+    "total_pages": 1
+  }
+}

@@ -1,0 +1,45 @@
+BASE_URL: https://chat.aperion.cc/api
+with_service_token.ROOT.http_status: 302
+with_service_token.ROOT.content-type: 
+with_service_token.ROOT.cf-ray: 9b72d7416a78e80c-ORD
+with_service_token.ROOT.server: cloudflare
+with_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+without_service_token.ROOT.http_status: 302
+without_service_token.ROOT.content-type: 
+without_service_token.ROOT.cf-ray: 9b72d741ff9fe239-ORD
+without_service_token.ROOT.server: cloudflare
+without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+diag.ROOT: NOT_ROUTED_API_ENDPOINT
+with_service_token.V1_IDENTITY.http_status: 302
+with_service_token.V1_IDENTITY.content-type: 
+with_service_token.V1_IDENTITY.cf-ray: 9b72d7432a67e450-ORD
+with_service_token.V1_IDENTITY.server: cloudflare
+with_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+without_service_token.V1_IDENTITY.http_status: 302
+without_service_token.V1_IDENTITY.content-type: 
+without_service_token.V1_IDENTITY.cf-ray: 9b72d743ad12a0b6-ORD
+without_service_token.V1_IDENTITY.server: cloudflare
+without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+diag.V1_IDENTITY: ACCESS_SERVICE_AUTH_REDIRECT
+with_service_token.V1_CONVERSATIONS.http_status: 302
+with_service_token.V1_CONVERSATIONS.content-type: 
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b72d744cf847b21-ORD
+with_service_token.V1_CONVERSATIONS.server: cloudflare
+with_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+without_service_token.V1_CONVERSATIONS.http_status: 302
+without_service_token.V1_CONVERSATIONS.content-type: 
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b72d7456a07508f-ORD
+without_service_token.V1_CONVERSATIONS.server: cloudflare
+without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+diag.V1_CONVERSATIONS: ACCESS_SERVICE_AUTH_REDIRECT
+with_service_token.V1_SEMANTIC_SEARCH.http_status: 302
+with_service_token.V1_SEMANTIC_SEARCH.content-type: 
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b72d7469f530008-ORD
+with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+with_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
+without_service_token.V1_SEMANTIC_SEARCH.content-type: 
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b72d7471ebd13cb-ORD
+without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+diag.V1_SEMANTIC_SEARCH: ACCESS_SERVICE_AUTH_REDIRECT

@@ -27,7 +27,7 @@ Commands:
   verify             Run the existing Private verification gate (no behavior change)
   verify:ci          Run the CI-grade verification gate (strict)
   deploy:prod         Orchestrate receipt-first prod deploy (safe)
-  deploy:validate     Quick network-gated prod validator (safe)
+  deploy:validate     Quick network-gated prod validator (safe; supports --surface api|browser)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
   cf:worker:audit    Audit DNS + Worker binding (defaults api.aperion.cc; supports --surface/--base-url)
@@ -39,6 +39,7 @@ Commands:
   cf:pages:deploy    Deploy Cloudflare Pages (build-var safe)
   cf:access:bootstrap Bootstrap Access IDs (defaults api.aperion.cc; supports --surface/--base-url/--host)
   cf:access:audit    Audit Cloudflare Access apps/policies (safe; no secrets)
+  cf:access:ensure-path-b Ensure Access service-auth policy for Path B (safe)
   ide:status         Print IDE/environment context status
   secrets:status     Print redacted secret status
   secrets:where      Show where secrets are sourced (safe)
@@ -137,6 +138,10 @@ devshell_dispatch() {
 
     cf:access:audit)
       "${repo_root}/devshell/commands/cf_access_audit.sh" "$repo_root" "$@"
+      ;;
+
+    cf:access:ensure-path-b)
+      "${repo_root}/devshell/commands/cf_access_ensure_path_b.sh" "$repo_root" "$@"
       ;;
 
     ide:status)

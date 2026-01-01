@@ -9,10 +9,11 @@ setup() {
 @test "deploy:validate skips cleanly without RUN_NETWORK_TESTS and prints schema" {
   unset RUN_NETWORK_TESTS
 
-  run "${DEV}" deploy:validate
+  run "${DEV}" deploy:validate --surface browser
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"VALIDATE.VERSION: 1"* ]]
+  [[ "$output" == *"VALIDATE.VERSION: 2"* ]]
+  [[ "$output" == *"SURFACE: browser"* ]]
   [[ "$output" == *"SKIP:"* ]]
 
   [[ "$output" != *"Bearer "* ]]

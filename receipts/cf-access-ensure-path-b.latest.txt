@@ -1,0 +1,7 @@
+== Cloudflare Access ensure Path B (safe; no secrets) ==
+CLOUDFLARE_ACCOUNT_ID=21ec8c…7374
+MUTATION: enabling service_auth_401_redirect on Chat app (safe; no secrets).
+ACCESS_APP_ID.API=b6b814…3e5b
+ACCESS_APP_ID.CHAT=8a528a…df06
+SERVICE_TOKEN.ID=85c654…2e90
+MUTATION: creating Service Auth policy on Chat app (safe; no secrets).

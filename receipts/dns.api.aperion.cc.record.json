@@ -1,0 +1,23 @@
+{
+  "result": {
+    "id": "65b85c1b675460592e03062110491f99",
+    "name": "api.aperion.cc",
+    "type": "AAAA",
+    "content": "100::",
+    "proxiable": true,
+    "proxied": true,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "origin_worker_id": "d5bbbfce94a007bea605bbd77332f347ff342f7c",
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T15:24:04.521546Z",
+    "modified_on": "2025-12-29T15:24:04.521546Z"
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}

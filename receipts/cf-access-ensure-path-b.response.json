@@ -1,0 +1,11 @@
+{
+  "result": null,
+  "success": false,
+  "errors": [
+    {
+      "code": 12130,
+      "message": "access.api.error.invalid_request"
+    }
+  ],
+  "messages": []
+}

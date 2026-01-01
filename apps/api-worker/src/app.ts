@@ -25,6 +25,13 @@ export function createApp() {
   const router = AutoRouter<IRequest, [Env, ExecutionContext]>({
     finally: [
       (response: Response, request: IRequest) => {
+        // WebSocket upgrade responses carry a `webSocket` property. Re-wrapping
+        // the Response would drop that property and break the handshake.
+        // (CORS/trace headers are not required for WS upgrades.)
+        const maybeWebSocket = (response as unknown as { webSocket?: unknown })
+          .webSocket;
+        if (maybeWebSocket) return response;
+
         const corsHeaders = getCorsHeaders(request);
         const newHeaders = new Headers(response.headers);
         Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -137,7 +144,72 @@ export function createApp() {
     }
     const id = env.CHAT_STATE.idFromName("global-chat");
     const stub = env.CHAT_STATE.get(id);
-    return stub.fetch(request);
+
+    // Normalize to a real Request with a string URL.
+    // In itty-router, `request.url` may be mutated into a URL-like object.
+    // Durable Object code expects `request.url` to be a string.
+    const rawUrl = (request as unknown as { url?: unknown }).url;
+    const method = (request as unknown as { method?: unknown }).method;
+    const headers = (request as unknown as { headers?: unknown }).headers;
+
+    const urlString = (() => {
+      if (typeof rawUrl === "string") return rawUrl;
+      if (rawUrl instanceof URL) return rawUrl.toString();
+      if (
+        rawUrl &&
+        typeof rawUrl === "object" &&
+        "href" in rawUrl &&
+        typeof (rawUrl as { href?: unknown }).href === "string"
+      ) {
+        return (rawUrl as { href: string }).href;
+      }
+      // Best-effort: try toString for URL-like objects.
+      if (
+        rawUrl &&
+        typeof (rawUrl as { toString?: unknown }).toString === "function"
+      ) {
+        const s = String(rawUrl);
+        if (s.startsWith("http://") || s.startsWith("https://")) return s;
+      }
+      return "";
+    })();
+
+    if (!urlString) {
+      return error(500, "Invalid URL (missing request.url)");
+    }
+
+    const normalizedHeaders = (() => {
+      if (headers instanceof Headers) return headers;
+      const h = new Headers();
+      if (Array.isArray(headers)) {
+        for (const entry of headers) {
+          if (
+            Array.isArray(entry) &&
+            entry.length === 2 &&
+            typeof entry[0] === "string" &&
+            typeof entry[1] === "string"
+          ) {
+            h.append(entry[0], entry[1]);
+          }
+        }
+        return h;
+      }
+      if (headers && typeof headers === "object") {
+        for (const [key, value] of Object.entries(headers)) {
+          if (typeof value === "string") {
+            h.set(key, value);
+          }
+        }
+      }
+      return h;
+    })();
+
+    const doRequest = new Request(urlString, {
+      method: typeof method === "string" ? method : "GET",
+      headers: normalizedHeaders,
+    });
+
+    return stub.fetch(doRequest);
   });
 
   // Media

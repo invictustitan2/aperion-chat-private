@@ -52,6 +52,9 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+      undici:
+        specifier: ^7.16.0
+        version: 7.16.0
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.26)(jiti@2.6.1)(jsdom@27.3.0(postcss@8.5.6))(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
@@ -7713,6 +7716,13 @@ packages:
       }
     engines: { node: ">=20.18.1" }
 
+  undici@7.16.0:
+    resolution:
+      {
+        integrity: sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g==,
+      }
+    engines: { node: ">=20.18.1" }
+
   unenv@2.0.0-rc.24:
     resolution:
       {
@@ -13161,6 +13171,8 @@ snapshots:
   undici-types@6.21.0: {}
 
   undici@7.14.0: {}
+
+  undici@7.16.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:

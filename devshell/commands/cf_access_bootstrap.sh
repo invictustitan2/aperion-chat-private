@@ -62,6 +62,39 @@ header = "Content-Type: application/json"
 EOF
 }
 
+cf_api_get_checked() {
+  local url="$1"
+  local json
+  json="$(cf_api_get "$url")"
+
+  local ok
+  ok="$(json_get "$json" "data && data.success")" || true
+  if [[ "$ok" != "true" ]]; then
+    echo "ERROR: Cloudflare API call failed: ${url}" >&2
+    node - <<'NODE' <<<"$json" >&2 || true
+try {
+  const data = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+  const errors = Array.isArray(data.errors) ? data.errors : [];
+  if (!errors.length) {
+    process.stderr.write('No Cloudflare errors field present.\n');
+    process.exit(0);
+  }
+  process.stderr.write('Cloudflare errors:\n');
+  for (const e of errors) {
+    const code = e && e.code !== undefined ? String(e.code) : '(no code)';
+    const msg = e && e.message ? String(e.message) : '(no message)';
+    process.stderr.write(`- code=${code} message=${msg}\n`);
+  }
+} catch (e) {
+  process.stderr.write('Failed to parse Cloudflare JSON response.\n');
+}
+NODE
+    return 2
+  fi
+
+  printf '%s' "$json"
+}
+
 json_get() {
   # Usage: json_get '<json>' '<js expression returning a string or JSON>'
   local json="$1"
@@ -135,21 +168,34 @@ NODE
 
   echo "CLOUDFLARE_ACCOUNT_ID=${account_id}"
 
-  local orgs_json
-  orgs_json="$(cf_api_get "https://api.cloudflare.com/client/v4/accounts/${account_id}/access/organizations")"
-
   local team_domain
-  team_domain="$(json_get "$orgs_json" "(data.result && data.result[0] && data.result[0].auth_domain) || ''")" || true
-  if [[ -z "$team_domain" ]]; then
-    echo "ERROR: could not determine CF_ACCESS_TEAM_DOMAIN from Access organizations." >&2
-    echo "Hint: verify Access is enabled for this account, or set CF_ACCESS_TEAM_DOMAIN manually." >&2
-    exit 2
+  team_domain=''
+  if [[ -n "${CF_ACCESS_TEAM_DOMAIN:-}" ]]; then
+    team_domain="$CF_ACCESS_TEAM_DOMAIN"
+    echo "CF_ACCESS_TEAM_DOMAIN=${team_domain} (from env)"
+  else
+    local orgs_json
+    orgs_json="$(cf_api_get_checked "https://api.cloudflare.com/client/v4/accounts/${account_id}/access/organizations")"
+
+    team_domain="$(json_get "$orgs_json" "(data.result && data.result[0] && data.result[0].auth_domain) || ''")" || true
+    if [[ -z "$team_domain" ]]; then
+      echo "ERROR: could not determine CF_ACCESS_TEAM_DOMAIN from Access organizations." >&2
+      echo "Hint: verify Access is enabled for this account, or set CF_ACCESS_TEAM_DOMAIN manually." >&2
+      exit 2
+    fi
+
+    echo "CF_ACCESS_TEAM_DOMAIN=${team_domain}"
   fi
 
-  echo "CF_ACCESS_TEAM_DOMAIN=${team_domain}"
+  local aud
+  aud=''
 
-  local apps_json
-  apps_json="$(cf_api_get "https://api.cloudflare.com/client/v4/accounts/${account_id}/access/apps")"
+  if [[ -n "${CF_ACCESS_AUD:-}" ]]; then
+    aud="$CF_ACCESS_AUD"
+    echo "CF_ACCESS_AUD=${aud} (from env)"
+  else
+    local apps_json
+    apps_json="$(cf_api_get_checked "https://api.cloudflare.com/client/v4/accounts/${account_id}/access/apps")"
 
   local match_count
   match_count="$(node - <<'NODE' <<<"$apps_json"
@@ -187,7 +233,6 @@ NODE
     exit 2
   fi
 
-  local aud
   aud="$(node - <<'NODE' <<<"$apps_json"
 const data = JSON.parse(require('fs').readFileSync(0,'utf8'));
 const apps = Array.isArray(data.result) ? data.result : [];
@@ -205,6 +250,8 @@ const aud = match && Array.isArray(match.aud) && match.aud.length ? match.aud[0]
 process.stdout.write(String(aud));
 NODE
 )"
+
+  fi
 
   if [[ -z "$aud" ]]; then
     echo "ERROR: could not extract CF_ACCESS_AUD from the matched Access app." >&2

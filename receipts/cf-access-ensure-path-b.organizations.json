@@ -1,0 +1,18 @@
+{
+  "result": {
+    "auth_domain": "aperiondev.cloudflareaccess.com",
+    "created_at": "2025-10-24T20:05:09Z",
+    "login_design": {},
+    "name": "aperiondev.cloudflareaccess.com",
+    "updated_at": "2025-10-24T20:05:09Z",
+    "is_ui_read_only": false,
+    "has_migrated_private_apps": true,
+    "allow_authenticate_via_warp": false,
+    "cache_device_posture": true,
+    "deny_unmatched_requests": false,
+    "deny_unmatched_requests_exempted_zone_names": []
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}

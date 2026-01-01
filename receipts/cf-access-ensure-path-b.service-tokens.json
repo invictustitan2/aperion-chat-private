@@ -1,0 +1,26 @@
+{
+  "result": [
+    {
+      "client_id": "eccd1f752380e97b35283d892aa9ee47.access",
+      "created_at": "2025-12-21T23:47:02Z",
+      "expires_at": "2026-12-29T17:53:39Z",
+      "id": "85c654d4-7ced-4fe6-87d5-3d88646b2e90",
+      "name": "aperion-api-prod-smoke",
+      "updated_at": "2025-12-29T17:53:39Z",
+      "duration": "8760h",
+      "last_seen_at": "2026-01-01T14:32:29Z",
+      "client_secret_version": 5,
+      "previous_client_secret_expires_at": "2025-12-29T17:53:26Z"
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 1000,
+    "count": 1,
+    "total_count": 1,
+    "total_pages": 1
+  }
+}

@@ -1,0 +1,16 @@
+== Cloudflare Access bootstrap (safe; no secrets) ==
+CLOUDFLARE_ACCOUNT_ID=21ec8cd9b9edec29288dceeaca6d7374
+CF_ACCESS_TEAM_DOMAIN=aperiondev.cloudflareaccess.com (from env)
+CF_ACCESS_AUD=38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62 (from env)
+CF_ACCESS_AUD=38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
+
+Add these to .dev.vars (safe; no secrets):
+
+CLOUDFLARE_ACCOUNT_ID=21ec8cd9b9edec29288dceeaca6d7374
+APERION_AUTH_MODE=access
+CF_ACCESS_TEAM_DOMAIN=aperiondev.cloudflareaccess.com
+CF_ACCESS_AUD=38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
+
+Service token file (never printed):
+  /home/dreamboat/.config/aperion/cf_access.env
+Reminder: keep CF_ACCESS_SERVICE_TOKEN_ID/SECRET in that file (or export them), never in .dev.vars.

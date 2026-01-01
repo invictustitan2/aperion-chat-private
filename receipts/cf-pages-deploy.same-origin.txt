@@ -1,0 +1,4 @@
+PAGES.BUILD.VITE_API_BASE_URL: /api
+PAGES.BUILD.VITE_AUTH_MODE: access
+PAGES.DEPLOY.OK: yes
+PAGES.DEPLOY.URL: https://0c397e47.aperion-chat-web.pages.dev

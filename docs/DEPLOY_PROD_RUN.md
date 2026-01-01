@@ -4,6 +4,15 @@ This runbook is meant to be executed top-to-bottom when deploying production.
 
 Path B note (same-origin API): this runbook reflects the **current** production contract where the browser calls the API at `https://api.aperion.cc` via `VITE_API_BASE_URL`. Path B is implemented in the repo (Worker route + `/api/v1/*` rewrite + web support for `/api` base), but must not be assumed live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
 
+### Manual Access UI gate (Path B)
+
+Cloudflare Zero Trust Access API automation for the Chat UI application is currently blocked (API returns `code=12130 access.api.error.invalid_request` for app-setting/policy creation attempts). Treat the Access change as a deliberate manual gate with receipts:
+
+- Checklist template:
+  - [receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md](../receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md)
+- Canonical post-change proof command:
+  - `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
+
 ## Preconditions (must already be true)
 
 - Cloudflare Access is configured as described in [docs/DEPLOY_PROD.md](docs/DEPLOY_PROD.md).

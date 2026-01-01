@@ -29,6 +29,19 @@ Recommended readiness checks:
 
 ## Rollout Steps (Proposed)
 
+## Manual Gate — Cloudflare Access UI (required)
+
+Reality check: Cloudflare Zero Trust Access API automation is currently blocked for the Chat UI application (`Aperion Chat (UI)`), returning `code=12130 access.api.error.invalid_request` when attempting to enable the “Return 401…” toggle or create a Service Auth policy.
+
+Treat this as a deliberate _manual gate_ with receipts.
+
+- Use the operator checklist template:
+  - [receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md](../../receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md)
+
+Canonical post-change proof step (captures REST + WS evidence for the chosen surface):
+
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
+
 ### Step 0 — Baseline receipts (before changes)
 
 - Confirm current production behavior is healthy:

@@ -1,0 +1,7 @@
+{
+  "name": "Allow service token: aperion-api-prod-smoke",
+  "decision": "non_identity",
+  "include": [
+    { "service_token": { "token_id": "85c654d4-7ced-4fe6-87d5-3d88646b2e90" } }
+  ]
+}

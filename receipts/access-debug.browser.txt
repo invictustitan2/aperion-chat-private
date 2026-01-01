@@ -1,0 +1,9 @@
+== Access debug (safe; no secrets) ==
+HTTP status: 302
+Location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+Result: redirect from Access (likely service auth not applied or not matching).
+Likely causes checklist:
+- Access policy for this app must include a Service Auth rule (Action=SERVICE AUTH), not just ALLOW.
+- Access app hostname/path must match: chat.aperion.cc and /api/v1/* (or broader).
+- Enable 'Return 401 Response for Service Auth policies' to avoid redirects.
+- Confirm policy changes are saved/published (no pending drafts).

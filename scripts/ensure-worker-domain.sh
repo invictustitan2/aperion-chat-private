@@ -100,8 +100,20 @@ RECORD_COUNT=$(echo "$DNS_RESPONSE" | jq -r '.result | length')
 
 if [[ "$RECORD_COUNT" -gt 0 ]]; then
   echo "Found ${RECORD_COUNT} existing DNS record(s) for ${WORKER_HOSTNAME}."
+  deletable_ids="$(echo "$DNS_RESPONSE" | jq -r '.result[] | select((.meta.read_only // false) != true) | .id')"
+  readonly_ids="$(echo "$DNS_RESPONSE" | jq -r '.result[] | select((.meta.read_only // false) == true) | .id')"
+
+  deletable_count="$(printf '%s\n' "$deletable_ids" | sed '/^$/d' | wc -l | tr -d ' ')"
+  readonly_count="$(printf '%s\n' "$readonly_ids" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+  if [[ "$deletable_count" -eq 0 && "$readonly_count" -gt 0 ]]; then
+    echo "✓ Existing DNS record(s) are read-only (Cloudflare-managed). No deletion needed."
+    echo "✅ Domain preparation complete. Wrangler should be able to configure/retain the custom domain route."
+    exit 0
+  fi
+
   echo "Would delete record IDs:"
-  echo "$DNS_RESPONSE" | jq -r '.result[].id'
+  printf '%s\n' "$deletable_ids" | sed '/^$/d'
 
   if [[ "$APPLY" != "yes" ]]; then
     echo "NOTE: Dry-run mode. Re-run with --apply to delete the conflicting DNS records."
@@ -109,7 +121,7 @@ if [[ "$RECORD_COUNT" -gt 0 ]]; then
   fi
 
   echo "Applying: deleting conflicting DNS records..."
-  echo "$DNS_RESPONSE" | jq -r '.result[].id' | while read -r RECORD_ID; do
+  printf '%s\n' "$deletable_ids" | sed '/^$/d' | while read -r RECORD_ID; do
     echo "Deleting DNS record ${RECORD_ID}..."
     DELETE_RESPONSE="$(cf_api "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" DELETE)"
 

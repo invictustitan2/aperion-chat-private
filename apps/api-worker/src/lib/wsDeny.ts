@@ -9,14 +9,17 @@ export function createPolicyCloseWebSocketUpgradeResponse(opts: {
   server.accept();
   server.close(opts.closeCode, opts.closeReason);
 
-  // Workers runtime supports status 101 for WS upgrades; Node's undici Response
-  // rejects 101 (throws RangeError). Fall back only for unit tests.
+  // Cloudflare Workers requires a 101 Switching Protocols response for WS.
+  // In Node-based unit tests, the global `Response` may reject 101; fall back
+  // to a non-upgrade Response so tests can still execute.
   try {
     return new Response(null, {
       status: 101,
       webSocket: client,
     } as ResponseInit);
   } catch {
-    return new Response(null, { status: 200 });
+    return new Response(null, {
+      webSocket: client,
+    } as ResponseInit);
   }
 }
