@@ -292,6 +292,9 @@ For production systems, implement a grace period:
 
 1. Access app/policy misconfigured for production domains
 2. Missing/incorrect Worker vars: `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD`
+
+   Note: `CF_ACCESS_AUD` can be a comma-separated allowlist (e.g. `aud-api,aud-chat`). This is useful when multiple Cloudflare Access applications protect different hostnames (for example `api.aperion.cc` vs `chat.aperion.cc/api/*`).
+
 3. Service token mismatch (if you use service tokens)
 
 ## Security Considerations

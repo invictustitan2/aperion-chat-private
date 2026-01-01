@@ -187,10 +187,22 @@ async function importJwkForVerify(jwk: JsonWebKey): Promise<CryptoKey> {
   );
 }
 
+function parseExpectedAudiences(raw: string): string[] {
+  // Support a comma-separated allowlist, e.g. "aud-api,aud-chat".
+  // Backwards-compatible with the single-audience case.
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function audMatches(aud: JwtPayload["aud"], expected: string): boolean {
   if (!aud) return false;
-  if (Array.isArray(aud)) return aud.includes(expected);
-  return aud === expected;
+  const expectedList = parseExpectedAudiences(expected);
+  if (expectedList.length === 0) return false;
+
+  if (Array.isArray(aud)) return expectedList.some((e) => aud.includes(e));
+  return expectedList.includes(aud);
 }
 
 function assertJwtClaims(

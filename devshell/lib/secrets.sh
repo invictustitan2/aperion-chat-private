@@ -160,6 +160,33 @@ aperion_secrets_validate() {
     return 1
   fi
 
+  # Common footgun: values accidentally include literal quote characters.
+  # Example bad value: CF_ACCESS_SERVICE_TOKEN_ID='"abc123..."'
+  # This will be sent to Cloudflare Access verbatim and rejected.
+  if [[ "$id" =~ ^\".*\"$ || "$id" =~ ^\'.*\'$ ]]; then
+    printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_ID appears to include literal quote characters.\n' >&2
+    printf 'Hint: In %s, set it like: export CF_ACCESS_SERVICE_TOKEN_ID="<client_id>" (without extra quoting).\n' "$secrets_file" >&2
+    return 1
+  fi
+
+  if [[ "$secret" =~ ^\".*\"$ || "$secret" =~ ^\'.*\'$ ]]; then
+    printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_SECRET appears to include literal quote characters.\n' >&2
+    printf 'Hint: In %s, set it like: export CF_ACCESS_SERVICE_TOKEN_SECRET="<client_secret>" (without extra quoting).\n' "$secrets_file" >&2
+    return 1
+  fi
+
+  if [[ "$id" =~ [[:space:]] ]]; then
+    printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_ID contains whitespace; this is almost certainly misconfigured.\n' >&2
+    printf 'Hint: Update secrets file: %s\n' "$secrets_file" >&2
+    return 1
+  fi
+
+  if [[ "$secret" =~ [[:space:]] ]]; then
+    printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_SECRET contains whitespace; this is almost certainly misconfigured.\n' >&2
+    printf 'Hint: Update secrets file: %s\n' "$secrets_file" >&2
+    return 1
+  fi
+
   if [[ ${#id} -le 10 ]]; then
     printf 'ERROR: CF_ACCESS_SERVICE_TOKEN_ID is too short (len=%s); must be > 10.\n' "${#id}" >&2
     printf 'Hint: set env vars or update secrets file: %s\n' "$secrets_file" >&2

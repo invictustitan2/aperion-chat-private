@@ -1,0 +1,4 @@
+ws url: wss://api.aperion.cc/v1/ws
+auth: using Access service token headers (id len=39, secret len=64)
+event: error name=ErrorEvent
+event: close code=1006 reason=""

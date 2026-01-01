@@ -1,0 +1,2 @@
+PAGES.BUILD.VITE_API_BASE_URL: https://api.aperion.cc
+PAGES.BUILD.VITE_AUTH_MODE: access

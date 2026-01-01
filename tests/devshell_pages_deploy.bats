@@ -9,14 +9,15 @@ setup() {
 @test "cf:pages:deploy prints VITE vars" {
   unset RUN_NETWORK_TESTS
   export DEV_LOAD_DOTENV=0
-  export VITE_API_BASE_URL="https://api.aperion.cc"
+  export VITE_API_BASE_URL="/api"
   export VITE_AUTH_MODE="access"
 
   run "${DEV}" cf:pages:deploy
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"PAGES.BUILD.VITE_API_BASE_URL: https://api.aperion.cc"* ]]
+  [[ "$output" == *"PAGES.BUILD.VITE_API_BASE_URL: /api"* ]]
   [[ "$output" == *"PAGES.BUILD.VITE_AUTH_MODE: access"* ]]
+  [[ "$output" == *"EXPECTED_PROD_BASE: /api"* ]]
   [[ "$output" == *"SKIP:"* ]]
 }
 

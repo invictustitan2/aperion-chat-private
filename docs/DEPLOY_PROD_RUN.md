@@ -2,7 +2,7 @@
 
 This runbook is meant to be executed top-to-bottom when deploying production.
 
-Path B note (same-origin API): this runbook reflects the **current** production contract where the browser calls the API at `https://api.aperion.cc` via `VITE_API_BASE_URL`. Path B is implemented in the repo (Worker route + `/api/v1/*` rewrite + web support for `/api` base), but must not be assumed live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+Path B note (same-origin API): the long-term browser contract is **same-origin** `https://chat.aperion.cc/api` (Pages uses `VITE_API_BASE_URL=/api`). Keep `https://api.aperion.cc` as a backward-compatible/tooling surface.
 
 ### Manual Access UI gate (Path B)
 
@@ -12,6 +12,37 @@ Cloudflare Zero Trust Access API automation for the Chat UI application is curre
   - [receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md](../receipts/templates/MANUAL_CLOUDFLARE_ACCESS_PATH_B_CHECKLIST.md)
 - Canonical post-change proof command:
   - `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
+
+### Phase 3 WS proof (deterministic)
+
+Phase 3 validation is complete only when REST + WS acceptance criteria are satisfied.
+
+REST acceptance (no ambiguity)
+
+- Browser surface: same-origin `https://chat.aperion.cc/api/v1/*` (web app uses `/api` in production; no cross-origin base).
+- API surface: `https://api.aperion.cc/v1/*` remains supported for tooling/backward compatibility.
+
+WS acceptance (two-part proof)
+
+WS validation is complete only when both are true:
+
+1. Upgrade proof (machine):
+
+- `RUN_NETWORK_TESTS=1 ./dev ws:probe --surface browser`
+  - Expect: `with_service_token.upgrade.http_status: 101`
+
+2. Data-plane proof (headless, server-compatible):
+
+- `RUN_NETWORK_TESTS=1 ./dev ws:proof --surface browser --mode headless`
+  - Expect: `CONNECTED: yes` and receipt indicates `pong_received: true`
+  - Receipt: `receipts/ws-proof.browser.latest.json`
+
+Note: Node WebSocket smoke (`scripts/smoke-ws.mjs`) close(1006) is **diagnostic-only** and is **not** used for acceptance when `ws:probe` + headless `ws:proof` are green.
+
+Canonical Phase 3 command (includes REST probes + WS upgrade + headless data-plane proof):
+
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface api`
 
 ## Preconditions (must already be true)
 
@@ -30,10 +61,6 @@ Cloudflare Worker production vars (required):
 - `API_TOKEN` (secret)
 
 Cloudflare Pages production env vars (required):
-
-- Current: `VITE_API_BASE_URL=https://api.aperion.cc`
-
-After Path B rollout (do not apply early):
 
 - `VITE_API_BASE_URL=/api` (preferred), or
 - unset `VITE_API_BASE_URL` to use the production default `/api`.

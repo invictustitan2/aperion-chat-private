@@ -47,7 +47,9 @@ Set these in **Cloudflare Dashboard → Workers & Pages → (your Worker) → Se
 
 - `APERION_AUTH_MODE` (Variable) = `access`
 - `CF_ACCESS_TEAM_DOMAIN` (Variable) = your Access team domain (slug or full domain)
-- `CF_ACCESS_AUD` (Variable) = AUD copied from the API Access app
+- `CF_ACCESS_AUD` (Variable) = Access app audience allowlist. For Path B, set this to a comma-separated list that includes both:
+  - the API Access app AUD (for `api.aperion.cc`), and
+  - the Chat UI Access app AUD (for `chat.aperion.cc/api/*`)
 
 **Optional (production):**
 

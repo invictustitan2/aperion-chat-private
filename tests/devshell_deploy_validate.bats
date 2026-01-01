@@ -14,6 +14,11 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"VALIDATE.VERSION: 2"* ]]
   [[ "$output" == *"SURFACE: browser"* ]]
+  [[ "$output" == *"STEP.3: ws:probe"* ]]
+  [[ "$output" == *"STEP.4: ws:proof --mode headless"* ]]
+  [[ "$output" == *"WS.PROBE.URL: https://chat.aperion.cc/api/v1/ws"* ]]
+  [[ "$output" == *"WS.PROOF.URL: wss://chat.aperion.cc/api/v1/ws"* ]]
+  [[ "$output" == *"WS.PROOF.MODE: headless"* ]]
   [[ "$output" == *"SKIP:"* ]]
 
   [[ "$output" != *"Bearer "* ]]

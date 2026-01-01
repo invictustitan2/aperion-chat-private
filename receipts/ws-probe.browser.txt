@@ -1,0 +1,13 @@
+BASE_URL: https://chat.aperion.cc/api
+URL: https://chat.aperion.cc/api/v1/ws
+with_service_token.http_status: 401
+with_service_token.content-type: application/json; charset=utf-8
+with_service_token.cf-ray: 9b7495d22bbceaf0-ORD
+with_service_token.server: cloudflare
+with_service_token.location: 
+with_service_token.body_json_prefix: {"status":401,"error":"Invalid Access JWT: JWT audience mismatch"}
+without_service_token.http_status: 302
+without_service_token.content-type: 
+without_service_token.cf-ray: 9b7495d2ac82020b-ORD
+without_service_token.server: cloudflare
+without_service_token.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc

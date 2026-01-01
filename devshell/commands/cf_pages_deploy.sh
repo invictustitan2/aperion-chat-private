@@ -42,10 +42,14 @@ vite_auth_mode="${VITE_AUTH_MODE:-}"
 printf 'PAGES.BUILD.VITE_API_BASE_URL: %s\n' "$vite_api_base_url"
 printf 'PAGES.BUILD.VITE_AUTH_MODE: %s\n' "$vite_auth_mode"
 
-expected_prod_base="${APERION_EXPECTED_VITE_API_BASE_URL:-https://api.aperion.cc}"
+expected_prod_base="${APERION_EXPECTED_VITE_API_BASE_URL:-/api}"
+printf 'EXPECTED_PROD_BASE: %s\n' "$expected_prod_base"
 
 # Enforce prod safety guardrail unless explicitly forced.
-if [[ -z "$vite_api_base_url" || "$vite_api_base_url" != "$expected_prod_base" ]]; then
+# For Path B, production is same-origin:
+# - VITE_API_BASE_URL="/api" OR
+# - unset/empty (so the web client defaults to "/api" in production builds).
+if [[ -n "$vite_api_base_url" && "$vite_api_base_url" != "$expected_prod_base" ]]; then
   printf 'WARN: VITE_API_BASE_URL is not production (%s).\n' "$expected_prod_base" >&2
   if [[ "$force" != 'yes' ]]; then
     printf '%s\n' 'REFUSE: pass --force to proceed anyway.' >&2
@@ -69,7 +73,12 @@ if ! command -v npx >/dev/null 2>&1; then
 fi
 
 # Export Vite vars so the build is deterministic even if local dotenv differs.
-export VITE_API_BASE_URL="$vite_api_base_url"
+if [[ -n "$vite_api_base_url" ]]; then
+  export VITE_API_BASE_URL="$vite_api_base_url"
+else
+  unset VITE_API_BASE_URL || true
+fi
+
 export VITE_AUTH_MODE="$vite_auth_mode"
 
 pnpm -s -C apps/web build >/dev/null

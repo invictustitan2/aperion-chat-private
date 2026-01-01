@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "surface": {
+    "pages": { "project": "aperion-chat-private" },
+    "worker": {
+      "name": "aperion-api-worker",
+      "previewName": "aperion-api-worker-preview"
+    },
+    "domains": { "chat": "chat.aperion.cc", "api": "api.aperion.cc" }
+  },
+  "checks": [
+    {
+      "id": "tooling.wrangler",
+      "status": "PASS",
+      "message": "wrangler is installed",
+      "data": { "version": "4.50.0" }
+    },
+    {
+      "id": "auth.wrangler",
+      "status": "PASS",
+      "message": "wrangler whoami succeeded (authenticated)",
+      "data": {}
+    },
+    {
+      "id": "config.pages.wrangler_toml",
+      "status": "PASS",
+      "message": "found Pages wrangler.toml",
+      "data": { "path": "wrangler.toml" }
+    },
+    {
+      "id": "config.pages.compatibility_date",
+      "status": "PASS",
+      "message": "Pages compatibility_date is set",
+      "data": {}
+    },
+    {
+      "id": "config.pages.bindings",
+      "status": "PASS",
+      "message": "Pages production bindings are declared",
+      "data": {}
+    },
+    {
+      "id": "config.worker.wrangler_toml",
+      "status": "PASS",
+      "message": "found Worker wrangler.toml",
+      "data": { "path": "apps/api-worker/wrangler.toml" }
+    },
+    {
+      "id": "config.worker.name",
+      "status": "PASS",
+      "message": "Worker name set",
+      "data": { "name": "aperion-api-worker" }
+    },
+    {
+      "id": "config.worker.compatibility_date",
+      "status": "PASS",
+      "message": "Worker compatibility_date is set",
+      "data": {}
+    },
+    {
+      "id": "config.worker.bindings",
+      "status": "PASS",
+      "message": "Worker bindings are declared",
+      "data": {}
+    },
+    {
+      "id": "intent.domain.api",
+      "status": "PASS",
+      "message": "Worker config references api.aperion.cc",
+      "data": { "domain": "api.aperion.cc" }
+    },
+    {
+      "id": "config.worker.preview_name",
+      "status": "PASS",
+      "message": "Preview worker name set",
+      "data": { "name": "aperion-api-worker-preview" }
+    },
+    {
+      "id": "intent.domain.chat",
+      "status": "PASS",
+      "message": "Repo claims chat.aperion.cc as the frontend domain",
+      "data": { "domain": "chat.aperion.cc" }
+    },
+    {
+      "id": "conflict.pages.project_exists",
+      "status": "PASS",
+      "message": "Pages project exists in account",
+      "data": { "project": "aperion-chat-private" }
+    },
+    {
+      "id": "conflict.worker.dry_run",
+      "status": "PASS",
+      "message": "wrangler deploy --dry-run succeeded (no mutation)",
+      "data": { "worker": "aperion-api-worker" }
+    },
+    {
+      "id": "secrets.env.cloudflare",
+      "status": "PASS",
+      "message": "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set",
+      "data": {
+        "CLOUDFLARE_API_TOKEN": "set",
+        "CLOUDFLARE_ACCOUNT_ID": "set",
+        "remediation": "Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in GitHub Actions (repo secrets or org/repo vars, depending on your policy)."
+      }
+    },
+    {
+      "id": "secrets.tracked.files",
+      "status": "PASS",
+      "message": "No local secrets files are tracked (.env/.dev.vars)",
+      "data": {}
+    }
+  ],
+  "summary": { "pass": 16, "warn": 0, "fail": 0, "skip": 0, "ok": true },
+  "meta": {
+    "repo": "aperion-chat-private",
+    "paths": {
+      "pagesWranglerToml": "wrangler.toml",
+      "workerWranglerToml": "apps/api-worker/wrangler.toml"
+    }
+  }
+}

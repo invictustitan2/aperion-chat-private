@@ -1,0 +1,4 @@
+ws url: wss://api.aperion.cc/v1/ws
+auth: none (expected to fail behind Access)
+event: error name=ErrorEvent
+event: close code=1006 reason=""

@@ -202,11 +202,16 @@ service_token_match_summary() {
   local configured_id="$2"
 
   node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); const configured=String(process.argv[2]||''); const list=Array.isArray(data&&data.result)?data.result:[];
+function redact(s){
+  const v=String(s||'');
+  if(v.length<=10) return v;
+  return v.slice(0,6)+'…'+v.slice(-4);
+}
 const toks=list.map(t=>({
   name:String((t&&t.name)||''),
   id:String((t&&t.id)||''),
   clientId:String((t&&((t.client_id)||(t.clientId)||(t.credentials&&t.credentials.client_id)))||'')
-}));
+})).filter(t=>t.id||t.clientId||t.name);
 
 const hasClientId=toks.some(t=>Boolean(t.clientId));
 const hasId=toks.some(t=>Boolean(t.id));
@@ -220,8 +225,18 @@ out.push(['COUNT',String(list.length)]);
 out.push(['TOKEN_LIST.HAS_CLIENT_ID',hasClientId? 'yes':'no']);
 out.push(['TOKEN_LIST.HAS_ID',hasId? 'yes':'no']);
 out.push(['CONFIGURED_CLIENT_ID_PRESENT',configured? 'yes':'no']);
+out.push(['CONFIGURED_CLIENT_ID_REDACTED',configured? redact(configured):'']);
 out.push(['CONFIGURED_CLIENT_ID_MATCHES_TOKEN',(!configured||!hasClientId)? 'unknown' : (hit? 'yes':'no')]);
 if(hit){ out.push(['CONFIGURED_CLIENT_ID_MATCH_NAME',hit.name]); }
+
+// Print up to a few candidates to help the operator update CF_ACCESS_SERVICE_TOKEN_ID
+// without dumping full identifiers.
+for(let i=0;i<Math.min(5,toks.length);i++){
+  const t=toks[i];
+  out.push(['TOKEN.'+i+'.NAME',t.name||'']);
+  out.push(['TOKEN.'+i+'.CLIENT_ID_REDACTED',t.clientId? redact(t.clientId):'']);
+  out.push(['TOKEN.'+i+'.ID_REDACTED',t.id? redact(t.id):'']);
+}
 process.stdout.write(out.map(([k,v])=>k+': '+v).join('\\n')+'\\n');" "$body_file" "$configured_id" 2>/dev/null || true
 }
 
@@ -246,7 +261,12 @@ function extractDomains(app){ const domains=[]; if(app&&app.domain) domains.push
 
 function extractPaths(app){ const paths=[]; const shd=app&&app.self_hosted_domains; if(Array.isArray(shd)){ for(const d of shd){ if(d&&typeof d==='object'){ if(d.path) paths.push(String(d.path)); if(Array.isArray(d.paths)) paths.push(...d.paths.map(String)); } } } if(app&&Array.isArray(app.paths)) paths.push(...app.paths.map(String)); if(app&&typeof app.path==='string') paths.push(String(app.path)); return Array.from(new Set(paths.filter(Boolean))); }
 
-function audFirst(app){ if(Array.isArray(app&&app.aud)&&app.aud.length) return String(app.aud[0]); return ''; }
+function audFirst(app){
+  const v=app&&app.aud;
+  if(typeof v==='string' && v.trim()) return v.trim();
+  if(Array.isArray(v) && v.length) return String(v[0]);
+  return '';
+}
 
 function appType(app){ return String((app&&((app.type)||(app.app_type)||(app.appType)||(app.application_type)))||''); }
 function sessionDuration(app){ return String((app&&((app.session_duration)||(app.sessionDuration)))||''); }
@@ -275,7 +295,11 @@ app_detail_hint() {
   node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); const app=(data&&data.result)||{};
 function yesno(v){return v? 'yes':'no';}
 function str(v){return (v==null)?'':String(v);}
-function listLen(v){return Array.isArray(v)?String(v.length):'0';}
+function listLen(v){
+  if(Array.isArray(v)) return String(v.length);
+  if(typeof v==='string' && v.trim()) return '1';
+  return '0';
+}
 // Self-hosted domains: keep raw strings/hostnames (may include paths like api.aperion.cc/*)
 let shd=[];
 const raw=app&&app.self_hosted_domains;
@@ -293,6 +317,11 @@ out.push(['DOMAIN',str(app.domain||'')]);
 out.push(['SELF_HOSTED_DOMAINS.COUNT',String(shd.length)]);
 for(let i=0;i<Math.min(8,shd.length);i++){ out.push(['SELF_HOSTED_DOMAINS.'+i,shd[i]]); }
 out.push(['AUD.COUNT',listLen(app.aud)]);
+if(typeof app.aud==='string' && app.aud.trim()){
+  out.push(['AUD.0',app.aud.trim()]);
+}else if(Array.isArray(app.aud)){
+  for(let i=0;i<Math.min(4,app.aud.length);i++){ out.push(['AUD.'+i,str(app.aud[i])]); }
+}
 out.push(['ALLOWED_IDPS.COUNT',listLen(app.allowed_idps)]);
 out.push(['SESSION_DURATION',str(app.session_duration||'')]);
 out.push(['AUTO_REDIRECT_TO_IDENTITY',yesno(app.auto_redirect_to_identity)]);
@@ -485,11 +514,17 @@ main_text() {
         json_hint "$appd_body" | sed "s/^/APP.${label}.${i}.DETAILS./"
       fi
 
-      # Best-effort: infer whether any path could match the v1 API.
+      # Best-effort: infer whether any Access app config could match the v1 API.
       # For Path B, the API may be mounted under /api (so /api/v1/*).
-      if [[ -n "${app_paths:-}" ]]; then
-        local v1_root
-        v1_root="${v1_prefix}/v1"
+      # IMPORTANT: Many Access apps are configured as self-hosted domains with
+      # wildcard paths (e.g. chat.aperion.cc/*) and may not expose explicit "paths".
+      local v1_root
+      v1_root="${v1_prefix}/v1"
+
+      # Wildcard domain pattern implies all paths are covered.
+      if printf '%s' "${app_domains:-}" | grep -Fq "${hostname}/*"; then
+        any_paths_cover_v1='yes'
+      elif [[ -n "${app_paths:-}" && "${app_paths:-}" != '-' ]]; then
         if printf '%s' "$app_paths" | grep -Eq "(^|,)${v1_root}/\\*($|,)|(^|,)${v1_root}($|,)|(^|,)${v1_root}/identity($|,)|(^|,)${v1_root}/"; then
           any_paths_cover_v1='yes'
         else

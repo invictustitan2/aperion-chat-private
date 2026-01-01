@@ -183,6 +183,46 @@ describe("getAuthContext (Cloudflare Access)", () => {
     }
   });
 
+  it("accepts a comma-separated audience allowlist", async () => {
+    const { getAuthContext } = await import("../../src/lib/authContext");
+    const kp = await generateRsaKeyPair();
+    const jwk = (await crypto.subtle.exportKey(
+      "jwk",
+      kp.publicKey,
+    )) as JsonWebKey;
+    jwk.kid = "kid-1";
+
+    const env: Env = {
+      APERION_AUTH_MODE: "access",
+      CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+      CF_ACCESS_AUD: "aud-api, aud-chat",
+    } as Env;
+
+    const iss = "https://team.cloudflareaccess.com";
+    const jwt = await createJwt({
+      kid: "kid-1",
+      aud: "aud-chat",
+      iss,
+      email: "user@example.com",
+      privateKey: kp.privateKey,
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ keys: [jwk] }),
+    });
+    // @ts-expect-error test override
+    globalThis.fetch = fetchMock;
+
+    const req = new Request("https://api.example.com/v1/identity", {
+      headers: { "CF-Access-Jwt-Assertion": jwt },
+    });
+
+    const auth = await getAuthContext(req, env);
+    expect(auth.authenticated).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("supports legacy token auth in token mode", async () => {
     const { getAuthContext } = await import("../../src/lib/authContext");
     const env: Env = {

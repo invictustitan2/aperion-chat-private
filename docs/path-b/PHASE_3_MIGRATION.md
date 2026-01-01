@@ -42,6 +42,43 @@ Canonical post-change proof step (captures REST + WS evidence for the chosen sur
 
 - `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
 
+## Phase 3 Acceptance Criteria (no ambiguity)
+
+Phase 3 is considered **COMPLETE** only when the REST + WS acceptance criteria below are satisfied.
+
+### A) REST acceptance (same-origin, no CORS)
+
+- Browser surface (Path B): same-origin requests under `https://chat.aperion.cc/api/v1/*`.
+  - The web app must use `/api` (relative) in production (no cross-origin base such as `https://api.aperion.cc`).
+- API surface (backward-compatible): `https://api.aperion.cc/v1/*` remains supported.
+
+Canonical commands:
+
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface browser`
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate --surface api`
+
+### B) WS acceptance (two-part proof)
+
+WS acceptance is **two-part** and both parts are required:
+
+1. Upgrade proof (machine):
+
+- `RUN_NETWORK_TESTS=1 ./dev ws:probe --surface <api|browser>`
+- Expected (service token case):
+  - `with_service_token.upgrade.http_status: 101`
+
+2. Data-plane proof (headless, server-compatible):
+
+- `RUN_NETWORK_TESTS=1 ./dev ws:proof --surface <api|browser> --mode headless`
+- Expected:
+  - `CONNECTED: yes`
+  - Receipt contains `pong_received: true`
+
+Notes:
+
+- `ws:proof --mode headless` is the canonical Phase 3 proof because it is deterministic and does not rely on GUI/interactive Access login.
+- Node WebSocket smoke (`scripts/smoke-ws.mjs`) close code `1006` is **diagnostic-only** and is **not** used for acceptance when `ws:probe` + headless `ws:proof` are green.
+
 ### Step 0 — Baseline receipts (before changes)
 
 - Confirm current production behavior is healthy:
@@ -92,7 +129,7 @@ Expected results:
 - Update web production configuration so the browser uses `/api` as its API base.
 - Deploy Pages.
 
-Repo status: the web app can now use a relative `/api` base, but production should continue setting `VITE_API_BASE_URL=https://api.aperion.cc` until Step 1/2 are deployed and verified.
+Repo status: the web app supports a relative `/api` base; production should use `/api` (same-origin) to avoid CORS.
 
 Validation:
 
