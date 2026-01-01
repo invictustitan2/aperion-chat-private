@@ -26,11 +26,17 @@ Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
   verify:ci          Run the CI-grade verification gate (strict)
+  deploy:prod         Orchestrate receipt-first prod deploy (safe)
+  deploy:validate     Quick network-gated prod validator (safe)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
   cf:worker:audit    Audit DNS + Worker binding for api.aperion.cc (safe; no secrets)
   cf:worker:smoke    Probe prod endpoints via service token (safe; no secrets)
+  cf:worker:deploy   Deploy API Worker (env-aware; safe summary)
+  cf:worker:secrets:list  List Worker secret names + required presence (safe; no secrets)
+  cf:worker:secrets:apply Interactively set required Worker secrets (safe; no secrets)
   cf:worker:ensure-domain Ensure Worker custom domain is prepareable (dry-run by default)
+  cf:pages:deploy    Deploy Cloudflare Pages (build-var safe)
   cf:access:bootstrap Bootstrap Access IDs (safe; no secrets)
   cf:access:audit    Audit Cloudflare Access apps/policies (safe; no secrets)
   ide:status         Print IDE/environment context status
@@ -81,6 +87,14 @@ devshell_dispatch() {
       "${repo_root}/devshell/commands/verify_ci.sh" "$repo_root" "$@"
       ;;
 
+    deploy:prod)
+      "${repo_root}/devshell/commands/deploy_prod.sh" "$repo_root" "$@"
+      ;;
+
+    deploy:validate)
+      "${repo_root}/devshell/commands/deploy_validate.sh" "$repo_root" "$@"
+      ;;
+
     shell)
       "${repo_root}/devshell/commands/shell.sh" "$repo_root" "$@"
       ;;
@@ -97,8 +111,24 @@ devshell_dispatch() {
       "${repo_root}/devshell/commands/cf_worker_smoke.sh" "$repo_root" "$@"
       ;;
 
+    cf:worker:deploy)
+      "${repo_root}/devshell/commands/cf_worker_deploy.sh" "$repo_root" "$@"
+      ;;
+
+    cf:worker:secrets:list)
+      "${repo_root}/devshell/commands/cf_worker_secrets_list.sh" "$repo_root" "$@"
+      ;;
+
+    cf:worker:secrets:apply)
+      "${repo_root}/devshell/commands/cf_worker_secrets_apply.sh" "$repo_root" "$@"
+      ;;
+
     cf:worker:ensure-domain)
       "${repo_root}/devshell/commands/cf_worker_ensure_domain.sh" "$repo_root" "$@"
+      ;;
+
+    cf:pages:deploy)
+      "${repo_root}/devshell/commands/cf_pages_deploy.sh" "$repo_root" "$@"
       ;;
 
     cf:access:bootstrap)

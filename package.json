@@ -11,7 +11,7 @@
     "fmt:sh": "./scripts/shell-files.sh shfmt | xargs -0 -r shfmt -w",
     "fmt:sh:check": "./scripts/shell-files.sh shfmt | xargs -0 -r shfmt -d",
     "lint:sh": "./scripts/shell-files.sh shellcheck | xargs -0 -r shellcheck",
-    "test:devshell": "bats tests/devshell_secrets.bats tests/devshell_secrets_where.bats tests/devshell_secrets_set.bats tests/devshell_secrets_wizard.bats tests/devshell_access.bats tests/devshell_access_audit.bats tests/devshell_worker_audit.bats tests/devshell_worker_smoke.bats tests/devshell_worker_ensure_domain.bats",
+    "test:devshell": "bats tests/devshell_secrets.bats tests/devshell_secrets_where.bats tests/devshell_secrets_set.bats tests/devshell_secrets_wizard.bats tests/devshell_access.bats tests/devshell_access_audit.bats tests/devshell_worker_audit.bats tests/devshell_worker_smoke.bats tests/devshell_worker_ensure_domain.bats tests/devshell_worker_secrets.bats tests/devshell_worker_deploy.bats tests/devshell_pages_deploy.bats tests/devshell_deploy_validate.bats tests/devshell_deploy_prod.bats",
     "verify:devshell": "pnpm -s run fmt:sh:check && pnpm -s run lint:sh && pnpm -s run test:devshell",
     "lint": "eslint .",
     "format": "prettier --write .",

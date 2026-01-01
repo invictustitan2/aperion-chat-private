@@ -1,0 +1,22 @@
+Aperion Dev Shell: Doctor
+================================================================
+[Deps]
+PASS: bash
+PASS: curl
+PASS: jq
+PASS: rg
+PASS: shellcheck (ShellCheck - shell script analysis tool)
+PASS: shfmt (3.8.0)
+PASS: bats (Bats 1.10.0)
+
+[Secrets]
+PASS: secrets loaded and validated (ID len=39, SECRET len=64)
+
+[Wrangler]
+PASS: wrangler present (4.50.0)
+PASS: wrangler whoami
+
+[Access Test]
+SKIP: network tests disabled (set RUN_NETWORK_TESTS=1)
+================================================================
+OK: doctor checks passed

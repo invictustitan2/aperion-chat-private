@@ -19,9 +19,55 @@ if (!import.meta.env.VITE_API_BASE_URL) {
 }
 
 const headers = {
-  "Content-Type": "application/json",
+  Accept: "application/json",
   ...authHeaders,
 };
+
+function isFormData(value: unknown): value is FormData {
+  return typeof FormData !== "undefined" && value instanceof FormData;
+}
+
+function normalizeRequestInit(init?: RequestInit): RequestInit {
+  const method = (init?.method ?? "GET").toUpperCase();
+  const body = init?.body;
+
+  const normalizedHeaders = new Headers(init?.headers);
+
+  // Always request JSON by default.
+  if (!normalizedHeaders.has("Accept")) {
+    normalizedHeaders.set("Accept", "application/json");
+  }
+
+  // Avoid accidental CORS preflights on GET/HEAD by not sending Content-Type.
+  if ((method === "GET" || method === "HEAD") && body == null) {
+    normalizedHeaders.delete("Content-Type");
+    normalizedHeaders.delete("content-type");
+  }
+
+  // If there is a string body and no explicit Content-Type, assume JSON.
+  // Do not override for FormData / Blob / File uploads (browser sets boundaries/types).
+  if (
+    body != null &&
+    typeof body === "string" &&
+    !normalizedHeaders.has("Content-Type") &&
+    !normalizedHeaders.has("content-type")
+  ) {
+    normalizedHeaders.set("Content-Type", "application/json");
+  }
+
+  // If the caller passed FormData but also mistakenly set Content-Type, remove it.
+  if (body != null && isFormData(body)) {
+    normalizedHeaders.delete("Content-Type");
+    normalizedHeaders.delete("content-type");
+  }
+
+  return {
+    ...init,
+    // Required for Cloudflare Access session cookies in the browser.
+    credentials: init?.credentials ?? "include",
+    headers: normalizedHeaders,
+  };
+}
 
 // Define ReceiptRecord if missing from core
 export interface ReceiptRecord {
@@ -151,11 +197,7 @@ async function fetchJson<T>(
   const method = (init?.method ?? "GET").toUpperCase();
 
   try {
-    const res = await fetch(url, {
-      ...init,
-      // Required for Cloudflare Access session cookies in the browser.
-      credentials: init?.credentials ?? "include",
-    });
+    const res = await fetch(url, normalizeRequestInit(init));
     if (!res.ok) {
       const bodyText = await res.text().catch(() => "");
       logApiError({
@@ -409,14 +451,14 @@ export const api = {
       );
     },
     export: async (html: string): Promise<Blob> => {
-      const res = await fetch(`${API_BASE_URL}/v1/chat/export`, {
-        method: "POST",
-        headers: {
-          ...headers,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ html }),
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/v1/chat/export`,
+        normalizeRequestInit({
+          method: "POST",
+          headers,
+          body: JSON.stringify({ html }),
+        }),
+      );
 
       if (!res.ok) {
         const errText = await res.text();
@@ -440,15 +482,18 @@ export const api = {
       onMeta?: (meta: { derived_from?: string[] }) => void,
       onDone?: () => void,
     ): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/v1/chat/stream`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          message,
-          history,
-          conversation_id: conversationId,
+      const response = await fetch(
+        `${API_BASE_URL}/v1/chat/stream`,
+        normalizeRequestInit({
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            message,
+            history,
+            conversation_id: conversationId,
+          }),
         }),
-      });
+      );
 
       if (!response.ok) {
         const errText = await response.text();
@@ -520,13 +565,17 @@ export const api = {
         formData.append("prompt", prompt);
       }
 
-      const res = await fetch(`${API_BASE_URL}/v1/chat/analyze`, {
-        method: "POST",
-        headers: {
-          ...authHeaders,
-        },
-        body: formData,
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/v1/chat/analyze`,
+        normalizeRequestInit({
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            ...authHeaders,
+          },
+          body: formData,
+        }),
+      );
 
       if (!res.ok) {
         const errText = await res.text();
@@ -548,13 +597,17 @@ export const api = {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
 
-      const res = await fetch(`${API_BASE_URL}/v1/voice-chat`, {
-        method: "POST",
-        headers: {
-          ...authHeaders,
-        },
-        body: formData,
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/v1/voice-chat`,
+        normalizeRequestInit({
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            ...authHeaders,
+          },
+          body: formData,
+        }),
+      );
 
       if (!res.ok) {
         const errText = await res.text();
@@ -618,14 +671,17 @@ export const api = {
     upload: async (file: File): Promise<{ success: boolean; key: string }> => {
       const key = `${Date.now()}-${file.name}`;
 
-      const res = await fetch(`${API_BASE_URL}/v1/media/${key}`, {
-        method: "PUT",
-        headers: {
-          ...authHeaders,
-          // Content-Type might be set automatically or we set it
-        },
-        body: file,
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/v1/media/${key}`,
+        normalizeRequestInit({
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            ...authHeaders,
+          },
+          body: file,
+        }),
+      );
 
       if (!res.ok) {
         throw new Error("Upload failed");

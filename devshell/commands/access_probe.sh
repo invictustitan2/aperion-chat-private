@@ -8,9 +8,12 @@ cd "$repo_root"
 
 # access:probe
 #
-# Probes https://api.aperion.cc/v1/identity with:
+# Probes a canonical endpoint list against https://api.aperion.cc with:
 #   (a) service token headers
 #   (b) no service token headers
+#
+# IMPORTANT: Probes that determine endpoint existence must use GET.
+# Some Workers return 404 to HEAD even when GET is routed.
 #
 # Hard rules:
 # - Never print secrets.
@@ -46,6 +49,32 @@ strip_location_query() {
   printf '%s' "$line"
 }
 
+status_from_headers() {
+  local headers="$1"
+  local status_line
+  status_line="$(printf '%s\n' "$headers" | first_status_line)"
+  printf '%s' "$(printf '%s\n' "$status_line" | awk '{print $2}' | head -n 1)"
+}
+
+header_value_from_headers() {
+  local headers="$1"
+  local header_name="$2"
+  local line
+  line="$(printf '%s\n' "$headers" | first_header "$header_name")"
+  if [[ -n "$line" ]]; then
+    header_value "$line"
+  fi
+}
+
+location_sanitized_from_headers() {
+  local headers="$1"
+  local line
+  line="$(printf '%s\n' "$headers" | first_header location)"
+  if [[ -n "$line" ]]; then
+    strip_location_query "$line"
+  fi
+}
+
 curl_headers() {
   local with_token="$1"
   local url="$2"
@@ -76,70 +105,22 @@ EOF
   printf '%s' "$headers"
 }
 
-print_probe() {
+print_case() {
   local label="$1"
   local headers="$2"
 
-  local status_line
-  status_line="$(printf '%s\n' "$headers" | first_status_line)"
-
-  local status
-  status="$(printf '%s\n' "$status_line" | awk '{print $2}' | head -n 1)"
-
-  local location_line cf_ray_line server_line content_type_line cache_status_line
-  location_line="$(printf '%s\n' "$headers" | first_header location)"
-  cf_ray_line="$(printf '%s\n' "$headers" | first_header cf-ray)"
-  server_line="$(printf '%s\n' "$headers" | first_header server)"
-  content_type_line="$(printf '%s\n' "$headers" | first_header content-type)"
-  cache_status_line="$(printf '%s\n' "$headers" | first_header cf-cache-status)"
+  local status content_type cf_ray server location
+  status="$(status_from_headers "$headers")"
+  content_type="$(header_value_from_headers "$headers" content-type)"
+  cf_ray="$(header_value_from_headers "$headers" cf-ray)"
+  server="$(header_value_from_headers "$headers" server)"
+  location="$(location_sanitized_from_headers "$headers")"
 
   printf '%s.http_status: %s\n' "$label" "${status:-unknown}"
-
-  if [[ -n "$location_line" ]]; then
-    printf '%s.location: %s\n' "$label" "$(strip_location_query "$location_line")"
-  else
-    printf '%s.location:\n' "$label"
-  fi
-
-  if [[ -n "$cf_ray_line" ]]; then
-    printf '%s.cf-ray: %s\n' "$label" "${cf_ray_line#*: }" | sed 's/\r$//'
-  else
-    printf '%s.cf-ray:\n' "$label"
-  fi
-
-  if [[ -n "$server_line" ]]; then
-    printf '%s.server: %s\n' "$label" "$(header_value "$server_line")"
-  else
-    printf '%s.server:\n' "$label"
-  fi
-
-  if [[ -n "$content_type_line" ]]; then
-    printf '%s.content-type: %s\n' "$label" "$(header_value "$content_type_line")"
-  else
-    printf '%s.content-type:\n' "$label"
-  fi
-
-  if [[ -n "$cache_status_line" ]]; then
-    printf '%s.cf-cache-status: %s\n' "$label" "$(header_value "$cache_status_line")"
-  else
-    printf '%s.cf-cache-status:\n' "$label"
-  fi
-
-  # Print x-aperion-* hint headers if present (safe; no secrets).
-  local hint_lines hint_count
-  hint_lines="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^x-aperion-[a-z0-9-]+:/{print $0}' | sed 's/\r$//' | head -n 10)"
-  hint_count="$(printf '%s\n' "$hint_lines" | grep -c '.' || true)"
-  printf '%s.hint_headers.count: %s\n' "$label" "${hint_count:-0}"
-  if [[ "${hint_count:-0}" -gt 0 ]]; then
-    local idx=0
-    while IFS= read -r line; do
-      [[ -n "$line" ]] || continue
-      printf '%s.hint_headers.%s: %s\n' "$label" "$idx" "$line"
-      idx=$((idx + 1))
-    done <<<"$hint_lines"
-  fi
-
-  printf '%s\n' "$status"
+  printf '%s.content-type: %s\n' "$label" "${content_type:-}"
+  printf '%s.cf-ray: %s\n' "$label" "${cf_ray:-}"
+  printf '%s.server: %s\n' "$label" "${server:-}"
+  printf '%s.location: %s\n' "$label" "${location:-}"
 }
 
 probe_one() {
@@ -150,32 +131,55 @@ probe_one() {
   local url
   url="${BASE_URL}${path}"
 
-  printf '\nENDPOINT: %s\n' "$endpoint_name"
-  printf 'PATH: %s\n' "$path"
-  printf 'METHOD: %s\n' "$method"
-
   local headers_with headers_without
   headers_with="$(curl_headers yes "$url" "$method" || true)"
   headers_without="$(curl_headers no "$url" "$method" || true)"
 
-  local out_with out_without status_with status_without
-  out_with="$(print_probe "with_service_token.${endpoint_name}" "$headers_with")"
-  printf '%s\n' "$out_with"
-  status_with="$(printf '%s\n' "$out_with" | tail -n 1)"
+  local status_with status_without ct_with ct_without
+  status_with="$(status_from_headers "$headers_with")"
+  status_without="$(status_from_headers "$headers_without")"
+  ct_with="$(header_value_from_headers "$headers_with" content-type)"
+  ct_without="$(header_value_from_headers "$headers_without" content-type)"
 
-  out_without="$(print_probe "without_service_token.${endpoint_name}" "$headers_without")"
-  printf '%s\n' "$out_without"
-  status_without="$(printf '%s\n' "$out_without" | tail -n 1)"
+  print_case "with_service_token.${endpoint_name}" "$headers_with"
+  print_case "without_service_token.${endpoint_name}" "$headers_without"
 
-  # Endpoint-level classification (evidence-driven).
-  if [[ "$status_without" == '401' && "$status_with" == '404' ]]; then
-    printf 'diag.%s: %s\n' "$endpoint_name" 'ENDPOINT_MISSING_OR_DEPLOY_MISMATCH_NOT_ACCESS_ROUTING'
-    printf 'diag.%s.hint: %s\n' "$endpoint_name" 'Access is enforcing auth (401 without token). Service-token request is not being redirected (so auth is likely accepted), but the endpoint path is missing or you are hitting a deployed version that does not serve it.'
-  elif [[ "$status_with" == '302' ]]; then
-    printf 'diag.%s: %s\n' "$endpoint_name" 'ACCESS_SERVICE_AUTH_REDIRECT'
+  # Endpoint-level classification (evidence-driven; avoids blaming Access routing).
+  if [[ "$endpoint_name" == 'ROOT' ]]; then
+    printf 'diag.%s: %s\n' "$endpoint_name" 'NOT_ROUTED_API_ENDPOINT'
+    return 0
   fi
 
-  printf '%s\n' "$endpoint_name=$status_with/$status_without" >/dev/null
+  if [[ "$status_with" == '302' ]]; then
+    printf 'diag.%s: %s\n' "$endpoint_name" 'ACCESS_SERVICE_AUTH_REDIRECT'
+    return 0
+  fi
+
+  if [[ "$status_with" == '405' ]]; then
+    printf 'diag.%s: %s\n' "$endpoint_name" 'METHOD_NOT_ALLOWED'
+    return 0
+  fi
+
+  if [[ "$status_without" == '401' && "$status_with" == '404' ]]; then
+    printf 'diag.%s: %s\n' "$endpoint_name" 'ENDPOINT_MISSING_OR_DEPLOY_MISMATCH_NOT_ACCESS_ROUTING'
+    return 0
+  fi
+
+  if [[ "$status_without" == '401' && "$status_with" == '401' ]]; then
+    if [[ "$ct_without" == text/html* && "$ct_with" == application/json* ]]; then
+      printf 'diag.%s: %s\n' "$endpoint_name" 'APP_AUTH_REJECTED_AFTER_ACCESS_SERVICE_AUTH'
+    else
+      printf 'diag.%s: %s\n' "$endpoint_name" 'AUTH_REJECTED'
+    fi
+    return 0
+  fi
+
+  if [[ "$status_without" == '401' && ( "$status_with" == '200' || "$status_with" == '204' ) ]]; then
+    printf 'diag.%s: %s\n' "$endpoint_name" 'OK_SERVICE_TOKEN_ACCEPTED'
+    return 0
+  fi
+
+  printf 'diag.%s: %s\n' "$endpoint_name" 'UNKNOWN'
 }
 
 main() {
@@ -187,15 +191,12 @@ main() {
   printf 'BASE_URL: %s\n' "$BASE_URL"
 
   # Canonical endpoint list for evidence:
-  # - HEAD for fast header-only where typically supported
-  # - GET for semantic search (often 405 on HEAD)
+  # - ROOT is NOT a routed API endpoint; keep HEAD.
+  # - Routed endpoints must use GET to avoid false 404s.
   probe_one 'ROOT' '/' 'HEAD'
-  probe_one 'V1_IDENTITY' '/v1/identity' 'HEAD'
-  probe_one 'V1_CONVERSATIONS' '/v1/conversations' 'HEAD'
+  probe_one 'V1_IDENTITY' '/v1/identity' 'GET'
+  probe_one 'V1_CONVERSATIONS' '/v1/conversations' 'GET'
   probe_one 'V1_SEMANTIC_SEARCH' '/v1/semantic/search?query=test' 'GET'
-
-  printf '\nNEXT: %s\n' 'If you see 404 only on specific endpoints (with service token), that points to endpoint availability / deployed version mismatch, not Access routing.'
-  printf '%s\n' 'Tip: Run RUN_NETWORK_TESTS=1 ./dev cf:worker:smoke for a single “what exists in prod” receipt (service-token only).'
 }
 
 main "$@"

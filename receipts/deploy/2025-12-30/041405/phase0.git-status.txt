@@ -1,0 +1,9 @@
+ M devshell/commands/access_probe.sh
+ M devshell/commands/cf_worker_smoke.sh
+ M devshell/entry.sh
+ M docs/DEPLOY_PROD_RUN.md
+ M package.json
+?? devshell/commands/cf_worker_secrets_apply.sh
+?? devshell/commands/cf_worker_secrets_list.sh
+?? receipts/
+?? tests/devshell_worker_secrets.bats

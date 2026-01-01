@@ -1,0 +1,41 @@
+BASE_URL: https://api.aperion.cc
+endpoint.ROOT.http_status: 404
+endpoint.ROOT.content-type: application/json; charset=utf-8
+endpoint.ROOT.cf-cache-status:
+endpoint.ROOT.cf-ray: 9b5c10e3091ef3d5-ORD
+endpoint.ROOT.server: cloudflare
+endpoint.ROOT.hint_headers.count: 2
+endpoint.ROOT.hint_headers.0: x-aperion-auth-fingerprint: pending
+endpoint.ROOT.hint_headers.1: x-aperion-trace-id: 9b5c10e3091ef3d5
+404
+endpoint.ROOT.exists: no
+endpoint.V1_IDENTITY.http_status: 404
+endpoint.V1_IDENTITY.content-type: application/json; charset=utf-8
+endpoint.V1_IDENTITY.cf-cache-status:
+endpoint.V1_IDENTITY.cf-ray: 9b5c10e44d50ff5b-ORD
+endpoint.V1_IDENTITY.server: cloudflare
+endpoint.V1_IDENTITY.hint_headers.count: 2
+endpoint.V1_IDENTITY.hint_headers.0: x-aperion-auth-fingerprint: pending
+endpoint.V1_IDENTITY.hint_headers.1: x-aperion-trace-id: 9b5c10e44d50ff5b
+404
+endpoint.V1_IDENTITY.exists: no
+endpoint.V1_CONVERSATIONS.http_status: 404
+endpoint.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
+endpoint.V1_CONVERSATIONS.cf-cache-status:
+endpoint.V1_CONVERSATIONS.cf-ray: 9b5c10e57dab2316-ORD
+endpoint.V1_CONVERSATIONS.server: cloudflare
+endpoint.V1_CONVERSATIONS.hint_headers.count: 2
+endpoint.V1_CONVERSATIONS.hint_headers.0: x-aperion-auth-fingerprint: pending
+endpoint.V1_CONVERSATIONS.hint_headers.1: x-aperion-trace-id: 9b5c10e57dab2316
+404
+endpoint.V1_CONVERSATIONS.exists: no
+endpoint.V1_SEMANTIC_SEARCH.http_status: 401
+endpoint.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
+endpoint.V1_SEMANTIC_SEARCH.cf-cache-status:
+endpoint.V1_SEMANTIC_SEARCH.cf-ray: 9b5c10e67c9deb08-ORD
+endpoint.V1_SEMANTIC_SEARCH.server: cloudflare
+endpoint.V1_SEMANTIC_SEARCH.hint_headers.count: 2
+endpoint.V1_SEMANTIC_SEARCH.hint_headers.0: x-aperion-auth-fingerprint: pending
+endpoint.V1_SEMANTIC_SEARCH.hint_headers.1: x-aperion-trace-id: 9b5c10e67c9deb08
+401
+endpoint.V1_SEMANTIC_SEARCH.exists: yes

@@ -1,0 +1,45 @@
+BASE_URL: https://api.aperion.cc
+with_service_token.ROOT.http_status: 404
+with_service_token.ROOT.content-type: application/json; charset=utf-8
+with_service_token.ROOT.cf-ray: 9b5ed033ffd7863e-ORD
+with_service_token.ROOT.server: cloudflare
+with_service_token.ROOT.location: 
+without_service_token.ROOT.http_status: 401
+without_service_token.ROOT.content-type: text/html
+without_service_token.ROOT.cf-ray: 9b5ed034cd0deac3-ORD
+without_service_token.ROOT.server: cloudflare
+without_service_token.ROOT.location: 
+diag.ROOT: NOT_ROUTED_API_ENDPOINT
+with_service_token.V1_IDENTITY.http_status: 200
+with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
+with_service_token.V1_IDENTITY.cf-ray: 9b5ed0365f1be108-ORD
+with_service_token.V1_IDENTITY.server: cloudflare
+with_service_token.V1_IDENTITY.location: 
+without_service_token.V1_IDENTITY.http_status: 401
+without_service_token.V1_IDENTITY.content-type: text/html
+without_service_token.V1_IDENTITY.cf-ray: 9b5ed03759827e6b-ORD
+without_service_token.V1_IDENTITY.server: cloudflare
+without_service_token.V1_IDENTITY.location: 
+diag.V1_IDENTITY: OK_SERVICE_TOKEN_ACCEPTED
+with_service_token.V1_CONVERSATIONS.http_status: 200
+with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b5ed038be5e6168-ORD
+with_service_token.V1_CONVERSATIONS.server: cloudflare
+with_service_token.V1_CONVERSATIONS.location: 
+without_service_token.V1_CONVERSATIONS.http_status: 401
+without_service_token.V1_CONVERSATIONS.content-type: text/html
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b5ed0396d8ba162-ORD
+without_service_token.V1_CONVERSATIONS.server: cloudflare
+without_service_token.V1_CONVERSATIONS.location: 
+diag.V1_CONVERSATIONS: OK_SERVICE_TOKEN_ACCEPTED
+with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
+with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5ed03b0b93e5b3-YYZ
+with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+with_service_token.V1_SEMANTIC_SEARCH.location: 
+without_service_token.V1_SEMANTIC_SEARCH.http_status: 401
+without_service_token.V1_SEMANTIC_SEARCH.content-type: text/html
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5ed03e0fdce82e-ORD
+without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+without_service_token.V1_SEMANTIC_SEARCH.location: 
+diag.V1_SEMANTIC_SEARCH: OK_SERVICE_TOKEN_ACCEPTED

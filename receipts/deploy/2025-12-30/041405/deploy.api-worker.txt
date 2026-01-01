@@ -1,0 +1,24 @@
+
+ ⛅️ wrangler 4.55.0
+───────────────────
+Total Upload: 1393.68 KiB / gzip: 240.49 KiB
+Worker Startup Time: 37 ms
+Your Worker has access to the following bindings:
+Binding                                                    Resource                      
+env.CHAT_STATE (ChatState)                                 Durable Object                
+env.CACHE_KV (212d43171f574b06b22f6fa4f24ca8a1)            KV Namespace                  
+env.MEMORY_QUEUE (aperion-memory-queue)                    Queue                         
+env.MEMORY_DB (aperion-memory)                             D1 Database                   
+env.MEMORY_VECTORS (aperion-vectors)                       Vectorize Index               
+env.MEDIA_BUCKET (aperion-media)                           R2 Bucket                     
+env.METRICS (aperion_metrics)                              Analytics Engine Dataset      
+env.BROWSER                                                Browser                       
+env.AI                                                     AI                            
+
+Uploaded aperion-api-worker (5.24 sec)
+Deployed aperion-api-worker triggers (1.68 sec)
+  api.aperion.cc (custom domain - zone name: aperion.cc)
+  schedule: 0 0 * * *
+  Producer for aperion-memory-queue
+  Consumer for aperion-memory-queue
+Current Version ID: 8c1b035a-e4b6-4080-9fba-e035cb83d894

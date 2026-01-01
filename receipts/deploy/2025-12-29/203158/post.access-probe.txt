@@ -1,0 +1,98 @@
+BASE_URL: https://api.aperion.cc
+
+ENDPOINT: ROOT
+PATH: /
+METHOD: HEAD
+with_service_token.ROOT.http_status: 404
+with_service_token.ROOT.location:
+with_service_token.ROOT.cf-ray: 9b5c16feaa56f13a-ORD
+with_service_token.ROOT.server: cloudflare
+with_service_token.ROOT.content-type: application/json; charset=utf-8
+with_service_token.ROOT.cf-cache-status:
+with_service_token.ROOT.hint_headers.count: 2
+with_service_token.ROOT.hint_headers.0: x-aperion-auth-fingerprint: pending
+with_service_token.ROOT.hint_headers.1: x-aperion-trace-id: 9b5c16feaa56f13a
+404
+without_service_token.ROOT.http_status: 401
+without_service_token.ROOT.location:
+without_service_token.ROOT.cf-ray: 9b5c16ffa8406185-ORD
+without_service_token.ROOT.server: cloudflare
+without_service_token.ROOT.content-type: text/html
+without_service_token.ROOT.cf-cache-status:
+without_service_token.ROOT.hint_headers.count: 0
+401
+diag.ROOT: ENDPOINT_MISSING_OR_DEPLOY_MISMATCH_NOT_ACCESS_ROUTING
+diag.ROOT.hint: Access is enforcing auth (401 without token). Service-token request is not being redirected (so auth is likely accepted), but the endpoint path is missing or you are hitting a deployed version that does not serve it.
+
+ENDPOINT: V1_IDENTITY
+PATH: /v1/identity
+METHOD: HEAD
+with_service_token.V1_IDENTITY.http_status: 404
+with_service_token.V1_IDENTITY.location:
+with_service_token.V1_IDENTITY.cf-ray: 9b5c1702ae7ccc6e-ORD
+with_service_token.V1_IDENTITY.server: cloudflare
+with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
+with_service_token.V1_IDENTITY.cf-cache-status:
+with_service_token.V1_IDENTITY.hint_headers.count: 2
+with_service_token.V1_IDENTITY.hint_headers.0: x-aperion-auth-fingerprint: pending
+with_service_token.V1_IDENTITY.hint_headers.1: x-aperion-trace-id: 9b5c1702ae7ccc6e
+404
+without_service_token.V1_IDENTITY.http_status: 401
+without_service_token.V1_IDENTITY.location:
+without_service_token.V1_IDENTITY.cf-ray: 9b5c17036eaf7815-ORD
+without_service_token.V1_IDENTITY.server: cloudflare
+without_service_token.V1_IDENTITY.content-type: text/html
+without_service_token.V1_IDENTITY.cf-cache-status:
+without_service_token.V1_IDENTITY.hint_headers.count: 0
+401
+diag.V1_IDENTITY: ENDPOINT_MISSING_OR_DEPLOY_MISMATCH_NOT_ACCESS_ROUTING
+diag.V1_IDENTITY.hint: Access is enforcing auth (401 without token). Service-token request is not being redirected (so auth is likely accepted), but the endpoint path is missing or you are hitting a deployed version that does not serve it.
+
+ENDPOINT: V1_CONVERSATIONS
+PATH: /v1/conversations
+METHOD: HEAD
+with_service_token.V1_CONVERSATIONS.http_status: 404
+with_service_token.V1_CONVERSATIONS.location:
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b5c17051ee5a2a1-ORD
+with_service_token.V1_CONVERSATIONS.server: cloudflare
+with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
+with_service_token.V1_CONVERSATIONS.cf-cache-status:
+with_service_token.V1_CONVERSATIONS.hint_headers.count: 2
+with_service_token.V1_CONVERSATIONS.hint_headers.0: x-aperion-auth-fingerprint: pending
+with_service_token.V1_CONVERSATIONS.hint_headers.1: x-aperion-trace-id: 9b5c17051ee5a2a1
+404
+without_service_token.V1_CONVERSATIONS.http_status: 401
+without_service_token.V1_CONVERSATIONS.location:
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b5c1705dac5964a-YYZ
+without_service_token.V1_CONVERSATIONS.server: cloudflare
+without_service_token.V1_CONVERSATIONS.content-type: text/html
+without_service_token.V1_CONVERSATIONS.cf-cache-status:
+without_service_token.V1_CONVERSATIONS.hint_headers.count: 0
+401
+diag.V1_CONVERSATIONS: ENDPOINT_MISSING_OR_DEPLOY_MISMATCH_NOT_ACCESS_ROUTING
+diag.V1_CONVERSATIONS.hint: Access is enforcing auth (401 without token). Service-token request is not being redirected (so auth is likely accepted), but the endpoint path is missing or you are hitting a deployed version that does not serve it.
+
+ENDPOINT: V1_SEMANTIC_SEARCH
+PATH: /v1/semantic/search?query=test
+METHOD: GET
+with_service_token.V1_SEMANTIC_SEARCH.http_status: 401
+with_service_token.V1_SEMANTIC_SEARCH.location:
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5c1707fe8cf153-ORD
+with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
+with_service_token.V1_SEMANTIC_SEARCH.cf-cache-status:
+with_service_token.V1_SEMANTIC_SEARCH.hint_headers.count: 2
+with_service_token.V1_SEMANTIC_SEARCH.hint_headers.0: x-aperion-auth-fingerprint: pending
+with_service_token.V1_SEMANTIC_SEARCH.hint_headers.1: x-aperion-trace-id: 9b5c1707fe8cf153
+401
+without_service_token.V1_SEMANTIC_SEARCH.http_status: 401
+without_service_token.V1_SEMANTIC_SEARCH.location:
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5c17091a866089-ORD
+without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+without_service_token.V1_SEMANTIC_SEARCH.content-type: text/html
+without_service_token.V1_SEMANTIC_SEARCH.cf-cache-status:
+without_service_token.V1_SEMANTIC_SEARCH.hint_headers.count: 0
+401
+
+NEXT: If you see 404 only on specific endpoints (with service token), that points to endpoint availability / deployed version mismatch, not Access routing.
+Tip: Run RUN_NETWORK_TESTS=1 ./dev cf:worker:smoke for a single “what exists in prod” receipt (service-token only).

@@ -1,0 +1,45 @@
+BASE_URL: https://api.aperion.cc
+with_service_token.ROOT.http_status: 404
+with_service_token.ROOT.content-type: application/json; charset=utf-8
+with_service_token.ROOT.cf-ray: 9b5ebc1dcc3daa71-YYZ
+with_service_token.ROOT.server: cloudflare
+with_service_token.ROOT.location: 
+without_service_token.ROOT.http_status: 401
+without_service_token.ROOT.content-type: text/html
+without_service_token.ROOT.cf-ray: 9b5ebc1e7eabf85a-ORD
+without_service_token.ROOT.server: cloudflare
+without_service_token.ROOT.location: 
+diag.ROOT: NOT_ROUTED_API_ENDPOINT
+with_service_token.V1_IDENTITY.http_status: 401
+with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
+with_service_token.V1_IDENTITY.cf-ray: 9b5ebc1fedf1e251-ORD
+with_service_token.V1_IDENTITY.server: cloudflare
+with_service_token.V1_IDENTITY.location: 
+without_service_token.V1_IDENTITY.http_status: 401
+without_service_token.V1_IDENTITY.content-type: text/html
+without_service_token.V1_IDENTITY.cf-ray: 9b5ebc207b568637-ORD
+without_service_token.V1_IDENTITY.server: cloudflare
+without_service_token.V1_IDENTITY.location: 
+diag.V1_IDENTITY: APP_AUTH_REJECTED_AFTER_ACCESS_SERVICE_AUTH
+with_service_token.V1_CONVERSATIONS.http_status: 401
+with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b5ebc21dada0ccc-ORD
+with_service_token.V1_CONVERSATIONS.server: cloudflare
+with_service_token.V1_CONVERSATIONS.location: 
+without_service_token.V1_CONVERSATIONS.http_status: 401
+without_service_token.V1_CONVERSATIONS.content-type: text/html
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b5ebc226d76cc1a-ORD
+without_service_token.V1_CONVERSATIONS.server: cloudflare
+without_service_token.V1_CONVERSATIONS.location: 
+diag.V1_CONVERSATIONS: APP_AUTH_REJECTED_AFTER_ACCESS_SERVICE_AUTH
+with_service_token.V1_SEMANTIC_SEARCH.http_status: 401
+with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5ebc241b8120d4-ORD
+with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+with_service_token.V1_SEMANTIC_SEARCH.location: 
+without_service_token.V1_SEMANTIC_SEARCH.http_status: 401
+without_service_token.V1_SEMANTIC_SEARCH.content-type: text/html
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b5ebc24bed35c91-ORD
+without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+without_service_token.V1_SEMANTIC_SEARCH.location: 
+diag.V1_SEMANTIC_SEARCH: APP_AUTH_REJECTED_AFTER_ACCESS_SERVICE_AUTH

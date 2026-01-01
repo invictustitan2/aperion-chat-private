@@ -1,0 +1,22 @@
+1..21
+ok 1 missing secrets file prints mkdir/cat/chmod instructions
+ok 2 env-only secrets pass even when secrets file is missing
+ok 3 missing vars fails with list
+ok 4 placeholder values are rejected (case-insensitive)
+ok 5 runs of x are rejected
+ok 6 short values are rejected
+ok 7 valid values pass and never print values
+ok 8 secrets:where prints sources without leaking values
+ok 9 secrets:set refuses to run without a TTY (no hang)
+ok 10 secrets:wizard refuses to run under bats (no hang)
+ok 11 secrets:doctor runs and never prints secrets
+ok 12 access test is skipped by default (no network)
+ok 13 access test returns a status code when enabled # skip Set RUN_NETWORK_TESTS=1 to enable network tests
+ok 14 cf:access:audit fails clearly without required env vars
+ok 15 access:probe skips without RUN_NETWORK_TESTS
+ok 16 cf:worker:audit skips without RUN_NETWORK_TESTS
+ok 17 cf:worker:audit fails clearly without required env vars
+ok 18 cf:worker:smoke skips without RUN_NETWORK_TESTS
+ok 19 cf:worker:ensure-domain skips without RUN_NETWORK_TESTS
+ok 20 cf:worker:secrets:list skips without RUN_NETWORK_TESTS
+ok 21 cf:worker:secrets:apply refuses without TTY

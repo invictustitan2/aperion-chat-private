@@ -33,11 +33,8 @@ GitHub Actions secrets (required for deploy + post-deploy authenticated checks):
 
 Run from repo root:
 
-- `pnpm verify`
-- `pnpm -r build`
-- `pnpm guard:prod-secrets`
-- `pnpm guard:config-drift`
-- `pnpm test:e2e`
+- `pnpm -s run verify:devshell`
+- `pnpm -s test:node`
 
 ## 2) Deploy (recommended path: GitHub Actions)
 
@@ -60,13 +57,119 @@ Notes:
 
 Use this only if you intentionally are not deploying via GitHub Actions.
 
+Recommended (CLI): one command, receipts-first
+
+- `RUN_NETWORK_TESTS=1 ./dev deploy:prod`
+
+This orchestrates:
+
+- Preflight gates
+- Pre-deploy evidence (Worker secrets/list, smoke, access probe, access audit)
+- Worker deploy + Pages deploy (using the safe wrappers)
+- Post-deploy validation
+- A strict summary file at:
+  - `receipts/deploy/<YYYY-MM-DD>/<HHMMSS>/SUMMARY.txt`
+
+Receipts:
+
+- The receipts directory is printed as `RECEIPTS.DIR: ...`.
+- The most recent run is recorded at `receipts/deploy/latest.txt`.
+
+Preferred deploy commands (deterministic wrappers)
+
+- Worker deploy (env-aware; rejects invalid env; network-gated):
+  - `RUN_NETWORK_TESTS=1 ./dev cf:worker:deploy [--env <name>]`
+  - Valid env names are those listed under `[env.*]` in `apps/api-worker/wrangler.toml`.
+
+- Pages deploy (build-var safe; refuses non-prod base URL unless `--force`; network-gated):
+  - `RUN_NETWORK_TESTS=1 ./dev cf:pages:deploy [--force]`
+
+Quick post-deploy check:
+
+- `RUN_NETWORK_TESTS=1 ./dev deploy:validate`
+
+Raw `wrangler` commands remain available as a fallback, but the wrappers prevent silent env drift and enforce the repo’s safety rails.
+
+Operator sequence (CLI, repo-grounded)
+
+0. Choose Wrangler environment (Worker only)
+
+Wrangler can have multiple environments under `apps/api-worker/wrangler.toml`.
+
+- If `apps/api-worker/wrangler.toml` defines `[env.production]`, then production deploys should consistently target it:
+  - `export APERION_WRANGLER_ENV=production`
+  - and pass `--env production` on all Worker-related CLI commands.
+
+- If there is no `[env.production]` (current repo state), production uses the top-level config and the effective env is `none`.
+  - Do not pass `--env` for production.
+  - Use `--env preview` / `--env test` only when you intentionally target those.
+
+Wrangler env selection safety
+
+- You can always see which Wrangler envs exist in `apps/api-worker/wrangler.toml` without enabling network calls:
+  - `./dev cf:worker:secrets:list`
+  - This prints:
+    - `WRANGLER.ENV.AVAILABLE: <csv|none>`
+    - `WRANGLER.ENV.VALID: <yes|no>` (based on `--env` / `APERION_WRANGLER_ENV`)
+- If you pass an invalid env name:
+  - `cf:worker:secrets:list` rejects it once `RUN_NETWORK_TESTS=1` is enabled (before any Wrangler call).
+  - `cf:worker:secrets:apply` rejects it immediately (before any Wrangler call), and still refuses without a TTY.
+
+1. Preflight gates:
+
+- `pnpm -s run verify:devshell`
+- `pnpm -s test:node`
+
+2. Confirm Worker secrets are present (names only; network opt-in):
+
+- Production (no `[env.production]`):
+  - `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:list`
+
+- If you are using `[env.production]`:
+  - `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:list --env production`
+
+If missing, set them (interactive; TTY required; never prints values):
+
+- Production (no `[env.production]`):
+  - `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:apply`
+
+- If you are using `[env.production]`:
+  - `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:apply --env production`
+
+3. Deploy Worker (from `apps/api-worker/`):
+
+- Production (no `[env.production]`):
+- Production (no `[env.production]`):
+  - Preferred: `RUN_NETWORK_TESTS=1 ./dev cf:worker:deploy`
+  - Fallback: `cd apps/api-worker && npx wrangler deploy`
+
+- If you are using `[env.production]`:
+- If you are using `[env.production]`:
+  - Preferred: `RUN_NETWORK_TESTS=1 ./dev cf:worker:deploy --env production`
+  - Fallback: `cd apps/api-worker && npx wrangler deploy --env production`
+
+4. Post-deploy API receipts:
+
+- `RUN_NETWORK_TESTS=1 ./dev access:probe`
+- `RUN_NETWORK_TESTS=1 ./dev cf:worker:smoke`
+
+5. Only then deploy Pages and validate UI → API calls.
+
 ### 3.1 Deploy API Worker
 
-- `cd apps/api-worker && npx wrangler deploy`
+- Production (no `[env.production]`): preferred `RUN_NETWORK_TESTS=1 ./dev cf:worker:deploy` (fallback: `cd apps/api-worker && npx wrangler deploy`)
+- If you are using `[env.production]`: preferred `RUN_NETWORK_TESTS=1 ./dev cf:worker:deploy --env production` (fallback: `cd apps/api-worker && npx wrangler deploy --env production`)
 
 ### 3.2 Deploy Pages
 
-- `cd apps/web && pnpm build && npx wrangler pages deploy dist --project-name aperion-chat-private`
+- Preferred: `RUN_NETWORK_TESTS=1 ./dev cf:pages:deploy`
+- Fallback: `cd apps/web && pnpm build && npx wrangler pages deploy dist --project-name aperion-chat-private`
+
+Note: Pages deploy is separate from Wrangler Worker environments.
+
+Receipts guidance (CLI deploys)
+
+- Capture logs under `receipts/deploy/<date>/<time>/` and store only command outputs and paths (never secret values).
 
 ## 4) Post-deploy smoke tests
 
@@ -100,13 +203,14 @@ If a request _with_ `CF-Access-Client-Id` / `CF-Access-Client-Secret` still retu
 | No service token   |       `401` | Request reached Worker, and Worker denied (missing Access assertion / bearer).                                                                                                 |
 | With service token |       `302` | Access did **not** accept service auth for this hostname/path (missing SERVICE_AUTH policy, path mismatch, wrong token association, or Access set to redirect instead of 401). |
 | With service token | `401`/`403` | Request reached Access/Worker but was denied (token mismatch, policy mismatch, or Worker fail-closed).                                                                         |
-| With service token |       `404` | Service token likely accepted, but the hostname is bound to the wrong origin/Worker (or the origin does not serve `/v1/identity`).                                             |
+| With service token |       `404` | Service token likely accepted, but either (a) you probed with the wrong HTTP method (e.g., `HEAD` when only `GET` is routed), or (b) the origin does not serve that path.      |
 | With service token |       `200` | Service auth succeeded end-to-end.                                                                                                                                             |
 
 Notes:
 
 - A `302` for service auth is almost always an Access configuration issue, not a Worker bug.
 - If you enable “Return 401 Response for Service Auth policies”, service-auth failures become `401` instead of `302` redirects.
+- When checking whether an endpoint exists, always use `GET`. Some Workers return `404` to `HEAD` even when `GET` is routed.
 
 #### Operator sequence (fastest path to resolve 302)
 
@@ -121,6 +225,23 @@ Notes:
 2b. If service-token requests return `404`, audit Worker binding for the hostname:
 
 - `RUN_NETWORK_TESTS=1 ./dev cf:worker:audit`
+
+2c. Confirm required Worker auth-mode inputs are present (these control Access JWT validation in prod):
+
+- `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:list`
+
+If missing, set them interactively (TTY required; never prints values):
+
+- `RUN_NETWORK_TESTS=1 ./dev cf:worker:secrets:apply`
+
+Then deploy the Worker:
+
+- `cd apps/api-worker && npx wrangler deploy`
+
+Post-deploy receipts:
+
+- `RUN_NETWORK_TESTS=1 ./dev access:probe`
+- `RUN_NETWORK_TESTS=1 ./dev cf:worker:smoke`
 
 3. Confirm requests are reaching origin when appropriate:
 
