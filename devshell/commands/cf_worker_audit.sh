@@ -16,8 +16,41 @@ cd "$repo_root"
 # - Never put secrets into argv.
 # - Use curl -K - so headers come from stdin config.
 
-HOSTNAME="api.aperion.cc"
-ZONE_NAME="aperion.cc"
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+# shellcheck source=devshell/lib/surfaces.sh
+source "${repo_root}/devshell/lib/surfaces.sh"
+
+surface='api'
+base_url_override=''
+ZONE_NAME='aperion.cc'
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --surface)
+      surface="${2:-}"
+      shift 2
+      ;;
+    --base-url)
+      base_url_override="${2:-}"
+      shift 2
+      ;;
+    --zone)
+      ZONE_NAME="${2:-}"
+      shift 2
+      ;;
+    *)
+      devshell_die "unknown arg: $1"
+      ;;
+  esac
+done
+
+BASE_URL="$(devshell_api_base_url_resolve "$surface" "$base_url_override")"
+
+HOSTNAME=""
+mapfile -t _url_parts < <(devshell_split_url_host_and_path_prefix "$BASE_URL")
+HOSTNAME="${_url_parts[0]:-}"
+[[ -n "$HOSTNAME" ]] || devshell_die "failed to parse host from base url: $BASE_URL"
 
 need_env() {
   local k="$1"

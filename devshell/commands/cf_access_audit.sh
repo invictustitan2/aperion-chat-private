@@ -15,13 +15,89 @@ cd "$repo_root"
 # - Never put secrets into argv.
 # - Use curl -K - so headers come from stdin config.
 
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+# shellcheck source=devshell/lib/surfaces.sh
+source "${repo_root}/devshell/lib/surfaces.sh"
+
 HOST_API="api.aperion.cc"
 HOST_CHAT="chat.aperion.cc"
 
+# Optional overrides to prepare for Path B (same-origin /api mount).
+# Defaults remain the current production hostnames.
+api_surface='api'
+api_base_url_override=''
+api_host_override=''
+chat_host_override=''
+api_path_prefix='' # e.g. "/api" for browser surface
+
 want_json='no'
-if [[ "${1:-}" == "--json" ]]; then
-  want_json='yes'
-  shift || true
+while [[ "$#" -gt 0 ]]; do
+  case "${1:-}" in
+    --json)
+      want_json='yes'
+      shift
+      ;;
+    --surface|--api-surface)
+      api_surface="${2:-}"
+      shift 2
+      ;;
+    --base-url|--api-base-url)
+      api_base_url_override="${2:-}"
+      shift 2
+      ;;
+    --api-host)
+      api_host_override="${2:-}"
+      shift 2
+      ;;
+    --chat-host)
+      chat_host_override="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      cat <<'HELP'
+Usage:
+  ./dev cf:access:audit [--json]
+  ./dev cf:access:audit [--surface api|browser] [--base-url https://...]
+  ./dev cf:access:audit [--api-host host] [--chat-host host]
+
+Defaults (no args):
+  - API host:  api.aperion.cc
+  - Chat host: chat.aperion.cc
+
+Notes:
+  - --surface/--base-url only affects the API host and optional path prefix.
+  - When using browser surface (https://chat.aperion.cc/api), the audit will
+    look for Access app paths that could match /api/v1/*.
+HELP
+      exit 0
+      ;;
+    *)
+      printf 'ERROR: unknown arg: %s\n' "$1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+# Only consult the surface resolver when explicitly requested.
+if [[ -n "$api_base_url_override" || "$api_surface" != 'api' ]]; then
+  base_url="$(devshell_api_base_url_resolve "$api_surface" "$api_base_url_override")"
+  mapfile -t host_and_path < <(devshell_split_url_host_and_path_prefix "$base_url")
+  HOST_API="${host_and_path[0]}"
+  api_path_prefix="${host_and_path[1]}"
+  api_path_prefix="${api_path_prefix%/}"
+  if [[ -z "$api_path_prefix" || "$api_path_prefix" == '/' ]]; then
+    api_path_prefix=''
+  fi
+fi
+
+if [[ -n "$api_host_override" ]]; then
+  HOST_API="$api_host_override"
+  api_path_prefix=''
+fi
+
+if [[ -n "$chat_host_override" ]]; then
+  HOST_CHAT="$chat_host_override"
 fi
 
 need_env() {
@@ -364,6 +440,7 @@ main_text() {
   audit_host() {
     local hostname="$1"
     local label="$2"
+    local v1_prefix="${3:-}"
 
     print_kv "HOST.${label}" "$hostname"
 
@@ -408,9 +485,12 @@ main_text() {
         json_hint "$appd_body" | sed "s/^/APP.${label}.${i}.DETAILS./"
       fi
 
-      # Best-effort: infer whether any path could match /v1/identity.
+      # Best-effort: infer whether any path could match the v1 API.
+      # For Path B, the API may be mounted under /api (so /api/v1/*).
       if [[ -n "${app_paths:-}" ]]; then
-        if printf '%s' "$app_paths" | grep -Eq '(^|,)/v1/\*($|,)|(^|,)/v1($|,)|(^|,)/v1/identity($|,)|(^|,)/v1/'; then
+        local v1_root
+        v1_root="${v1_prefix}/v1"
+        if printf '%s' "$app_paths" | grep -Eq "(^|,)${v1_root}/\\*($|,)|(^|,)${v1_root}($|,)|(^|,)${v1_root}/identity($|,)|(^|,)${v1_root}/"; then
           any_paths_cover_v1='yes'
         else
           any_paths_cover_v1='no'
@@ -464,7 +544,7 @@ main_text() {
     printf -v "policy_service_token_ids_${label}" '%s' "$any_service_token_ids"
   }
 
-  audit_host "$HOST_API" 'API'
+  audit_host "$HOST_API" 'API' "$api_path_prefix"
   audit_host "$HOST_CHAT" 'CHAT'
 
   # Summary: policies commonly reference service tokens by UUID (not client_id).

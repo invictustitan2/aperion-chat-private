@@ -2,6 +2,8 @@
 
 This guide covers the authentication model for Aperion Chat.
 
+Path B note (same-origin API): the repo supports mounting the browser API under the same origin as the UI (`https://chat.aperion.cc/api/*`) to eliminate CORS. Implementation exists in the repo, but production should still be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, production browser builds should keep calling `https://api.aperion.cc` (configured via `VITE_API_BASE_URL`). See `docs/path-b/SAME_ORIGIN_PLAN.md` and `docs/adr/0001-same-origin-api.md`.
+
 ## Architecture Overview
 
 Aperion Chat uses **Cloudflare Zero Trust Access** as the production authentication boundary:
@@ -14,7 +16,7 @@ Aperion Chat uses **Cloudflare Zero Trust Access** as the production authenticat
 
 - **Single-user system**: Access policy limits who can reach the app/API
 - **Rotation**: Access keys rotate automatically; service tokens can be rotated when needed
-- **CORS protection**: Environment-aware origin restrictions
+- **CORS protection**: Environment-aware origin restrictions (only relevant while browser traffic is cross-origin)
 - **HTTPS only**: Production endpoints enforce TLS
 
 ## Optional: Legacy Token Auth (API-only)
@@ -80,7 +82,7 @@ cp .env.example .env
 
 # For API-only local dev (legacy token mode)
 VITE_API_BASE_URL=http://127.0.0.1:8787
-AUTH_TOKEN=<your-generated-token>
+VITE_AUTH_TOKEN=<your-generated-token>
 ```
 
 **Restart dev servers** after changing `.env`:
@@ -120,14 +122,23 @@ The web UI is Access-session-only. It must not bake bearer tokens into the build
 Configure only:
 
 - **Variable name:** `VITE_API_BASE_URL`
-- **Value:** `https://api.aperion.cc`
+- **Value (current cross-origin):** `https://api.aperion.cc`
 - **Environment:** Production
+
+After Path B rollout (do not apply early):
+
+- Prefer relative base: set `VITE_API_BASE_URL=/api`, or
+- Unset `VITE_API_BASE_URL` to use the production default `/api`.
+
+Do not switch production to `/api` (or unset `VITE_API_BASE_URL`) until `chat.aperion.cc/api/*` is actually routed to the Worker and validated.
 
 **Redeploy** after adding variables for changes to take effect.
 
 ## CORS Configuration
 
-The Worker implements **environment-aware CORS** for security:
+The Worker implements **environment-aware CORS** for security.
+
+Note: this section is primarily relevant while the browser uses the cross-origin API (`api.aperion.cc`). Path B is intended to remove browser CORS requirements by using same-origin `/api/*`.
 
 ### Allowed Origins
 
@@ -202,13 +213,11 @@ curl -H "Authorization: Bearer <your-token>" http://127.0.0.1:8787/v1/identity
 #### 2. Production
 
 ```bash
-# Test without auth (should fail)
-curl https://api.aperion.cc/v1/identity
-# Expected: 401 Unauthorized
+# Without an Access session, unauthenticated requests typically redirect to Access login.
+curl -i https://api.aperion.cc/v1/identity
 
-# Test with auth (should succeed)
-curl -H "Authorization: Bearer <your-token>" https://api.aperion.cc/v1/identity
-# Expected: [] or your identity data
+# With a valid Access session cookie (browser) or a service token (automation), requests should succeed.
+# (Bearer Authorization applies only in token/hybrid modes; production is expected to use Access.)
 ```
 
 #### 3. Web App UI
@@ -217,8 +226,8 @@ curl -H "Authorization: Bearer <your-token>" https://api.aperion.cc/v1/identity
 2. Navigate to **Settings → Authentication Debug**
 3. Click **"Run auth self-test"**
 4. Verify all checks pass:
-   - ✓ Token is configured
    - ✓ API URL is set
+   - ✓ Access session is active
    - ✓ Authenticated request succeeds
 
 ## Token Rotation

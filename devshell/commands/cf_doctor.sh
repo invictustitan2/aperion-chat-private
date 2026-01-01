@@ -7,6 +7,10 @@ shift
 want_json='no'
 fail_on_warn='no'
 
+# Defaults: current production surfaces.
+pages_host='chat.aperion.cc'
+worker_host='api.aperion.cc'
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --json)
@@ -15,18 +19,36 @@ while [ "$#" -gt 0 ]; do
     --fail-on-warn)
       fail_on_warn='yes'
       ;;
+    --pages-host)
+      if [ -z "${2:-}" ]; then
+        printf 'ERROR: --pages-host requires a value\n' >&2
+        exit 2
+      fi
+      pages_host="$2"
+      shift
+      ;;
+    --worker-host|--api-host)
+      if [ -z "${2:-}" ]; then
+        printf 'ERROR: --worker-host requires a value\n' >&2
+        exit 2
+      fi
+      worker_host="$2"
+      shift
+      ;;
     -h|--help)
       cat <<'HELP'
 Usage:
-  ./dev cf:doctor [--json] [--fail-on-warn]
+  ./dev cf:doctor [--json] [--fail-on-warn] [--pages-host host] [--worker-host host]
 
 Read-only Cloudflare deployment preflight checks for:
-  - Pages: chat.aperion.cc
-  - Worker: api.aperion.cc
+  - Pages: chat.aperion.cc (default)
+  - Worker: api.aperion.cc (default)
 
 Flags:
   --json          Print stable JSON output
   --fail-on-warn  Exit nonzero if any WARN or FAIL
+  --pages-host     Override expected Pages hostname (default: chat.aperion.cc)
+  --worker-host    Override expected Worker hostname (default: api.aperion.cc)
 HELP
       exit 0
       ;;
@@ -214,11 +236,11 @@ if [ -f "$worker_config_path" ]; then
     add_check "config.worker.bindings" "FAIL" "Worker bindings missing: ${missing_worker_bindings[*]}" "{}"
   fi
 
-  # Deploy intent: api.aperion.cc custom domain
-  if grep -qF -- 'api.aperion.cc' "$worker_config_path"; then
-    add_check "intent.domain.api" "PASS" "Worker config references api.aperion.cc" "{\"domain\":\"api.aperion.cc\"}"
+  # Deploy intent: worker custom domain
+  if grep -qF -- "$worker_host" "$worker_config_path"; then
+    add_check "intent.domain.api" "PASS" "Worker config references ${worker_host}" "{\"domain\":\"$(json_escape "$worker_host")\"}"
   else
-    add_check "intent.domain.api" "FAIL" "Worker config does not reference api.aperion.cc" "{\"domain\":\"api.aperion.cc\"}"
+    add_check "intent.domain.api" "FAIL" "Worker config does not reference ${worker_host}" "{\"domain\":\"$(json_escape "$worker_host")\"}"
   fi
 
   # Preview worker name is declared under env.preview
@@ -232,19 +254,19 @@ else
   add_check "config.worker.wrangler_toml" "FAIL" "missing Worker wrangler.toml" "{\"expectedPath\":\"$(json_escape "$worker_config_rel")\"}"
 fi
 
-# Deploy intent: chat.aperion.cc should be referenced in workflows/docs
+# Deploy intent: expected Pages hostname should be referenced in workflows/docs
 chat_domain_claimed='no'
-if [ -f "${repo_root}/.github/workflows/deploy-web.yml" ] && grep -qF -- 'chat.aperion.cc' "${repo_root}/.github/workflows/deploy-web.yml"; then
+if [ -f "${repo_root}/.github/workflows/deploy-web.yml" ] && grep -qF -- "$pages_host" "${repo_root}/.github/workflows/deploy-web.yml"; then
   chat_domain_claimed='yes'
 fi
-if [ "$chat_domain_claimed" = 'no' ] && [ -f "${repo_root}/docs/DEPLOY_PROD.md" ] && grep -qF -- 'chat.aperion.cc' "${repo_root}/docs/DEPLOY_PROD.md"; then
+if [ "$chat_domain_claimed" = 'no' ] && [ -f "${repo_root}/docs/DEPLOY_PROD.md" ] && grep -qF -- "$pages_host" "${repo_root}/docs/DEPLOY_PROD.md"; then
   chat_domain_claimed='yes'
 fi
 
 if [ "$chat_domain_claimed" = 'yes' ]; then
-  add_check "intent.domain.chat" "PASS" "Repo claims chat.aperion.cc as the frontend domain" "{\"domain\":\"chat.aperion.cc\"}"
+  add_check "intent.domain.chat" "PASS" "Repo claims ${pages_host} as the frontend domain" "{\"domain\":\"$(json_escape "$pages_host")\"}"
 else
-  add_check "intent.domain.chat" "WARN" "Did not find chat.aperion.cc claim in primary workflow/docs" "{\"domain\":\"chat.aperion.cc\"}"
+  add_check "intent.domain.chat" "WARN" "Did not find ${pages_host} claim in primary workflow/docs" "{\"domain\":\"$(json_escape "$pages_host")\"}"
 fi
 
 # Conflict heuristics (read-only, best-effort)
@@ -354,8 +376,8 @@ if [ "$want_json" = 'yes' ]; then
   printf '"previewName":"%s"' "$(json_escape "${worker_preview_name:-}")"
   printf '},'
   printf '"domains":{'
-  printf '"chat":"chat.aperion.cc",'
-  printf '"api":"api.aperion.cc"'
+  printf '"chat":"%s",' "$(json_escape "$pages_host")"
+  printf '"api":"%s"' "$(json_escape "$worker_host")"
   printf '}'
   printf '},'
   printf '"checks":[%s],' "$checks_json"
@@ -377,7 +399,7 @@ if [ "$want_json" = 'yes' ]; then
   printf '\n'
 else
   printf 'Cloudflare doctor (read-only)\n'
-  printf 'Targets: chat.aperion.cc (Pages), api.aperion.cc (Worker)\n\n'
+  printf 'Targets: %s (Pages), %s (Worker)\n\n' "$pages_host" "$worker_host"
 
   printf 'Checks: PASS=%s WARN=%s FAIL=%s SKIP=%s\n\n' "$pass_count" "$warn_count" "$fail_count" "$skip_count"
 

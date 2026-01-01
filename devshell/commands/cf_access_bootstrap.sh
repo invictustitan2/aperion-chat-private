@@ -6,6 +6,47 @@ shift || true
 
 cd "$repo_root"
 
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+# shellcheck source=devshell/lib/surfaces.sh
+source "${repo_root}/devshell/lib/surfaces.sh"
+
+surface='api'
+base_url_override=''
+host_override=''
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --surface)
+      surface="${2:-}"
+      shift 2
+      ;;
+    --base-url)
+      base_url_override="${2:-}"
+      shift 2
+      ;;
+    --host)
+      host_override="${2:-}"
+      shift 2
+      ;;
+    *)
+      devshell_die "unknown arg: $1"
+      ;;
+  esac
+done
+
+resolved_host=''
+if [[ -n "$host_override" ]]; then
+  resolved_host="$host_override"
+else
+  BASE_URL="$(devshell_api_base_url_resolve "$surface" "$base_url_override")"
+  mapfile -t _url_parts < <(devshell_split_url_host_and_path_prefix "$BASE_URL")
+  resolved_host="${_url_parts[0]:-}"
+fi
+
+[[ -n "$resolved_host" ]] || devshell_die "failed to determine host"
+
+export APERION_ACCESS_APP_HOST="$resolved_host"
+
 cf_api_get() {
   local url="$1"
 
@@ -114,7 +155,7 @@ NODE
   match_count="$(node - <<'NODE' <<<"$apps_json"
 const data = JSON.parse(require('fs').readFileSync(0,'utf8'));
 const apps = Array.isArray(data.result) ? data.result : [];
-const host = 'api.aperion.cc';
+const host = String(process.env.APERION_ACCESS_APP_HOST || '').toLowerCase();
 const matches = apps.filter(a => {
   if (!a) return false;
   if (a.domain && String(a.domain).toLowerCase() === host) return true;
@@ -129,7 +170,7 @@ NODE
 )"
 
   if [[ "$match_count" != "1" ]]; then
-    echo "ERROR: could not uniquely identify the Access application for api.aperion.cc (matches=${match_count})." >&2
+    echo "ERROR: could not uniquely identify the Access application for ${resolved_host} (matches=${match_count})." >&2
     echo "Candidates:" >&2
     node - <<'NODE' <<<"$apps_json" >&2
 const data = JSON.parse(require('fs').readFileSync(0,'utf8'));
@@ -142,7 +183,7 @@ apps.forEach((a, i) => {
   process.stderr.write(`${i+1}) ${name}  id=${id}  domain=${domain}  aud=${aud}\n`);
 });
 NODE
-    echo "Hint: ensure there is exactly one Access App matching api.aperion.cc, or set CF_ACCESS_AUD manually." >&2
+  echo "Hint: ensure there is exactly one Access App matching ${resolved_host}, or set CF_ACCESS_AUD manually." >&2
     exit 2
   fi
 
@@ -150,7 +191,7 @@ NODE
   aud="$(node - <<'NODE' <<<"$apps_json"
 const data = JSON.parse(require('fs').readFileSync(0,'utf8'));
 const apps = Array.isArray(data.result) ? data.result : [];
-const host = 'api.aperion.cc';
+const host = String(process.env.APERION_ACCESS_APP_HOST || '').toLowerCase();
 const match = apps.find(a => {
   if (!a) return false;
   if (a.domain && String(a.domain).toLowerCase() === host) return true;

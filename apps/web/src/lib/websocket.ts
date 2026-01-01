@@ -258,8 +258,7 @@ export function initializeWebSocket(
     wsClient.disconnect();
   }
 
-  // Convert http(s) to ws(s)
-  const wsUrl = baseUrl.replace(/^http/, "ws") + "/v1/ws";
+  const wsUrl = buildWebSocketUrl(baseUrl);
 
   wsClient = new WebSocketClient({
     url: wsUrl,
@@ -277,4 +276,34 @@ export function initializeWebSocket(
   }
 
   return wsClient;
+}
+
+function buildWebSocketUrl(apiBaseUrl: string): string {
+  const httpUrl = resolveHttpUrl(apiBaseUrl);
+
+  const basePath = httpUrl.pathname.replace(/\/$/, "");
+  const path = `${basePath}/v1/ws`;
+
+  const wsUrl = new URL(httpUrl.toString());
+  wsUrl.pathname = path;
+  wsUrl.search = "";
+  wsUrl.hash = "";
+  wsUrl.protocol = wsUrl.protocol === "https:" ? "wss:" : "ws:";
+
+  return wsUrl.toString();
+}
+
+function resolveHttpUrl(apiBaseUrl: string): URL {
+  if (/^https?:\/\//i.test(apiBaseUrl)) {
+    return new URL(apiBaseUrl);
+  }
+
+  const origin = globalThis.location?.origin;
+  if (!origin) {
+    throw new Error(
+      "Cannot resolve relative API base URL without window.location.origin",
+    );
+  }
+
+  return new URL(apiBaseUrl, origin);
 }

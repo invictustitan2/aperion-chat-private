@@ -2,6 +2,8 @@
 
 Generated at: `2025-12-27T08:26:49Z`
 
+Note: this is a receipts-only snapshot; it does not reflect the planned Path B same-origin API mount (`/api/*` on `chat.aperion.cc`).
+
 Non-negotiables for this document:
 
 - Receipts only (commands + outputs); no speculative claims

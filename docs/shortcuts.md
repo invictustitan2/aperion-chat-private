@@ -2,6 +2,8 @@
 
 This project supports a voice request flow via the API Worker endpoint `/v1/voice-chat`.
 
+Note: there is also a compatibility route at `/api/voice-chat` (same handler). The canonical endpoint remains `/v1/voice-chat`.
+
 ## Create a Shortcut (basic)
 
 1. Open the **Shortcuts** app.

@@ -1,12 +1,29 @@
 # API Reference
 
-The Aperion Chat API is a RESTful interface running on Cloudflare Workers. It uses Bearer Token authentication and JSON payloads.
+This document describes the **HTTP API surface** (paths under `/v1/*`) implemented by the API Worker.
 
-**Base URL**: `https://api.aperion.cc` (Production) / `http://127.0.0.1:8787` (Local)
+Path B note (same-origin API):
+
+- Browser traffic can be served from `https://chat.aperion.cc/api/*` to eliminate CORS.
+- Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+- Until then, production browser builds should keep using `https://api.aperion.cc` via `VITE_API_BASE_URL`.
+- Source of truth for the migration plan: `docs/path-b/SAME_ORIGIN_PLAN.md` and `docs/adr/0001-same-origin-api.md`.
+
+**Base URL (external clients / current production)**: `https://api.aperion.cc`
+
+**Base URL (local)**: `http://127.0.0.1:8787`
 
 ## Authentication
 
-All requests must include the `Authorization` header:
+The Worker supports multiple auth modes, but production is expected to be protected by Cloudflare Access.
+
+### Cloudflare Access (production)
+
+Requests succeed when the caller has a valid Cloudflare Access session (browser cookies) or uses a service token (for automation).
+
+### Legacy bearer token (dev/test / token or hybrid modes)
+
+In token/hybrid modes, requests include an `Authorization` header:
 
 ```http
 Authorization: Bearer <API_TOKEN>
@@ -120,6 +137,8 @@ Retrieve all identity records.
 ### 5. Voice
 
 **POST** `/v1/voice-chat`
+
+Compatibility: the Worker also exposes the same handler at **POST** `/api/voice-chat`.
 
 Multipart form handling for audio input. Returns STT, AI Response, and TTS audio.
 

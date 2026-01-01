@@ -2,17 +2,21 @@
 
 ## Status
 
-Proposed (Phase 1 deliverable; no behavior changes yet)
+Accepted; implementation landed in repo (Phase 4). Production rollout/validation is still pending.
 
 ## Context
 
-Today the browser calls the API on a separate origin (`https://api.aperion.cc`) configured via the build-time variable `VITE_API_BASE_URL`.
+Today production browser builds typically call the API on a separate origin (`https://api.aperion.cc`) via the build-time variable `VITE_API_BASE_URL`.
+
+The repo now also supports a same-origin base (`/api`) for the browser, but this must not be assumed live until Cloudflare routing is deployed/validated.
 
 Evidence:
 
-- Web REST calls are constructed as `${VITE_API_BASE_URL}/v1/...`:
+- Web API base is resolved in `apps/web/src/lib/apiBaseUrl.ts`:
+  - Uses `VITE_API_BASE_URL` if set (absolute or relative `/api`).
+  - If unset: dev defaults to `http://127.0.0.1:8787`, prod defaults to `/api`.
+- Web REST calls and WebSocket URL construction consume that resolved base:
   - `apps/web/src/lib/api.ts`
-- WebSocket URL is derived from the same base and hardcodes `/v1/ws`:
   - `apps/web/src/lib/websocket.ts`
 - Production docs describe `VITE_API_BASE_URL=https://api.aperion.cc`:
   - `docs/environment-matrix.md`
@@ -48,8 +52,10 @@ The existing API origin remains supported for backward compatibility:
 ### Negative / Costs
 
 - Requires Cloudflare routing configuration so that `chat.aperion.cc/api/*` is served by the Worker.
-- Likely requires Worker changes because current routes are registered at `/v1/*` and `/v1/ws`.
+- Requires Worker changes because current routes are registered at `/v1/*` and `/v1/ws`.
 - May change path strings observed in logs/metrics unless normalized.
+
+Note: in the current implementation, the Worker rewrites `/api/v1/*` to `/v1/*` by constructing a new `Request` before routing, so request-level logging/metrics that read `new URL(request.url).pathname` observe normalized `/v1/*`.
 
 ### Compatibility
 
@@ -65,14 +71,13 @@ The existing API origin remains supported for backward compatibility:
 
 ## Rollout Plan
 
-This ADR is Phase 1 only. Implementation must not begin until Phase 2 and Phase 3 documents exist:
+Phase 2/3 documents exist and Phase 4 implementation has landed. Remaining work is operational rollout/validation:
 
-- Phase 2: design decisions (routing mechanism, Worker path handling, WS behavior, Access policy changes)
-- Phase 3: migration/rollback plan
+- Phase 3: execute the rollout/rollback plan
 
 ## Notes / Open Questions
 
 - Confirm Cloudflare precedence and safe setup for Pages on `chat.aperion.cc` plus Worker routing on `chat.aperion.cc/api/*`.
 - Decide whether the Worker should:
-  - accept `/api/v1/*` directly (rewrite/dual routes), or
+  - accept `/api/v1/*` directly (rewrite/dual routes; rewrite must be conditional and must not break existing non-`/v1` `/api/*` routes such as `/api/voice-chat`), or
   - remain `/v1/*` only with some platform-level strip (unlikely).

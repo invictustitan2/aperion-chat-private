@@ -1,5 +1,13 @@
 # Authentication System Overhaul - Implementation Summary
 
+Note: this document is a historical implementation summary. The current production posture is Cloudflare Access (JWKS) with an Access-session-only web UI. The planned Path B change (same-origin API under `https://chat.aperion.cc/api/*`) is tracked in `docs/path-b/SAME_ORIGIN_PLAN.md`.
+
+For current operator-facing setup instructions, prefer:
+
+- `docs/authentication-setup.md`
+- `docs/auth-debugging.md`
+- `docs/DEPLOY_PROD_RUN.md`
+
 ## Overview
 
 Successfully implemented a comprehensive, production-ready authentication system for Aperion Chat with proper token generation, secrets management, environment-aware CORS, and extensive verification tooling.

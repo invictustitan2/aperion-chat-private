@@ -1,5 +1,7 @@
 ## Plan: Cloudflare Access Auth Unification (JWKS + DO-Safe)
 
+Note (2026-01): Path B work is underway to move browser traffic to a same-origin API mount (`https://chat.aperion.cc/api/*`) to eliminate CORS. This plan remains relevant for Access/JWKS as the auth boundary, but the browser-visible API hostname/path will change during the Path B rollout.
+
 Replace the current static bearer-token and WS query-token auth with a single, shared “auth truth” based on **Cloudflare Zero Trust Access** identity for both HTTP and WebSocket traffic. Implement **real Access JWT verification (JWKS)** and ensure the **Durable Object re-verifies** auth at WS accept time (the DO must not trust an unsigned userId).
 
 Keep legacy bearer token auth only for local/dev/test behind an explicit `APERION_AUTH_MODE` contract that **fails closed in prod** when Access config is missing. Note: the shipped web UI is Access-session-only (it does not send browser bearer tokens). Then add prod-safe WS close-code logging + spam reduction, make preferences return defaults for known keys, and strip/gate Settings debug/token info in production. Update unit + e2e tests to keep `pnpm test` and `pnpm test:e2e` green.

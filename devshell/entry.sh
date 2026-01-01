@@ -30,14 +30,14 @@ Commands:
   deploy:validate     Quick network-gated prod validator (safe)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
   cf:doctor          Run Cloudflare preflight checks (read-only)
-  cf:worker:audit    Audit DNS + Worker binding for api.aperion.cc (safe; no secrets)
-  cf:worker:smoke    Probe prod endpoints via service token (safe; no secrets)
+  cf:worker:audit    Audit DNS + Worker binding (defaults api.aperion.cc; supports --surface/--base-url)
+  cf:worker:smoke    Probe API endpoints (defaults api.aperion.cc; supports --surface/--base-url)
   cf:worker:deploy   Deploy API Worker (env-aware; safe summary)
   cf:worker:secrets:list  List Worker secret names + required presence (safe; no secrets)
   cf:worker:secrets:apply Interactively set required Worker secrets (safe; no secrets)
   cf:worker:ensure-domain Ensure Worker custom domain is prepareable (dry-run by default)
   cf:pages:deploy    Deploy Cloudflare Pages (build-var safe)
-  cf:access:bootstrap Bootstrap Access IDs (safe; no secrets)
+  cf:access:bootstrap Bootstrap Access IDs (defaults api.aperion.cc; supports --surface/--base-url/--host)
   cf:access:audit    Audit Cloudflare Access apps/policies (safe; no secrets)
   ide:status         Print IDE/environment context status
   secrets:status     Print redacted secret status
@@ -45,8 +45,8 @@ Commands:
   secrets:set        Interactively set repo-local secrets (safe)
   secrets:wizard     Interactive secrets configurator (safe)
   secrets:doctor     Diagnose secret overrides (safe)
-  access:debug       Debug Access service-token redirects (safe)
-  access:probe       Probe api.aperion.cc with/without service token headers (safe)
+  access:debug       Debug Access service-token redirects (defaults api.aperion.cc; supports --surface/--base-url)
+  access:probe       Probe API surface with/without service token headers (supports --surface/--base-url)
   vscode:logs:start  Start VS Code log capture into receipts/
   vscode:logs:stop   Stop VS Code log capture
   vscode:logs:status Show VS Code log capture status

@@ -1,5 +1,7 @@
 # Production Deploy Evidence
 
+Note: this is a point-in-time snapshot of the then-current production surface (`api.aperion.cc` + `chat.aperion.cc`). The planned same-origin API mount (`/api/*` on `chat.aperion.cc`) is tracked separately in `docs/path-b/SAME_ORIGIN_PLAN.md`.
+
 ## Version
 
 - Commit: 717d296

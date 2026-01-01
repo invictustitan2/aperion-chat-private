@@ -41,6 +41,11 @@ Rules:
 - Frontend (Pages): `https://chat.aperion.cc`
 - API (Worker): `https://api.aperion.cc`
 
+Path B note (same-origin API): mount the API under the same origin as the UI:
+
+- Planned browser-facing API: `https://chat.aperion.cc/api/*`
+- Implementation exists in the repo, but this is not assumed to be configured/live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+
 ## Where These Names Appear
 
 - Pages project name: `.github/workflows/deploy-web.yml`, `.github/workflows/preview.yml`

@@ -6,10 +6,34 @@ shift || true
 
 cd "$repo_root"
 
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+# shellcheck source=devshell/lib/surfaces.sh
+source "${repo_root}/devshell/lib/surfaces.sh"
+
 # shellcheck source=devshell/lib/secrets.sh
 source "${repo_root}/devshell/lib/secrets.sh"
 
-API_URL="https://api.aperion.cc/v1/identity"
+surface="api"
+base_url_override=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --surface)
+      surface="${2:-}"
+      shift 2
+      ;;
+    --base-url)
+      base_url_override="${2:-}"
+      shift 2
+      ;;
+    *)
+      devshell_die "unknown arg: $1"
+      ;;
+  esac
+done
+
+BASE_URL="$(devshell_api_base_url_resolve "$surface" "$base_url_override")"
+API_URL="${BASE_URL}/v1/identity"
 
 first_status_line() {
   awk 'NR==1 {print; exit}'
@@ -63,6 +87,16 @@ EOF
 main() {
   echo "== Access debug (safe; no secrets) =="
 
+  local host path_prefix
+  host='' ; path_prefix=''
+  local _parts
+  mapfile -t _parts < <(devshell_split_url_host_and_path_prefix "$BASE_URL")
+  host="${_parts[0]:-}"
+  path_prefix="${_parts[1]:-}"
+  if [[ "$path_prefix" == '/' ]]; then
+    path_prefix=''
+  fi
+
   aperion_secrets_load
   aperion_secrets_validate >/dev/null
 
@@ -101,7 +135,7 @@ main() {
       echo "Result: redirect from Access (likely service auth not applied or not matching)."
       echo "Likely causes checklist:"
       echo "- Access policy for this app must include a Service Auth rule (Action=SERVICE AUTH), not just ALLOW."
-      echo "- Access app hostname/path must match: api.aperion.cc and /v1/* (or broader)."
+      echo "- Access app hostname/path must match: ${host} and ${path_prefix}/v1/* (or broader)."
       echo "- Enable 'Return 401 Response for Service Auth policies' to avoid redirects."
       echo "- Confirm policy changes are saved/published (no pending drafts)."
       exit 10
@@ -127,7 +161,7 @@ main() {
         if grep -q 'error code: 1033' "$body_file" 2>/dev/null; then
           echo "Result: Cloudflare edge error 1033 (route/origin unreachable)."
           echo "Most common causes:"
-          echo "- Missing DNS record for api.aperion.cc (must exist and be proxied)"
+          echo "- Missing DNS record for ${host} (must exist and be proxied)"
           echo "- Worker route/custom domain not attached to the Worker"
           echo "- Leftover Tunnel/origin config expecting a tunnel-backed origin"
         else

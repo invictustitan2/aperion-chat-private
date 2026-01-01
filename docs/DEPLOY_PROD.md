@@ -2,6 +2,8 @@
 
 This doc is generated from what the repo code and configs actually read.
 
+Path B note (same-origin API): this checklist reflects the **current** production contract where the browser calls the API on `https://api.aperion.cc` via `VITE_API_BASE_URL`. Path B is implemented in the repo (Worker route + `/api/v1/*` rewrite + web support for a relative `/api` base), but must not be assumed live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+
 For a step-by-step execution runbook (exact commands + smoke tests), see [docs/DEPLOY_PROD_RUN.md](docs/DEPLOY_PROD_RUN.md).
 
 ## Hard Constraints (enforced by code/CI)
@@ -17,6 +19,8 @@ Create **two** Self-hosted applications:
 1. **Chat UI app**
    - **Application domain**: `chat.aperion.cc`
    - **Paths**: `/*`
+
+Note: After Path B rollout, browser API and WS traffic is still under this domain (e.g. `/api/v1/*` and `/api/v1/ws`), so this app continues to protect the same-origin surface.
 
 2. **API app**
    - **Application domain**: `api.aperion.cc`
@@ -87,7 +91,14 @@ The web app reads these env vars via Vite `import.meta.env.*`:
 
 **Required (production):**
 
-- `VITE_API_BASE_URL` = `https://api.aperion.cc`
+- Current (cross-origin): `VITE_API_BASE_URL=https://api.aperion.cc`
+
+After Path B rollout (same-origin):
+
+- Prefer relative base: `VITE_API_BASE_URL=/api`, or
+- Unset `VITE_API_BASE_URL` to use the production default `/api`.
+
+Do not switch production to `/api` (or unset `VITE_API_BASE_URL`) until `chat.aperion.cc/api/*` is actually routed to the Worker and validated.
 
 **Optional (dev/test only):**
 

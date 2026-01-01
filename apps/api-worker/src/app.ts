@@ -157,11 +157,26 @@ export function createApp() {
   return {
     fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
       try {
-        return await router.fetch(request as IRequest, env, ctx);
+        const rewritten = maybeRewritePathForSameOriginMount(request);
+        return await router.fetch(rewritten as IRequest, env, ctx);
       } catch (err: unknown) {
         console.error("Unhandled error:", err);
         return errorHandler(err);
       }
     },
   };
+}
+
+function maybeRewritePathForSameOriginMount(request: Request): Request {
+  const url = new URL(request.url);
+
+  // Path B mount: the browser will call /api/v1/* on chat.aperion.cc.
+  // Rewrite only the v1 API surface so we do not break existing non-v1 /api/* routes
+  // like /api/voice-chat.
+  if (url.pathname === "/api/v1" || url.pathname.startsWith("/api/v1/")) {
+    url.pathname = url.pathname.replace(/^\/api/, "");
+    return new Request(url.toString(), request);
+  }
+
+  return request;
 }

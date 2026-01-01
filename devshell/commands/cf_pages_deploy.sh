@@ -42,7 +42,7 @@ vite_auth_mode="${VITE_AUTH_MODE:-}"
 printf 'PAGES.BUILD.VITE_API_BASE_URL: %s\n' "$vite_api_base_url"
 printf 'PAGES.BUILD.VITE_AUTH_MODE: %s\n' "$vite_auth_mode"
 
-expected_prod_base='https://api.aperion.cc'
+expected_prod_base="${APERION_EXPECTED_VITE_API_BASE_URL:-https://api.aperion.cc}"
 
 # Enforce prod safety guardrail unless explicitly forced.
 if [[ -z "$vite_api_base_url" || "$vite_api_base_url" != "$expected_prod_base" ]]; then

@@ -167,13 +167,16 @@ devshell_access_test() {
 
   local status url
 
+  local base_url
+  base_url="${APERION_API_BASE_URL:-https://api.aperion.cc}"
+
   # Prefer identity, but fall back to other canonical endpoints if identity is
   # missing in the currently deployed Worker. Keep stdout as status code only.
   local candidates=(
-    "https://api.aperion.cc/v1/identity"
-    "https://api.aperion.cc/v1/conversations"
-    "https://api.aperion.cc/v1/semantic/search?query=test"
-    "https://api.aperion.cc/"
+    "${base_url}/v1/identity"
+    "${base_url}/v1/conversations"
+    "${base_url}/v1/semantic/search?query=test"
+    "${base_url}/"
   )
 
   status=''

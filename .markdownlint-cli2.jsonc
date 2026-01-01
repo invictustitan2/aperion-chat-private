@@ -1,0 +1,30 @@
+// Markdown lint configuration (optional).
+//
+// Run:
+//   pnpm -s run lint:md
+// Auto-fix:
+//   pnpm -s run fmt:md
+//
+// This is intentionally a *minimal* rule set to avoid noisy failures.
+{
+  "config": {
+    "default": false,
+
+    // No trailing spaces
+    "MD009": true,
+
+    // No multiple consecutive blank lines
+    "MD012": true,
+
+    // Files end with a single newline
+    "MD047": true,
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "**/node_modules/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    "apps/**/node_modules/**",
+  ],
+}

@@ -2,14 +2,17 @@
 
 This guide covers deploying the Aperion Chat system to Cloudflare, including GitHub Actions workflows, secrets configuration, and domain setup.
 
+Path B note (same-origin API): the repo supports a same-origin browser API surface at `https://chat.aperion.cc/api/*` to eliminate CORS. Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, browser builds typically call `https://api.aperion.cc` (configured via `VITE_API_BASE_URL`).
+
 ## Architecture Overview
 
 Aperion Chat consists of two main components deployed to Cloudflare:
 
 1. **API Worker** (`apps/api-worker`)
    - Deployed to: Cloudflare Workers
-   - Domain: `api.aperion.cc`
-   - Route: `api.aperion.cc/*`
+
+- Domain (current surface): `api.aperion.cc`
+- Route: `api.aperion.cc/*`
 
 2. **Web App** (`apps/web`)
    - Deployed to: Cloudflare Pages
@@ -113,9 +116,9 @@ The web app needs environment variables for build-time configuration.
 1. Go to **Pages → aperion-chat-private → Settings → Environment variables**
 2. Add the following variables for **Production**:
 
-| Variable Name       | Value                    | Description      |
-| ------------------- | ------------------------ | ---------------- |
-| `VITE_API_BASE_URL` | `https://api.aperion.cc` | API endpoint URL |
+| Variable Name       | Value                    | Description                                               |
+| ------------------- | ------------------------ | --------------------------------------------------------- |
+| `VITE_API_BASE_URL` | `https://api.aperion.cc` | API endpoint URL (current; Path B will change this later) |
 
 The web UI is **Access-session-only** and must not ship any `VITE_AUTH_TOKEN` references.
 
@@ -183,7 +186,7 @@ Deployments are triggered automatically by GitHub Actions **after CI passes**:
     - `.github/workflows/deploy-api.yml`
 - **Workflow:** `.github/workflows/deploy-api.yml`
 - **Environment:** `production`
-- **URL:** https://api.aperion.cc
+- **URL (current API surface):** https://api.aperion.cc
 
 #### Production Web App
 
@@ -287,7 +290,7 @@ CLOUDFLARE_API_TOKEN=<your-cloudflare-token>
 CLOUDFLARE_ACCOUNT_ID=<your-account-id>
 
 # Optional: legacy bearer token for local API-only dev (web UI does not use this)
-AUTH_TOKEN=<your-token>
+VITE_AUTH_TOKEN=<your-token>
 ```
 
 ### GitHub Actions (Secrets)
@@ -309,9 +312,9 @@ AUTH_TOKEN=<your-token>
 
 ### Cloudflare Pages (Environment Variables)
 
-| Variable            | Value                    | Environment |
-| ------------------- | ------------------------ | ----------- |
-| `VITE_API_BASE_URL` | `https://api.aperion.cc` | Production  |
+| Variable            | Value                    | Environment                                         |
+| ------------------- | ------------------------ | --------------------------------------------------- |
+| `VITE_API_BASE_URL` | `https://api.aperion.cc` | Production (current; Path B will change this later) |
 
 ## Deployment Commands
 
@@ -403,6 +406,9 @@ npx wrangler d1 migrations apply aperion-memory --remote
 
 ### CORS Errors in Production
 
+Note: this troubleshooting section is only relevant while the browser calls the API on a separate origin (current default: `https://api.aperion.cc`).
+Path B is intended to eliminate browser CORS by mounting the API under the same origin as the UI (`https://chat.aperion.cc/api/*`).
+
 **Problem:** Frontend can't call API due to CORS.
 
 **Solution:**
@@ -451,6 +457,9 @@ EOF
 2. If you use an Access service token, rotate it periodically and update both GitHub and Worker secrets.
 
 ### CORS Configuration
+
+Note: this is only required while browser traffic is cross-origin (browser on `chat.aperion.cc`, API on `api.aperion.cc`).
+Once Path B’s same-origin `/api/*` mount is rolled out, browser CORS configuration should no longer be part of normal operation.
 
 The API restricts CORS to:
 

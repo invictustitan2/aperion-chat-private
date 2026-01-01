@@ -2,12 +2,19 @@
 
 These steps help diagnose Cloudflare Access session issues and CORS failures.
 
+Path B note (same-origin API): CORS troubleshooting applies to the **current** cross-origin setup where the browser calls `https://api.aperion.cc`. The repo supports a same-origin surface at `https://chat.aperion.cc/api/*` (implementation exists), but production should not be assumed to be on that surface until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+
 > **📚 For comprehensive setup instructions**, see [Authentication Setup Guide](./authentication-setup.md)
 
 ## Quick checklist
 
 1. Ensure you're signed into Cloudflare Access for both `chat.aperion.cc` and `api.aperion.cc`.
 2. Ensure `VITE_API_BASE_URL` is set correctly (build-time).
+
+   Notes:
+   - Cross-origin mode (current production): `VITE_API_BASE_URL=https://api.aperion.cc`
+   - Same-origin mode (after rollout): `VITE_API_BASE_URL=/api` or unset to use the production default `/api`
+
 3. Verify the repo guardrails are green:
 
    ```bash
@@ -53,7 +60,9 @@ The Settings auth debug panel is intentionally hidden in production. Use the bro
 
 ### CORS Errors
 
-**Cause:** origin not allowed or wrong `VITE_API_BASE_URL`.
+**Cause (current cross-origin mode):** origin not allowed or wrong `VITE_API_BASE_URL`.
+
+If/when Path B is rolled out (same-origin `/api/*`), browser CORS failures should no longer be part of normal operation.
 
 **Fix:** Check that you're accessing from:
 

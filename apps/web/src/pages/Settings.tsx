@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import { applyTheme, getTheme, onThemeChange, toggleTheme } from "../lib/theme";
 import { shouldShowDevDebugUi } from "../lib/authMode";
+import { apiBaseUrlHints, getApiBaseUrl } from "../lib/apiBaseUrl";
 
 export function Settings() {
   const [isDark, setIsDark] = useState(() => {
@@ -36,10 +37,9 @@ export function Settings() {
   });
 
   const showDebug = shouldShowDevDebugUi();
-  const apiBaseUrl = useMemo(
-    () => import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787",
-    [],
-  );
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+
+  const apiBase = useMemo(() => apiBaseUrlHints(apiBaseUrl), [apiBaseUrl]);
 
   const [authCheck, setAuthCheck] = useState<
     | { status: "idle" }
@@ -208,12 +208,20 @@ export function Settings() {
                 )}
                 {authCheck.status === "error" && (
                   <span>
-                    Auth failed: {authCheck.detail}. Confirm CORS for{" "}
-                    {apiBaseUrl}.
+                    Auth failed: {authCheck.detail}.{" "}
+                    {apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin
+                      ? `Confirm CORS for ${apiBaseUrl}.`
+                      : "Confirm you have an active Access session."}
                   </span>
                 )}
                 {authCheck.status === "idle" && (
-                  <span>Run the self-test to validate auth and CORS.</span>
+                  <span>
+                    Run the self-test to validate auth
+                    {apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin
+                      ? " and CORS"
+                      : ""}
+                    .
+                  </span>
                 )}
                 {authCheck.status === "running" && (
                   <span>Checking /v1/identity...</span>

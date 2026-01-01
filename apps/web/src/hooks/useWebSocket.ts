@@ -5,9 +5,9 @@ import {
   WebSocketMessage,
 } from "../lib/websocket";
 import { getDevAuthToken, shouldAppendWebSocketToken } from "../lib/authMode";
+import { getApiBaseUrl } from "../lib/apiBaseUrl";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8787";
+const API_BASE_URL = getApiBaseUrl();
 const AUTH_TOKEN = shouldAppendWebSocketToken() ? getDevAuthToken() : undefined;
 
 export interface UseWebSocketReturn {

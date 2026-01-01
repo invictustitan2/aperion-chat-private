@@ -20,10 +20,33 @@ cd "$repo_root"
 # - Never put secrets into argv.
 # - Headers provided via curl -K - (stdin config).
 
-BASE_URL="https://api.aperion.cc"
+# shellcheck source=devshell/lib/common.sh
+source "${repo_root}/devshell/lib/common.sh"
+# shellcheck source=devshell/lib/surfaces.sh
+source "${repo_root}/devshell/lib/surfaces.sh"
 
 # shellcheck source=devshell/lib/secrets.sh
 source "${repo_root}/devshell/lib/secrets.sh"
+
+surface="api"
+base_url_override=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --surface)
+      surface="${2:-}"
+      shift 2
+      ;;
+    --base-url)
+      base_url_override="${2:-}"
+      shift 2
+      ;;
+    *)
+      devshell_die "unknown arg: $1"
+      ;;
+  esac
+done
+
+BASE_URL="$(devshell_api_base_url_resolve "$surface" "$base_url_override")"
 
 first_status_line() { awk 'NR==1 {print; exit}'; }
 first_header() {

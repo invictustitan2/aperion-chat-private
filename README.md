@@ -19,7 +19,9 @@
 
 See `./scripts/bootstrap.sh` to get started.
 
-For authentication and CORS troubleshooting, see [`docs/auth-debugging.md`](./docs/auth-debugging.md).
+For authentication and current cross-origin CORS troubleshooting, see [`docs/auth-debugging.md`](./docs/auth-debugging.md).
+
+Path B note (same-origin API): the repo supports serving browser API traffic from `https://chat.aperion.cc/api/*` to eliminate CORS. Implementation exists in the repo, but production should not be assumed to be on that surface until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
 
 ## Dev Shell
 
@@ -86,7 +88,7 @@ Prints only HTTP status + Location (no querystring) and a short checklist.
 
 ## Deployments
 
-- **Production API:** [api.aperion.cc](https://api.aperion.cc) (Cloudflare Workers)
+- **Production API (current surface / external clients):** [api.aperion.cc](https://api.aperion.cc) (Cloudflare Workers)
 - **Production Web:** [chat.aperion.cc](https://chat.aperion.cc) (Cloudflare Pages)
 - **Deployment Guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions
 

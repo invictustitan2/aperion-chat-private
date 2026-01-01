@@ -39,6 +39,7 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 - `./dev shell` (preferred entrypoint)
 - `./dev cf:access:bootstrap` (populate Access IDs; safe)
 - `./dev cf:access:audit` (audit Access apps/policies; safe)
+- `./dev cf:doctor` (read-only Cloudflare preflight checks; safe)
 - `./dev secrets:status`
 - `./dev secrets:where` (show env/.env/.dev.vars/secrets-file sources; safe)
 - `./dev secrets:set CLOUDFLARE_API_TOKEN` (interactive; writes to .env)
@@ -70,6 +71,28 @@ Requires `CLOUDFLARE_API_TOKEN` in the environment. Prints safe values you can p
 ```
 
 Runs a single authenticated request to `https://api.aperion.cc/v1/identity` using your service token (env-or-file) and prints only status + Location hostname/path.
+
+Surface controls (preparing for Path B):
+
+- Default surface is the current external API: `https://api.aperion.cc`
+- You can target the planned browser-facing surface with:
+  - `./dev access:debug --surface browser`
+  - `./dev access:probe --surface browser`
+  - `./dev cf:access:audit --surface browser`
+- Or override explicitly:
+  - `./dev access:probe --base-url https://chat.aperion.cc/api`
+
+Doctor target overrides (preparing for Path B and other environments):
+
+- Override the expected hostnames:
+  - `./dev cf:doctor --pages-host chat.aperion.cc --worker-host api.aperion.cc`
+
+Environment overrides:
+
+- `APERION_API_BASE_URL` (default: `https://api.aperion.cc`)
+- `APERION_BROWSER_API_BASE_URL` (default: `https://chat.aperion.cc/api`)
+
+Path B note: devshell tooling defaults to the `api.aperion.cc` surface, but already supports probing the browser surface via `--surface browser` (e.g. `--base-url https://chat.aperion.cc/api`) for rollout verification while preserving backward compatibility.
 
 ## Shell tooling (fmt/lint)
 

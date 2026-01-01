@@ -2,11 +2,13 @@
 
 This runbook is meant to be executed top-to-bottom when deploying production.
 
+Path B note (same-origin API): this runbook reflects the **current** production contract where the browser calls the API at `https://api.aperion.cc` via `VITE_API_BASE_URL`. Path B is implemented in the repo (Worker route + `/api/v1/*` rewrite + web support for `/api` base), but must not be assumed live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+
 ## Preconditions (must already be true)
 
 - Cloudflare Access is configured as described in [docs/DEPLOY_PROD.md](docs/DEPLOY_PROD.md).
 - Worker production vars are set (at minimum: `APERION_AUTH_MODE=access`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`).
-- Pages production env var is set: `VITE_API_BASE_URL=https://api.aperion.cc`.
+- Pages production env var is set (current cross-origin): `VITE_API_BASE_URL=https://api.aperion.cc`.
 
 ### Required configuration (where each value lives)
 
@@ -20,7 +22,12 @@ Cloudflare Worker production vars (required):
 
 Cloudflare Pages production env vars (required):
 
-- `VITE_API_BASE_URL=https://api.aperion.cc`
+- Current: `VITE_API_BASE_URL=https://api.aperion.cc`
+
+After Path B rollout (do not apply early):
+
+- `VITE_API_BASE_URL=/api` (preferred), or
+- unset `VITE_API_BASE_URL` to use the production default `/api`.
 
 GitHub Actions secrets (required for deploy + post-deploy authenticated checks):
 

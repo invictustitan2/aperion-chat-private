@@ -1,5 +1,7 @@
 # Onboarding & Setup
 
+Path B note (same-origin API): the repo supports a same-origin browser API surface at `https://chat.aperion.cc/api/*` to eliminate CORS. Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, browser builds should keep calling `https://api.aperion.cc` via `VITE_API_BASE_URL`.
+
 ## Prerequisites
 
 - Node.js 18+
@@ -40,8 +42,11 @@ See [Deploy to Cloudflare](./deploy-cloudflare.md) for production deployment ins
 
 ## 4. Authentication
 
-The system uses a shared secret Bearer Token for API access.
-See [Authentication Setup](./authentication-setup.md) for configuring tokens in local and production environments.
+Production auth is Cloudflare Access (browser carries an Access session; the Worker verifies identity via JWKS).
+
+Legacy bearer-token auth exists for API-only dev/test scenarios (token/hybrid modes), but the shipped web UI is Access-session-only.
+
+See [Authentication Setup](./authentication-setup.md) for the current setup.
 
 ## 5. Development Workflow
 

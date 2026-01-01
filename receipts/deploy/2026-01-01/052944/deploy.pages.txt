@@ -1,0 +1,4 @@
+PAGES.BUILD.VITE_API_BASE_URL: 
+PAGES.BUILD.VITE_AUTH_MODE: 
+WARN: VITE_API_BASE_URL is not production (https://api.aperion.cc).
+REFUSE: pass --force to proceed anyway.
