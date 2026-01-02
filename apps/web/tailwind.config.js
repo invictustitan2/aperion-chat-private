@@ -39,7 +39,7 @@ export default {
       },
       fontFamily: {
         // Maintain system fonts but allow for future customization
-        sans: ["InterVariable", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       fontSize: {

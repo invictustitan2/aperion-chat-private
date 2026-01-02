@@ -45,6 +45,11 @@ chmod 600 "$HOME/.config/aperion/cf_access.env"
 ## Commands
 
 - `./dev shell` (preferred entrypoint)
+- `./dev test:unit` (Vitest; receipt-first)
+- `./dev test:coverage` (Vitest coverage; receipt-first)
+- `./dev e2e:local` (Playwright against local Vite; receipt-first)
+- `RUN_NETWORK_TESTS=1 ./dev e2e:prod` (Playwright prod smoke; receipt-first)
+- `./dev e2e:auth:save:prod` (interactive; creates Playwright `storageState` under `.ref/`)
 - `./dev cf:access:bootstrap` (populate Access IDs; safe)
 - `./dev cf:access:audit` (audit Access apps/policies; safe)
 - `./dev cf:doctor` (read-only Cloudflare preflight checks; safe)
@@ -115,6 +120,22 @@ The `pnpm` scripts for shell formatting/linting use a NUL-separated file list an
 
 - Secrets are never printed; only lengths and HTTP status codes.
 - Network checks are disabled by default. Enable with `RUN_NETWORK_TESTS=1`.
+
+## Production E2E (safe)
+
+Create an authenticated Playwright `storageState` file (do not commit; contains cookies):
+
+```bash
+./dev e2e:auth:save:prod .ref/playwright/storageState.chat.prod.json
+```
+
+Run the prod smoke suite (network gated):
+
+```bash
+RUN_NETWORK_TESTS=1 \
+PLAYWRIGHT_STORAGE_STATE=.ref/playwright/storageState.chat.prod.json \
+./dev e2e:prod
+```
 
 ## bootstrap-dev.sh fallbacks
 

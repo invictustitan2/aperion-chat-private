@@ -1,0 +1,30 @@
+TEST.COVERAGE.UTC: 2026-01-02T15:48:31Z
+TEST.COVERAGE.EXIT_CODE: 1
+TEST.COVERAGE.NODE_EXIT_CODE: 1
+TEST.COVERAGE.WEB_EXIT_CODE: 0
+COVERAGE_DIR: coverage/vitest
+COVERAGE_NODE_SNAPSHOT_DIR: receipts/test-coverage.20260102-154751Z/coverage-node
+COVERAGE_WEB_SNAPSHOT_DIR: receipts/test-coverage.20260102-154751Z/coverage-web
+
+COVERAGE_NODE_TOTAL: node: (missing coverage-summary.json)
+COVERAGE_WEB_TOTAL: web: Lines 82.81% (6177/7459), Statements 82.81% (6177/7459), Branches 75.70% (860/1136), Functions 70.52% (268/380)
+
+COVERAGE_NODE_CRITICAL_FILTER: apps/api-worker/src/index.ts, apps/api-worker/src/app.ts, apps/api-worker/src/middleware/
+COVERAGE_NODE_CRITICAL_TOTAL: node-critical: (missing coverage-summary.json)
+COVERAGE_WEB_CRITICAL_FILTER: apps/web/src/pages/, apps/web/src/lib/
+COVERAGE_WEB_CRITICAL_TOTAL: web-critical: Lines 79.31% (3742/4718), Statements 79.31% (3742/4718), Branches 70.97% (506/713), Functions 70.30% (187/266)
+
+COVERAGE_NODE_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_NODE_TOP_UNCOVERED_01: (missing coverage-summary.json)
+
+COVERAGE_WEB_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_WEB_TOP_UNCOVERED_01: apps/web/src/pages/Chat.tsx (uncoveredLines=518, lines=62.94% 880/1398)
+COVERAGE_WEB_TOP_UNCOVERED_02: apps/web/src/pages/Memory.tsx (uncoveredLines=203, lines=69.65% 466/669)
+COVERAGE_WEB_TOP_UNCOVERED_03: apps/web/src/lib/api.ts (uncoveredLines=117, lines=79.50% 454/571)
+COVERAGE_WEB_TOP_UNCOVERED_04: apps/web/src/hooks/useWebSocket.ts (uncoveredLines=62, lines=55.07% 76/138)
+COVERAGE_WEB_TOP_UNCOVERED_05: apps/web/src/components/Layout.tsx (uncoveredLines=47, lines=76.61% 154/201)
+COVERAGE_WEB_TOP_UNCOVERED_06: apps/web/src/components/CommandPalette.tsx (uncoveredLines=45, lines=88.34% 341/386)
+COVERAGE_WEB_TOP_UNCOVERED_07: apps/web/src/lib/websocket.ts (uncoveredLines=40, lines=82.06% 183/223)
+COVERAGE_WEB_TOP_UNCOVERED_08: apps/web/src/lib/errorLog.ts (uncoveredLines=26, lines=77.58% 90/116)
+COVERAGE_WEB_TOP_UNCOVERED_09: apps/web/src/components/MessageContent.tsx (uncoveredLines=23, lines=89.30% 192/215)
+COVERAGE_WEB_TOP_UNCOVERED_10: apps/web/src/pages/Identity.tsx (uncoveredLines=22, lines=92.43% 269/291)

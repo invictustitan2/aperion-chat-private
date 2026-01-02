@@ -115,5 +115,68 @@ describe("API Client", () => {
         expect.any(Object),
       );
     });
+
+    it("covers additional endpoint methods and request normalization", async () => {
+      fetchMock.mockImplementation(async (url: string, _init?: RequestInit) => {
+        const u = String(url);
+
+        if (u.includes("/v1/chat/export")) {
+          return {
+            ok: true,
+            blob: async () => new Blob(["x"], { type: "text/plain" }),
+            text: async () => "",
+          } as unknown;
+        }
+
+        return {
+          ok: true,
+          json: async () => ({ success: true }),
+          text: async () => "",
+        } as unknown;
+      });
+
+      await api.preferences.set("k", "v");
+      await api.conversations.rename("c1", "t");
+      await api.conversations.delete("c1");
+
+      await api.episodic.update("e1", { tags: ["a"], importance: 0.7 });
+      await api.episodic.clear();
+
+      await api.semantic.create("c", ["r"], { source_type: "user" });
+      await api.semantic.search("q", 2);
+      await api.semantic.summarize(["a", "b"], "q");
+
+      await api.chat.send("hi", [{ role: "user", content: "h" }], "conv");
+      await api.chat.export("<p>hi</p>");
+
+      await api.chat.analyze(new Blob(["img"], { type: "image/png" }), "p");
+      await api.chat.voice(new Blob(["aud"], { type: "audio/webm" }));
+
+      await api.identity.list();
+      await api.receipts.list(5, 0);
+      await api.logs.list(3);
+      await api.logs.clear();
+      await api.knowledge.list(5, 0, "q");
+      await api.knowledge.promote("s1");
+      await api.insights.summarize("q");
+      await api.relationships.list({ kind: "semantic", id: "s1" });
+      await api.relationships.create({
+        type: "EVIDENCE_FOR",
+        from_kind: "semantic",
+        from_id: "s1",
+        to_kind: "semantic",
+        to_id: "s2",
+        rationale: "r",
+      });
+
+      // GET requests should avoid setting Content-Type when there is no body.
+      fetchMock.mockClear();
+      await api.preferences.get("test-key");
+      const lastInit = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+      expect(lastInit?.headers).toBeInstanceOf(Headers);
+      const h = lastInit?.headers as Headers;
+      expect(h.get("content-type") ?? h.get("Content-Type")).toBe(null);
+      expect(h.get("Accept")).toBe("application/json");
+    });
   });
 });

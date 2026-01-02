@@ -334,6 +334,8 @@ new_classes = ["ChatState"]
 # AI, VECTORIZE, R2, BROWSER, QUEUES are not needed for auth tests
 # Trigger deployment for permission check
 
+NOTE: The block below is a captured excerpt (command output) and may drift from the current `package.json` over time.
+
 + sed -n '1,260p' package.json
 {
   "name": "aperion-chat-private",
@@ -353,8 +355,8 @@ new_classes = ["ChatState"]
     "test:node": "vitest run --environment node --exclude \"apps/web/src/**/*.test.*\" --exclude \"apps/web/src/**/*.spec.*\"",
     "test:web": "vitest run --environment jsdom --dir apps/web/src",
     "test:coverage": "pnpm test:coverage:node && pnpm test:coverage:web",
-    "test:coverage:node": "vitest run --coverage --environment node --exclude \"apps/web/src/**/*.test.*\" --exclude \"apps/web/src/**/*.spec.*\"",
-    "test:coverage:web": "vitest run --coverage --environment jsdom --dir apps/web/src",
+    "test:coverage:node": "vitest run --coverage -c vitest.coverage.node.config.ts",
+    "test:coverage:web": "vitest run --coverage -c vitest.coverage.web.config.ts --dir apps/web/src",
     "coverage:report": "node ./scripts/coverage/report.mjs",
     "test:e2e": "playwright test",
     "guard:prod-secrets": "node ./scripts/guard-prod-secrets.mjs",

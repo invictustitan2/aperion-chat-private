@@ -1,0 +1,21 @@
+TEST.COVERAGE.UTC: 2026-01-02T12:11:45Z
+TEST.COVERAGE.EXIT_CODE: 1
+TEST.COVERAGE.NODE_EXIT_CODE: 1
+TEST.COVERAGE.WEB_EXIT_CODE: 1
+COVERAGE_DIR: coverage/vitest
+COVERAGE_NODE_SNAPSHOT_DIR: receipts/test-coverage.20260102-121103Z/coverage-node
+COVERAGE_WEB_SNAPSHOT_DIR: receipts/test-coverage.20260102-121103Z/coverage-web
+
+COVERAGE_NODE_TOTAL: node: (missing coverage-summary.json)
+COVERAGE_WEB_TOTAL: web: (missing coverage-summary.json)
+
+COVERAGE_NODE_CRITICAL_FILTER: apps/api-worker/src/index.ts, apps/api-worker/src/app.ts, apps/api-worker/src/middleware/
+COVERAGE_NODE_CRITICAL_TOTAL: node-critical: (missing coverage-summary.json)
+COVERAGE_WEB_CRITICAL_FILTER: apps/web/src/pages/, apps/web/src/lib/
+COVERAGE_WEB_CRITICAL_TOTAL: web-critical: (missing coverage-summary.json)
+
+COVERAGE_NODE_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_NODE_TOP_UNCOVERED_01: (missing coverage-summary.json)
+
+COVERAGE_WEB_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_WEB_TOP_UNCOVERED_01: (missing coverage-summary.json)

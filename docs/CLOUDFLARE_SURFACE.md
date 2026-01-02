@@ -10,6 +10,8 @@
 
 This document records the authoritative Cloudflare “surfaces” this repo owns and deploys to.
 
+Bindings checklist (verification commands + expected outputs): [docs/CLOUDFLARE_BINDINGS_CHECKLIST.md](docs/CLOUDFLARE_BINDINGS_CHECKLIST.md)
+
 Rules:
 
 - Names only (no IDs, no tokens)

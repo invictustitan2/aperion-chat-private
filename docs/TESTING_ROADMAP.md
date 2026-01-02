@@ -21,7 +21,11 @@ This roadmap is intentionally coverage-driven and philosophy-aligned: we only te
 
 Command:
 
-- `pnpm -w test:coverage` (Vitest v1.6.1)
+- Historical (at the time): `pnpm -w test:coverage` (Vitest v1.6.1)
+
+Modern equivalent (preferred):
+
+- `./dev test:coverage` (receipt-first; produces `receipts/test-coverage.latest/`)
 
 Results:
 
@@ -63,14 +67,17 @@ Runtime types (this PR):
 
 ## Coverage-Driven Workflow (Always Start Here)
 
-1. Run: `pnpm -w test:coverage`.
+1. Run: `./dev test:coverage`.
 2. Identify the top 10 files by uncovered lines (non-optional).
 
    Extract top offenders automatically (no manual HTML clicking):
-   - `node -e "const s=require('./coverage/vitest/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
 
-   - Prefer the HTML report: `coverage/vitest/index.html` and sort by worst offenders.
-   - Or use `coverage/vitest/coverage-summary.json` for package-level hotspots.
+- Node suite: `node -e "const s=require('./receipts/test-coverage.latest/coverage-node/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
+- Web suite: `node -e "const s=require('./receipts/test-coverage.latest/coverage-web/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
+
+- Prefer the receipt `coverage-summary.json` snapshots for package-level hotspots.
+
+Note: the full HTML report lives under `coverage/vitest/index.html` after running a single suite (ignored by git). The receipt snapshots intentionally stay lightweight.
 
 3. Write tests that hit those files first (maximize executed lines per hour).
 4. Re-run coverage and repeat until phase target is met.
@@ -204,8 +211,9 @@ Stability requirements:
 
 ## Next 10 Tasks (Checklist)
 
-- [x] Run `pnpm -w test:coverage` and extract the top 10 uncovered files (paste output into the PR):
-  - `node -e "const s=require('./coverage/vitest/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
+- [x] Run `./dev test:coverage` and extract the top 10 uncovered files (paste output into the PR):
+  - Node suite: `node -e "const s=require('./receipts/test-coverage.latest/coverage-node/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
+  - Web suite: `node -e "const s=require('./receipts/test-coverage.latest/coverage-web/coverage-summary.json'); const files=Object.entries(s).filter(([k])=>k!=='total'); const rows=files.map(([file,v])=>({file, uncovered:(v.lines.total-v.lines.covered)})); rows.sort((a,b)=>b.uncovered-a.uncovered); console.log(rows.slice(0,10));"`
 - [x] Create the binding seam module `apps/api-worker/test/bindings/mockBindings.ts` (Fake AI, Fake Vectorize, Fake Queues).
 - [x] Refactor worker integration tests to import bindings from the seam (no ad-hoc mocks).
 - [x] Unskip + rewrite `apps/api-worker/test/index.test.ts` to verify wiring + middleware order + stable error shapes.
@@ -233,7 +241,7 @@ Stability requirements:
 ## Pre-PR Verification Checklist (Required for This PR)
 
 - Types are regenerated and stable: `pnpm --filter @aperion/api-worker types:generate` (no unexpected diffs).
-- Workspace checks are green: `pnpm -w typecheck`, `pnpm -w lint`, `pnpm -w test:coverage`.
+- Workspace checks are green: `pnpm -w typecheck`, `pnpm -w lint`, `./dev test:coverage`.
 - Local Worker boots under test env: `pnpm --filter @aperion/api-worker wrangler dev --local --env test --port 8787`.
 - Smoke requests confirm routing/auth/error-shapes (no remote calls; stable status codes/JSON):
   - `curl -i http://127.0.0.1:8787/v1/receipts`

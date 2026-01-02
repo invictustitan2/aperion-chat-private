@@ -32,7 +32,7 @@
   }
 
   body {
-    @apply h-full w-full overflow-hidden;
+    @apply h-full w-full overflow-hidden font-sans;
     background-image: linear-gradient(
       to bottom right,
       #1e293b,

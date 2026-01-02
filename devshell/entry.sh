@@ -26,6 +26,12 @@ Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
   verify:ci          Run the CI-grade verification gate (strict)
+  test:unit          Run unit tests (Vitest) with receipts
+  test:coverage      Run coverage (Vitest) with receipts
+  test:all           Run unit tests + local E2E (receipts)
+  e2e:local          Run Playwright E2E against local web (receipts)
+  e2e:prod           Run Playwright prod smoke against chat.aperion.cc (network-gated; receipts)
+  e2e:auth:save:prod Create a Playwright storageState for prod (interactive; writes under .ref/)
   deploy:prod         Orchestrate receipt-first prod deploy (safe)
   deploy:validate     Quick network-gated prod validator (safe; supports --surface api|browser)
   shell              Launch the legacy interactive dev shell (scripts/dev-shell.sh)
@@ -89,6 +95,30 @@ devshell_dispatch() {
 
     verify:ci)
       "${repo_root}/devshell/commands/verify_ci.sh" "$repo_root" "$@"
+      ;;
+
+    test:unit)
+      "${repo_root}/devshell/commands/test_unit.sh" "$repo_root" "$@"
+      ;;
+
+    test:coverage)
+      "${repo_root}/devshell/commands/test_coverage.sh" "$repo_root" "$@"
+      ;;
+
+    test:all)
+      "${repo_root}/devshell/commands/test_all.sh" "$repo_root" "$@"
+      ;;
+
+    e2e:local)
+      "${repo_root}/devshell/commands/e2e_local.sh" "$repo_root" "$@"
+      ;;
+
+    e2e:prod)
+      "${repo_root}/devshell/commands/e2e_prod.sh" "$repo_root" "$@"
+      ;;
+
+    e2e:auth:save:prod)
+      "${repo_root}/devshell/commands/e2e_auth_save_prod.sh" "$repo_root" "$@"
       ;;
 
     deploy:prod)

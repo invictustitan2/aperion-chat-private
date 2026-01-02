@@ -163,10 +163,7 @@ describe("Settings Page", () => {
       expect(screen.getByText(/Auth failed: Auth Failed/)).toBeInTheDocument();
     });
 
-    // Default dev API base is cross-origin (http://127.0.0.1:8787), so the UI should warn
-    // about CORS and that prod should use same-origin /api.
-    expect(
-      screen.getAllByText(/Production should use \/api/).length,
-    ).toBeGreaterThan(0);
+    // UI should provide guidance that production uses same-origin /api.
+    expect(screen.getAllByText(/Same-origin \/api/i).length).toBeGreaterThan(0);
   });
 });

@@ -1,0 +1,39 @@
+TEST.COVERAGE.UTC: 2026-01-02T12:05:12Z
+TEST.COVERAGE.EXIT_CODE: 1
+TEST.COVERAGE.NODE_EXIT_CODE: 1
+TEST.COVERAGE.WEB_EXIT_CODE: 1
+COVERAGE_DIR: coverage/vitest
+COVERAGE_NODE_SNAPSHOT_DIR: receipts/test-coverage.20260102-120431Z/coverage-node
+COVERAGE_WEB_SNAPSHOT_DIR: receipts/test-coverage.20260102-120431Z/coverage-web
+
+COVERAGE_NODE_TOTAL: node: Lines 74.17% (3775/5089), Statements 74.17% (3775/5089), Branches 65.94% (610/925), Functions 88.12% (193/219)
+COVERAGE_WEB_TOTAL: web: Lines 74.62% (5566/7459), Statements 74.62% (5566/7459), Branches 73.79% (811/1099), Functions 68.16% (257/377)
+
+COVERAGE_NODE_CRITICAL_FILTER: apps/api-worker/src/index.ts, apps/api-worker/src/app.ts, apps/api-worker/src/middleware/
+COVERAGE_NODE_CRITICAL_TOTAL: node-critical: Lines 81.16% (392/483), Statements 81.16% (392/483), Branches 75.53% (71/94), Functions 92.86% (13/14)
+COVERAGE_WEB_CRITICAL_FILTER: apps/web/src/pages/, apps/web/src/lib/
+COVERAGE_WEB_CRITICAL_TOTAL: web-critical: Lines 73.15% (3451/4718), Statements 73.15% (3451/4718), Branches 70.62% (500/708), Functions 69.70% (184/264)
+
+COVERAGE_NODE_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_NODE_TOP_UNCOVERED_01: apps/api-worker/src/lib/authContext.ts (uncoveredLines=103, lines=70.31% 244/347)
+COVERAGE_NODE_TOP_UNCOVERED_02: tools/mcp/aperion/src/index.ts (uncoveredLines=88, lines=0.00% 0/88)
+COVERAGE_NODE_TOP_UNCOVERED_03: apps/api-worker/src/do/ChatState.ts (uncoveredLines=83, lines=39.41% 54/137)
+COVERAGE_NODE_TOP_UNCOVERED_04: apps/api-worker/src/services/SemanticService.ts (uncoveredLines=78, lines=67.36% 161/239)
+COVERAGE_NODE_TOP_UNCOVERED_05: apps/api-worker/src/controllers/ChatController.ts (uncoveredLines=69, lines=68.20% 148/217)
+COVERAGE_NODE_TOP_UNCOVERED_06: tools/cli/src/commands/verify.ts (uncoveredLines=55, lines=55.28% 68/123)
+COVERAGE_NODE_TOP_UNCOVERED_07: tools/cli/src/commands/export.ts (uncoveredLines=52, lines=0.00% 0/52)
+COVERAGE_NODE_TOP_UNCOVERED_08: tools/mcp/aperion/src/memoryIngest.ts (uncoveredLines=45, lines=0.00% 0/45)
+COVERAGE_NODE_TOP_UNCOVERED_09: apps/api-worker/src/app.ts (uncoveredLines=44, lines=77.20% 149/193)
+COVERAGE_NODE_TOP_UNCOVERED_10: apps/api-worker/src/controllers/VoiceController.ts (uncoveredLines=44, lines=68.79% 97/141)
+
+COVERAGE_WEB_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_WEB_TOP_UNCOVERED_01: apps/web/src/pages/Chat.tsx (uncoveredLines=518, lines=62.94% 880/1398)
+COVERAGE_WEB_TOP_UNCOVERED_02: apps/web/src/pages/UILab.tsx (uncoveredLines=291, lines=0.00% 0/291)
+COVERAGE_WEB_TOP_UNCOVERED_03: apps/web/src/pages/Memory.tsx (uncoveredLines=203, lines=69.65% 466/669)
+COVERAGE_WEB_TOP_UNCOVERED_04: apps/web/src/App.tsx (uncoveredLines=168, lines=0.00% 0/168)
+COVERAGE_WEB_TOP_UNCOVERED_05: apps/web/src/lib/api.ts (uncoveredLines=117, lines=79.50% 454/571)
+COVERAGE_WEB_TOP_UNCOVERED_06: apps/web/src/components/ui/Toast.tsx (uncoveredLines=81, lines=22.11% 23/104)
+COVERAGE_WEB_TOP_UNCOVERED_07: apps/web/src/components/ui/Dialog.tsx (uncoveredLines=62, lines=54.07% 73/135)
+COVERAGE_WEB_TOP_UNCOVERED_08: apps/web/src/hooks/useWebSocket.ts (uncoveredLines=62, lines=55.07% 76/138)
+COVERAGE_WEB_TOP_UNCOVERED_09: apps/web/src/components/Layout.tsx (uncoveredLines=47, lines=76.61% 154/201)
+COVERAGE_WEB_TOP_UNCOVERED_10: apps/web/src/components/CommandPalette.tsx (uncoveredLines=45, lines=88.34% 341/386)

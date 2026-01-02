@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -274,8 +280,11 @@ describe("Chat Page", () => {
 
     await screen.findByText("To Delete");
 
-    const deleteBtn = screen.getByTitle("Delete");
-    fireEvent.click(deleteBtn);
+    const actionsTrigger = screen.getByLabelText(
+      "Conversation actions for To Delete",
+    );
+    fireEvent.keyDown(actionsTrigger, { key: "Enter" });
+    fireEvent.click(await screen.findByTestId("conversation-action-delete"));
 
     await waitFor(() => {
       expect(api.conversations.delete).toHaveBeenCalledWith("1");
@@ -301,10 +310,13 @@ describe("Chat Page", () => {
 
     await screen.findByText("Old Title");
 
-    const renameBtn = screen.getByTitle("Rename");
-    fireEvent.click(renameBtn);
+    const actionsTrigger = screen.getByLabelText(
+      "Conversation actions for Old Title",
+    );
+    fireEvent.keyDown(actionsTrigger, { key: "Enter" });
+    fireEvent.click(await screen.findByTestId("conversation-action-rename"));
 
-    const input = screen.getByDisplayValue("Old Title");
+    const input = await screen.findByLabelText("Rename conversation");
     fireEvent.change(input, { target: { value: "New Title" } });
 
     fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
@@ -346,13 +358,22 @@ describe("Chat Page", () => {
       expect(matches.length).toBeGreaterThan(0);
     });
 
-    const editBtn = screen.getByTitle("Edit message");
-    fireEvent.click(editBtn);
+    const bubbles = screen.getAllByTestId("message-bubble");
+    const targetBubble = bubbles.find((b) =>
+      (b.textContent ?? "").includes("Typo"),
+    );
+    expect(targetBubble).toBeTruthy();
+
+    const messageActionsTrigger = within(targetBubble!).getByTestId(
+      "message-actions-trigger",
+    );
+    fireEvent.keyDown(messageActionsTrigger, { key: "Enter" });
+    fireEvent.click(await screen.findByTestId("message-action-edit"));
 
     const textarea = screen.getByDisplayValue("Typo");
     fireEvent.change(textarea, { target: { value: "Fixed" } });
 
-    const saveBtn = screen.getByTitle("Save edit");
+    const saveBtn = screen.getByLabelText("Save edit");
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
@@ -382,7 +403,7 @@ describe("Chat Page", () => {
 
     renderWithClient(<Chat />);
 
-    const micBtn = screen.getByTitle("Voice Chat");
+    const micBtn = screen.getByLabelText("Start voice chat");
     fireEvent.click(micBtn);
 
     await waitFor(() => {
@@ -390,7 +411,7 @@ describe("Chat Page", () => {
       expect(mockMediaRecorder.start).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getByTitle("Stop Recording"));
+    fireEvent.click(screen.getByLabelText("Stop recording"));
     expect(mockMediaRecorder.stop).toHaveBeenCalled();
   });
 

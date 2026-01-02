@@ -47,6 +47,18 @@ function renderWithClient(ui: React.ReactNode) {
   );
 }
 
+async function activateTab(name: string) {
+  const tab = screen.getByRole("tab", { name });
+  // Radix Tabs uses onMouseDown (not onClick) to activate.
+  fireEvent.mouseDown(tab, { button: 0, ctrlKey: false });
+  fireEvent.mouseUp(tab, { button: 0 });
+  // Fallback for environments where mouse events don't trigger activation.
+  fireEvent.keyDown(tab, { key: "Enter" });
+  await waitFor(() => {
+    expect(tab).toHaveAttribute("aria-selected", "true");
+  });
+}
+
 describe("Memory Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,7 +69,10 @@ describe("Memory Page", () => {
     renderWithClient(<Memory />);
 
     expect(screen.getByText("Memory Store")).toBeInTheDocument();
-    expect(screen.getByText("Identity")).toHaveClass("text-emerald-400");
+    expect(screen.getByRole("tab", { name: "Identity" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(
       await screen.findByText("No identity records found."),
     ).toBeInTheDocument();
@@ -67,10 +82,7 @@ describe("Memory Page", () => {
     vi.mocked(api.episodic.list).mockResolvedValue([]);
     renderWithClient(<Memory />);
 
-    const tab = screen.getByText("Episodic Log");
-    fireEvent.click(tab);
-
-    expect(tab).toHaveClass("text-emerald-400");
+    await activateTab("Episodic Log");
     expect(await screen.findByText("Showing 0 of 0")).toBeInTheDocument();
   });
 
@@ -89,15 +101,15 @@ describe("Memory Page", () => {
     renderWithClient(<Memory />);
 
     // Switch to Semantic Search
-    fireEvent.click(screen.getByText("Semantic Search"));
+    await activateTab("Semantic Search");
 
     // Check empty state
     expect(
-      screen.getByText("Search your semantic memory using natural language"),
+      screen.getByText(/Search your semantic memory/i),
     ).toBeInTheDocument();
 
     // Perform search
-    const input = screen.getByPlaceholderText("Search semantic memory...");
+    const input = await screen.findByPlaceholderText(/Search semantic memory/i);
     fireEvent.change(input, { target: { value: "test query" } });
     fireEvent.click(screen.getByText("Search"));
 
@@ -120,9 +132,10 @@ describe("Memory Page", () => {
     vi.mocked(api.relationships.list).mockResolvedValue([]);
 
     renderWithClient(<Memory />);
-    fireEvent.click(screen.getByText("Semantic Search"));
 
-    const input = screen.getByPlaceholderText("Search semantic memory...");
+    await activateTab("Semantic Search");
+
+    const input = await screen.findByPlaceholderText(/Search semantic memory/i);
     fireEvent.change(input, { target: { value: "test query" } });
     fireEvent.click(screen.getByText("Search"));
 
@@ -139,9 +152,10 @@ describe("Memory Page", () => {
     );
 
     renderWithClient(<Memory />);
-    fireEvent.click(screen.getByText("Semantic Search"));
 
-    const input = screen.getByPlaceholderText("Search semantic memory...");
+    await activateTab("Semantic Search");
+
+    const input = await screen.findByPlaceholderText(/Search semantic memory/i);
     fireEvent.change(input, { target: { value: "test query" } });
     fireEvent.click(screen.getByText("Search"));
 
@@ -191,8 +205,9 @@ describe("Memory Page", () => {
     renderWithClient(<Memory />);
 
     // Navigate and Search
-    fireEvent.click(screen.getByText("Semantic Search"));
-    const input = screen.getByPlaceholderText("Search semantic memory...");
+
+    await activateTab("Semantic Search");
+    const input = await screen.findByPlaceholderText(/Search semantic memory/i);
     fireEvent.change(input, { target: { value: "test query" } });
     fireEvent.click(screen.getByText("Search"));
 

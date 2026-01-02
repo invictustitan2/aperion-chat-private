@@ -63,8 +63,9 @@ describe("MessageBubble", () => {
       <MessageBubble message={mockMessage} isUser={true} onCopy={handleCopy} />,
     );
 
-    const copyButton = screen.getByLabelText("Copy message");
-    fireEvent.click(copyButton);
+    const trigger = screen.getByLabelText("Message actions");
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(screen.getByTestId("message-action-copy"));
 
     expect(handleCopy).toHaveBeenCalledWith("msg-1", "Hello, world!");
   });
@@ -79,8 +80,9 @@ describe("MessageBubble", () => {
       />,
     );
 
-    const shareButton = screen.getByLabelText("Share message");
-    fireEvent.click(shareButton);
+    const trigger = screen.getByLabelText("Message actions");
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(screen.getByTestId("message-action-share"));
 
     expect(handleShare).toHaveBeenCalledWith("msg-1");
   });
@@ -106,8 +108,9 @@ describe("MessageBubble", () => {
       <MessageBubble message={mockMessage} isUser={true} onEdit={handleEdit} />,
     );
 
-    const editButton = screen.getByLabelText("Edit message");
-    fireEvent.click(editButton);
+    const trigger = screen.getByLabelText("Message actions");
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(screen.getByTestId("message-action-edit"));
 
     expect(handleEdit).toHaveBeenCalledWith("msg-1", "Hello, world!");
   });
@@ -122,8 +125,11 @@ describe("MessageBubble", () => {
       />,
     );
 
-    const upButton = screen.getByLabelText("Rate response as good");
-    const downButton = screen.getByLabelText("Rate response as poor");
+    const trigger = screen.getByLabelText("Message actions");
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
+    const upButton = screen.getByTestId("message-action-rate-up");
+    const downButton = screen.getByTestId("message-action-rate-down");
 
     expect(upButton).toBeInTheDocument();
     expect(downButton).toBeInTheDocument();
@@ -137,8 +143,11 @@ describe("MessageBubble", () => {
       <MessageBubble message={mockMessage} isUser={true} onRate={vi.fn()} />,
     );
 
+    const trigger = screen.getByLabelText("Message actions");
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
     expect(
-      screen.queryByLabelText("Rate response as good"),
+      screen.queryByTestId("message-action-rate-up"),
     ).not.toBeInTheDocument();
   });
 
@@ -173,9 +182,8 @@ describe("MessageBubble", () => {
       <MessageBubble message={mockMessage} isUser={true} onCopy={vi.fn()} />,
     );
 
-    const copyButton = screen.getByLabelText("Copy message");
-    copyButton.focus();
-
-    expect(document.activeElement).toBe(copyButton);
+    const trigger = screen.getByLabelText("Message actions");
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
   });
 });

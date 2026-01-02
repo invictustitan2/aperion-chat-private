@@ -40,6 +40,11 @@ import { ReceiptsList } from "../components/ReceiptsList";
 import {
   Dialog,
   DialogContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   IconButtonTooltip,
   TooltipProvider,
 } from "../components/ui";
@@ -1221,7 +1226,7 @@ export function Chat() {
                 </span>
               </div>
 
-              <p className="text-gray-400 text-xs md:text-sm hidden md:block">
+              <p className="text-gray-400 text-xs md:text-sm hidden md:block flex-1 min-w-0 truncate">
                 Secure channel • Episodic logging active • Context: last{" "}
                 {Math.min(history?.length ?? 0, 10)} messages
               </p>
@@ -1280,20 +1285,39 @@ export function Chat() {
                 {/* Tone Selector */}
                 <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 radius-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm shrink-0">
                   <span className="text-gray-400 font-medium">Tone</span>
-                  <select
-                    value={tone}
-                    onChange={(e) =>
-                      onChangeTone(
-                        e.target.value as "default" | "concise" | "detailed",
-                      )
-                    }
-                    className="bg-transparent text-white font-medium focus:outline-none h-8 md:h-auto"
-                    aria-label="Select Tone"
-                  >
-                    <option value="default">Default</option>
-                    <option value="concise">Concise</option>
-                    <option value="detailed">Detailed</option>
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="bg-transparent text-white font-medium focus:outline-none"
+                        aria-label="Select Tone"
+                      >
+                        {tone === "default"
+                          ? "Default"
+                          : tone === "concise"
+                            ? "Concise"
+                            : "Detailed"}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Tone</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onSelect={() => onChangeTone("default")}
+                      >
+                        {tone === "default" ? "✓ " : ""}Default
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => onChangeTone("concise")}
+                      >
+                        {tone === "concise" ? "✓ " : ""}Concise
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => onChangeTone("detailed")}
+                      >
+                        {tone === "detailed" ? "✓ " : ""}Detailed
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Regenerate last response */}

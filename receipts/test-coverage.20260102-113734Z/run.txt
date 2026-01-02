@@ -1,0 +1,9 @@
+=== COVERAGE:node (pnpm test:coverage:node) ===
+
+> aperion-chat-private@0.0.0 test:coverage:node /home/dreamboat/projects/aperion-chat-private
+> vitest run --coverage -c vitest.coverage.node.config.ts
+
+
+ RUN  v3.2.4 /home/dreamboat/projects/aperion-chat-private
+      Coverage enabled with v8
+

@@ -1,0 +1,272 @@
+=== COVERAGE:node (pnpm test:coverage:node) ===
+
+> aperion-chat-private@0.0.0 test:coverage:node /home/dreamboat/projects/aperion-chat-private
+> vitest run --coverage --environment node --exclude "apps/web/src/**/*.test.*" --exclude "apps/web/src/**/*.spec.*"
+
+
+ RUN  v3.2.4 /home/dreamboat/projects/aperion-chat-private
+      Coverage enabled with v8
+
+
+ ⛅️ wrangler 4.55.0
+───────────────────
+Resource location: local 
+
+Use --remote if you want to access the remote instance.
+
+✅ No migrations to apply!
+stdout | apps/api-worker/test/auth.test.ts > Authentication Middleware
+Starting worker...
+
+stdout | apps/api-worker/test/auth.test.ts > Authentication Middleware
+Waiting for worker to be ready...
+Will poll every 500ms for up to 12 attempts (6s total)
+
+stderr | apps/api-worker/test/auth.test.ts > Authentication Middleware
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://127.0.0.1:undefined/cdn-cgi/handler/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+
+stderr | apps/api-worker/test/auth.test.ts > Authentication Middleware
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mAI bindings always access remote resources, and so may incur usage charges even in local dev. To suppress this warning, set `remote: true` for the binding definition in your configuration file.[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mVectorize Index bindings do not support local development, and so parts of your Worker may not work correctly. You may be able to set `remote: true` for the binding definition in your configuration file to access a remote version of the resource.[0m
+
+
+
+stdout | apps/api-worker/test/auth.test.ts > Authentication Middleware
+Attempt 1: Got response with status 401
+✓ Worker ready after 1 attempts (~0.5s)
+
+ ✓ apps/api-worker/test/auth.test.ts (23 tests) 5796ms
+
+ ⛅️ wrangler 4.55.0
+───────────────────
+Resource location: local 
+
+Use --remote if you want to access the remote instance.
+
+✅ No migrations to apply!
+stderr | apps/api-worker/test/index.test.ts > API Worker Integration > Missing Authorization -> 401 with exact error shape
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mAI bindings always access remote resources, and so may incur usage charges even in local dev. To suppress this warning, set `remote: true` for the binding definition in your configuration file.[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mVectorize Index bindings do not support local development, and so parts of your Worker may not work correctly. You may be able to set `remote: true` for the binding definition in your configuration file to access a remote version of the resource.[0m
+
+
+
+ ✓ apps/api-worker/test/index.test.ts (7 tests) 4784ms
+   ✓ API Worker Integration > Missing Authorization -> 401 with exact error shape  2117ms
+ ✓ apps/api-worker/test/lib/authContext.test.ts (5 tests) 1082ms
+   ✓ getAuthContext (Cloudflare Access) > refreshes JWKS once when kid is unknown  574ms
+ ✓ test/verify-ci.test.ts (3 tests) 710ms
+   ✓ verify:ci > local mode does not hard-fail when Cloudflare account id is missing  421ms
+ ✓ test/cf-doctor.test.ts (1 test) 254ms
+stderr | tools/cli/test/cli.test.ts > CLI Commands > verify > should not require AUTH_TOKEN in access mode
+⚠️  Server did not return X-Aperion-Auth-Fingerprint. The API worker may be on an older version.
+
+ ✓ tools/cli/test/cli.test.ts (4 tests) 105ms
+ ✓ test/guard-config-drift.test.ts (3 tests) 31ms
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
+{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"ba6575d1-db32-4a83-b658-0a08893aa8cb","source":"api-worker","timestamp":"2026-01-02T10:27:37.340Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
+{"level":"warn","message":"Auth outcome","traceId":"ba6575d1-db32-4a83-b658-0a08893aa8cb","source":"api-worker","timestamp":"2026-01-02T10:27:37.341Z","event":"auth.outcome","outcome":"deny","mode":"token","method":"GET","path":"/v1/conversations","status":401,"reason":"Unauthorized (missing bearer token)","durationMs":0}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
+{"level":"info","message":"Request completed","traceId":"ba6575d1-db32-4a83-b658-0a08893aa8cb","source":"api-worker","timestamp":"2026-01-02T10:27:37.343Z","status":401,"durationMs":2.6908839999996417}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
+{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"0f8f6f6f-9de9-4ba7-ac96-8763c66ccbd0","source":"api-worker","timestamp":"2026-01-02T10:27:37.345Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
+{"level":"warn","message":"Auth outcome","traceId":"0f8f6f6f-9de9-4ba7-ac96-8763c66ccbd0","source":"api-worker","timestamp":"2026-01-02T10:27:37.345Z","event":"auth.outcome","outcome":"deny","mode":"access","method":"GET","path":"/v1/conversations","status":401,"reason":"Missing Access assertion (expected CF-Access-Jwt-Assertion header or CF_Authorization cookie)","durationMs":0}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
+{"level":"info","message":"Request completed","traceId":"0f8f6f6f-9de9-4ba7-ac96-8763c66ccbd0","source":"api-worker","timestamp":"2026-01-02T10:27:37.346Z","status":401,"durationMs":1.0013950000011391}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > OPTIONS -> 204 and includes CORS headers
+{"level":"info","message":"Incoming request: OPTIONS http://local.test/v1/conversations","traceId":"0656111e-fc78-4f9a-b6fa-446fe1f90d61","source":"api-worker","timestamp":"2026-01-02T10:27:37.348Z","method":"OPTIONS","url":"http://local.test/v1/conversations","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > OPTIONS -> 204 and includes CORS headers
+{"level":"info","message":"Request completed","traceId":"0656111e-fc78-4f9a-b6fa-446fe1f90d61","source":"api-worker","timestamp":"2026-01-02T10:27:37.349Z","status":204,"durationMs":0.9507720000001427}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> includes strict CORS headers for allowed origin
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"abfe0473-e642-4dd9-b9ef-9a6516653db1","source":"api-worker","timestamp":"2026-01-02T10:27:37.350Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> includes strict CORS headers for allowed origin
+{"level":"info","message":"Request completed","traceId":"abfe0473-e642-4dd9-b9ef-9a6516653db1","source":"api-worker","timestamp":"2026-01-02T10:27:37.351Z","status":404,"durationMs":0.9187640000000101}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> does not include allow-origin for unknown origin
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"7b08bf6c-71e1-48bb-9955-dc2eb7bfc090","source":"api-worker","timestamp":"2026-01-02T10:27:37.353Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> does not include allow-origin for unknown origin
+{"level":"info","message":"Request completed","traceId":"7b08bf6c-71e1-48bb-9955-dc2eb7bfc090","source":"api-worker","timestamp":"2026-01-02T10:27:37.354Z","status":404,"durationMs":0.7572609999988344}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Unknown route -> 404
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"03e30b6e-d65e-4559-a436-d16f00287ee5","source":"api-worker","timestamp":"2026-01-02T10:27:37.355Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Unknown route -> 404
+{"level":"info","message":"Request completed","traceId":"03e30b6e-d65e-4559-a436-d16f00287ee5","source":"api-worker","timestamp":"2026-01-02T10:27:37.355Z","status":404,"durationMs":0.5869810000003781}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> 503 if ChatState not configured
+{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"58303227-5a48-4839-afac-951321ec7c90","source":"api-worker","timestamp":"2026-01-02T10:27:37.356Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> 503 if ChatState not configured
+{"level":"info","message":"Request completed","traceId":"58303227-5a48-4839-afac-951321ec7c90","source":"api-worker","timestamp":"2026-01-02T10:27:37.357Z","status":503,"durationMs":0.9991530000006605}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> delegates to Durable Object
+{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"26ded7d0-817a-43d5-bfe3-43ae5cf89809","source":"api-worker","timestamp":"2026-01-02T10:27:37.359Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> delegates to Durable Object
+{"level":"info","message":"Request completed","traceId":"26ded7d0-817a-43d5-bfe3-43ae5cf89809","source":"api-worker","timestamp":"2026-01-02T10:27:37.359Z","status":200,"durationMs":0.6338570000007167}
+
+ ✓ apps/api-worker/test/app.wiring.test.ts (8 tests) 24ms
+ ✓ apps/api-worker/src/lib/speechToText.test.ts (1 test) 12ms
+ ✓ apps/api-worker/test/controllers/EpisodicController.test.ts (9 tests) 12ms
+ ✓ apps/api-worker/src/lib/textToSpeech.test.ts (1 test) 11ms
+ ✓ apps/api-worker/test/controllers/ChatController.test.ts (5 tests) 12ms
+ ✓ apps/api-worker/test/controllers/IdentityController.test.ts (4 tests) 5ms
+ ✓ apps/api-worker/test/controllers/LogsController.test.ts (7 tests) 7ms
+stdout | apps/api-worker/test/queue.test.ts > Queue Processor > should process semantic messages and generate embeddings
+Generated embedding for semantic record rec-2 in 0.14ms
+
+stderr | apps/api-worker/test/queue.test.ts > Queue Processor > should retry if processing fails
+Failed to process message msg-3: Error: DB Error
+    at run [90m(/home/dreamboat/projects/aperion-chat-private/[39mapps/api-worker/test/queue.test.ts:98:15[90m)[39m
+    at Object.run [90m(/home/dreamboat/projects/aperion-chat-private/[39mapps/api-worker/test/bindings/mockBindings.ts:138:30[90m)[39m
+    at processEpisodic [90m(/home/dreamboat/projects/aperion-chat-private/[39mapps/api-worker/src/lib/queue-processor.ts:93:6[90m)[39m
+    at processMemoryBatch [90m(/home/dreamboat/projects/aperion-chat-private/[39mapps/api-worker/src/lib/queue-processor.ts:39:15[90m)[39m
+    at [90m/home/dreamboat/projects/aperion-chat-private/[39mapps/api-worker/test/queue.test.ts:120:11
+    at [90mfile:///home/dreamboat/projects/aperion-chat-private/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///home/dreamboat/projects/aperion-chat-private/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///home/dreamboat/projects/aperion-chat-private/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/dreamboat/projects/aperion-chat-private/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+
+ ✓ apps/api-worker/test/queue.test.ts (3 tests) 9ms
+ ✓ apps/api-worker/test/controllers/SemanticController.test.ts (7 tests) 8ms
+ ✓ apps/api-worker/test/controllers/VoiceController.test.ts (4 tests) 7ms
+ ✓ apps/api-worker/test/middleware/rateLimit.test.ts (5 tests) 7ms
+ ✓ packages/policy/test/policy.test.ts (9 tests) 4ms
+ ✓ apps/api-worker/test/controllers/PreferencesController.test.ts (6 tests) 6ms
+ ✓ apps/api-worker/test/controllers/RelationshipsController.test.ts (2 tests) 5ms
+ ✓ apps/api-worker/test/controllers/ConversationsController.test.ts (4 tests) 4ms
+ ✓ apps/api-worker/test/controllers/MediaController.test.ts (5 tests) 4ms
+ ✓ apps/api-worker/test/preferences-theme.test.ts (3 tests) 5ms
+stdout | apps/api-worker/test/queue-job.test.ts > Queue Processor Jobs > should process embed job
+Generated embedding for job job-456 in 0.03ms
+
+ ✓ apps/api-worker/test/queue-job.test.ts (2 tests) 4ms
+ ✓ packages/memory-core/test/store.test.ts (6 tests) 4ms
+ ✓ apps/api-worker/test/controllers/JobsController.test.ts (3 tests) 3ms
+ ✓ apps/api-worker/test/controllers/KnowledgeController.test.ts (2 tests) 2ms
+ ✓ apps/api-worker/test/middleware/cors.test.ts (7 tests) 3ms
+ ✓ apps/api-worker/test/controllers/ReceiptsController.test.ts (2 tests) 3ms
+ ✓ apps/api-worker/test/controllers/AnalyticsController.test.ts (2 tests) 2ms
+ ✓ apps/api-worker/test/controllers/InsightsController.test.ts (2 tests) 2ms
+ ✓ apps/api-worker/test/middleware/errorHandler.test.ts (2 tests) 3ms
+ ✓ apps/api-worker/src/lib/gemini.test.ts (1 test) 3ms
+ ✓ packages/memory-core/test/hash.test.ts (6 tests) 2ms
+ ✓ apps/api-worker/src/lib/workersAiStt.test.ts (3 tests) 2ms
+stdout | apps/api-worker/test/middleware/context.test.ts > withContext Middleware > should attach logger and metrics to request
+{"level":"info","message":"Incoming request: undefined undefined","traceId":"984cefdd-2b44-42f6-8a61-78b4cc9bb31d","source":"api-worker","timestamp":"2026-01-02T10:27:39.185Z"}
+
+stdout | apps/api-worker/test/middleware/context.test.ts > withContext Middleware > should use existing cf-ray as traceId if present
+{"level":"info","message":"Incoming request: undefined undefined","traceId":"existing-trace-id","source":"api-worker","timestamp":"2026-01-02T10:27:39.186Z","userAgent":"existing-trace-id"}
+
+ ✓ apps/api-worker/test/middleware/context.test.ts (2 tests) 2ms
+ ✓ test/workflows_deploy_web_path_b.test.ts (4 tests) 2ms
+ ✓ apps/api-worker/test/controllers/RunbooksController.test.ts (2 tests) 2ms
+ ✓ apps/api-worker/test/ai.test.ts (2 tests) 1ms
+ ✓ test/docs_path_b_defaults.test.ts (2 tests) 2ms
+ ✓ test/docs_deployment_contract.test.ts (2 tests) 1ms
+ ✓ apps/api-worker/test/identity-preferences.test.ts (1 test) 1ms
+ ✓ apps/api-worker/test/lib/wsDeny.test.ts (1 test) 1ms
+ ✓ apps/api-worker/src/lib/vectorStore.test.ts (1 test) 1ms
+ ✓ tools/mcp/aperion/src/paths.test.ts (2 tests) 1ms
+ ✓ test/no-network.test.ts (1 test) 1ms
+ ✓ apps/api-worker/test/hello.test.ts (2 tests) 1ms
+
+ Test Files  48 passed (48)
+      Tests  189 passed (189)
+   Start at  10:27:20
+   Duration  19.92s (transform 891ms, setup 187ms, collect 3.36s, tests 12.95s, environment 0ms, prepare 115ms)
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 19.59% ( 2460/12556 )
+Branches     : 63.17% ( 446/706 )
+Functions    : 64.74% ( 202/312 )
+Lines        : 19.59% ( 2460/12556 )
+================================================================================
+ERROR: Coverage for lines (19.59%) does not meet global threshold (45%)
+ERROR: Coverage for statements (19.59%) does not meet global threshold (45%)
+ ELIFECYCLE  Command failed with exit code 1.
+
+=== COVERAGE:web (pnpm test:coverage:web) ===
+
+> aperion-chat-private@0.0.0 test:coverage:web /home/dreamboat/projects/aperion-chat-private
+> vitest run --coverage --environment jsdom --dir apps/web/src
+
+
+ RUN  v3.2.4 /home/dreamboat/projects/aperion-chat-private
+      Coverage enabled with v8
+
+ ✓ apps/web/src/pages/Chat.test.tsx (17 tests) 2840ms
+   ✓ Chat Page > deletes a conversation  631ms
+   ✓ Chat Page > renames a conversation  349ms
+   ✓ Chat Page > edits a message  339ms
+   ✓ Mobile Navigation > opens conversations drawer and selects a conversation  462ms
+ ✓ apps/web/src/components/MessageBubble.test.tsx (13 tests) 1057ms
+ ✓ apps/web/src/pages/Insights.test.tsx (5 tests) 798ms
+   ✓ Insights Page > handles queued job and polls for result  761ms
+stderr | apps/web/src/pages/Memory.test.tsx > Memory Page > renders the header and default tab (Identity)
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["episodic"]
+
+ ✓ apps/web/src/pages/Memory.test.tsx (6 tests) 791ms
+ ✓ apps/web/src/components/ConversationItem.test.tsx (11 tests) 506ms
+ ✓ apps/web/src/pages/Logs.test.tsx (9 tests) 370ms
+ ✓ apps/web/src/components/CommandPalette.test.tsx (6 tests) 340ms
+ ✓ apps/web/src/pages/Identity.test.tsx (7 tests) 176ms
+ ✓ apps/web/src/pages/Settings.test.tsx (7 tests) 167ms
+ ✓ apps/web/src/hooks/useWebSocket.test.tsx (2 tests) 130ms
+ ✓ apps/web/src/pages/Analytics.test.tsx (5 tests) 131ms
+ ✓ apps/web/src/components/MessageContent.test.tsx (5 tests) 114ms
+ ✓ apps/web/src/components/ChatInput.test.tsx (19 tests) 114ms
+ ✓ apps/web/src/components/Layout.test.tsx (3 tests | 1 skipped) 114ms
+ ✓ apps/web/src/pages/SystemStatus.test.tsx (4 tests) 90ms
+ ✓ apps/web/src/pages/Knowledge.test.tsx (6 tests) 84ms
+ ✓ apps/web/src/pages/Receipts.test.tsx (4 tests) 51ms
+ ✓ apps/web/src/components/EmptyStates.test.tsx (9 tests) 33ms
+ ✓ apps/web/src/components/ConversationSearch.test.tsx (6 tests) 31ms
+ ✓ apps/web/src/lib/api.test.ts (8 tests) 14ms
+ ✓ apps/web/src/lib/errorLog.test.ts (3 tests) 7ms
+ ✓ apps/web/src/lib/api.streamAbort.test.ts (1 test) 3ms
+ ✓ apps/web/src/lib/theme.test.ts (6 tests) 5ms
+ ✓ apps/web/src/hello.test.ts (1 test) 1ms
+
+ Test Files  24 passed (24)
+      Tests  162 passed | 1 skipped (163)
+   Start at  10:27:42
+   Duration  13.88s (transform 990ms, setup 321ms, collect 2.40s, tests 7.97s, environment 686ms, prepare 130ms)
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 39.32% ( 4938/12556 )
+Branches     : 72.14% ( 816/1131 )
+Functions    : 62.5% ( 300/480 )
+Lines        : 39.32% ( 4938/12556 )
+================================================================================
+ERROR: Coverage for lines (39.32%) does not meet global threshold (45%)
+ERROR: Coverage for statements (39.32%) does not meet global threshold (45%)
+ ELIFECYCLE  Command failed with exit code 1.
+RECEIPT_DIR: receipts/test-coverage.20260102-102720Z
+RECEIPT_LATEST: receipts/test-coverage.latest

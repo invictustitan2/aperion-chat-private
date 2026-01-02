@@ -1,0 +1,30 @@
+TEST.COVERAGE.UTC: 2026-01-02T12:30:40Z
+TEST.COVERAGE.EXIT_CODE: 1
+TEST.COVERAGE.NODE_EXIT_CODE: 1
+TEST.COVERAGE.WEB_EXIT_CODE: 1
+COVERAGE_DIR: coverage/vitest
+COVERAGE_NODE_SNAPSHOT_DIR: receipts/test-coverage.20260102-121919Z/coverage-node
+COVERAGE_WEB_SNAPSHOT_DIR: receipts/test-coverage.20260102-121919Z/coverage-web
+
+COVERAGE_NODE_TOTAL: node: Lines 80.46% (4139/5144), Statements 80.46% (4139/5144), Branches 68.37% (694/1015), Functions 91.37% (212/232)
+COVERAGE_WEB_TOTAL: web: (missing coverage-summary.json)
+
+COVERAGE_NODE_CRITICAL_FILTER: apps/api-worker/src/index.ts, apps/api-worker/src/app.ts, apps/api-worker/src/middleware/
+COVERAGE_NODE_CRITICAL_TOTAL: node-critical: Lines 81.16% (392/483), Statements 81.16% (392/483), Branches 75.53% (71/94), Functions 92.86% (13/14)
+COVERAGE_WEB_CRITICAL_FILTER: apps/web/src/pages/, apps/web/src/lib/
+COVERAGE_WEB_CRITICAL_TOTAL: web-critical: (missing coverage-summary.json)
+
+COVERAGE_NODE_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_NODE_TOP_UNCOVERED_01: apps/api-worker/src/lib/authContext.ts (uncoveredLines=103, lines=70.31% 244/347)
+COVERAGE_NODE_TOP_UNCOVERED_02: apps/api-worker/src/do/ChatState.ts (uncoveredLines=83, lines=39.41% 54/137)
+COVERAGE_NODE_TOP_UNCOVERED_03: apps/api-worker/src/services/SemanticService.ts (uncoveredLines=78, lines=67.36% 161/239)
+COVERAGE_NODE_TOP_UNCOVERED_04: apps/api-worker/src/controllers/ChatController.ts (uncoveredLines=69, lines=68.20% 148/217)
+COVERAGE_NODE_TOP_UNCOVERED_05: tools/mcp/aperion/src/index.ts (uncoveredLines=51, lines=64.33% 92/143)
+COVERAGE_NODE_TOP_UNCOVERED_06: apps/api-worker/src/app.ts (uncoveredLines=44, lines=77.20% 149/193)
+COVERAGE_NODE_TOP_UNCOVERED_07: apps/api-worker/src/controllers/VoiceController.ts (uncoveredLines=44, lines=68.79% 97/141)
+COVERAGE_NODE_TOP_UNCOVERED_08: tools/cli/src/index.ts (uncoveredLines=44, lines=0.00% 0/44)
+COVERAGE_NODE_TOP_UNCOVERED_09: apps/api-worker/src/services/EpisodicService.ts (uncoveredLines=34, lines=81.00% 145/179)
+COVERAGE_NODE_TOP_UNCOVERED_10: tools/cli/src/commands/migrate.ts (uncoveredLines=33, lines=0.00% 0/33)
+
+COVERAGE_WEB_TOP_UNCOVERED_LIMIT: 10
+COVERAGE_WEB_TOP_UNCOVERED_01: (missing coverage-summary.json)

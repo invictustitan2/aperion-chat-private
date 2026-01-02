@@ -1,0 +1,1142 @@
+{
+  "total": {
+    "lines": { "total": 12556, "covered": 2460, "skipped": 0, "pct": 19.59 },
+    "statements": {
+      "total": 12556,
+      "covered": 2460,
+      "skipped": 0,
+      "pct": 19.59
+    },
+    "functions": { "total": 312, "covered": 202, "skipped": 0, "pct": 64.74 },
+    "branches": { "total": 706, "covered": 446, "skipped": 0, "pct": 63.17 },
+    "branchesTrue": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/app.ts": {
+    "lines": { "total": 193, "covered": 149, "skipped": 0, "pct": 77.2 },
+    "functions": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 },
+    "statements": { "total": 193, "covered": 149, "skipped": 0, "pct": 77.2 },
+    "branches": { "total": 23, "covered": 11, "skipped": 0, "pct": 47.82 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/index.ts": {
+    "lines": { "total": 25, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 25, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/types.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/AnalyticsController.ts": {
+    "lines": { "total": 34, "covered": 31, "skipped": 0, "pct": 91.17 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 34, "covered": 31, "skipped": 0, "pct": 91.17 },
+    "branches": { "total": 8, "covered": 6, "skipped": 0, "pct": 75 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/ChatController.ts": {
+    "lines": { "total": 217, "covered": 148, "skipped": 0, "pct": 68.2 },
+    "functions": { "total": 5, "covered": 4, "skipped": 0, "pct": 80 },
+    "statements": { "total": 217, "covered": 148, "skipped": 0, "pct": 68.2 },
+    "branches": { "total": 38, "covered": 17, "skipped": 0, "pct": 44.73 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/ConversationsController.ts": {
+    "lines": { "total": 76, "covered": 52, "skipped": 0, "pct": 68.42 },
+    "functions": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 },
+    "statements": { "total": 76, "covered": 52, "skipped": 0, "pct": 68.42 },
+    "branches": { "total": 14, "covered": 4, "skipped": 0, "pct": 28.57 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/EpisodicController.ts": {
+    "lines": { "total": 81, "covered": 66, "skipped": 0, "pct": 81.48 },
+    "functions": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 },
+    "statements": { "total": 81, "covered": 66, "skipped": 0, "pct": 81.48 },
+    "branches": { "total": 18, "covered": 12, "skipped": 0, "pct": 66.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/IdentityController.ts": {
+    "lines": { "total": 36, "covered": 30, "skipped": 0, "pct": 83.33 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 36, "covered": 30, "skipped": 0, "pct": 83.33 },
+    "branches": { "total": 9, "covered": 6, "skipped": 0, "pct": 66.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/InsightsController.ts": {
+    "lines": { "total": 38, "covered": 31, "skipped": 0, "pct": 81.57 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 38, "covered": 31, "skipped": 0, "pct": 81.57 },
+    "branches": { "total": 4, "covered": 2, "skipped": 0, "pct": 50 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/JobsController.ts": {
+    "lines": { "total": 29, "covered": 29, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 29, "covered": 29, "skipped": 0, "pct": 100 },
+    "branches": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/KnowledgeController.ts": {
+    "lines": { "total": 39, "covered": 27, "skipped": 0, "pct": 69.23 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 39, "covered": 27, "skipped": 0, "pct": 69.23 },
+    "branches": { "total": 7, "covered": 2, "skipped": 0, "pct": 28.57 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/LogsController.ts": {
+    "lines": { "total": 66, "covered": 66, "skipped": 0, "pct": 100 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 66, "covered": 66, "skipped": 0, "pct": 100 },
+    "branches": { "total": 16, "covered": 12, "skipped": 0, "pct": 75 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/MediaController.ts": {
+    "lines": { "total": 20, "covered": 20, "skipped": 0, "pct": 100 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 20, "covered": 20, "skipped": 0, "pct": 100 },
+    "branches": { "total": 6, "covered": 6, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/PreferencesController.ts": {
+    "lines": { "total": 60, "covered": 49, "skipped": 0, "pct": 81.66 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 60, "covered": 49, "skipped": 0, "pct": 81.66 },
+    "branches": { "total": 14, "covered": 9, "skipped": 0, "pct": 64.28 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/ReceiptsController.ts": {
+    "lines": { "total": 25, "covered": 25, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 25, "covered": 25, "skipped": 0, "pct": 100 },
+    "branches": { "total": 4, "covered": 3, "skipped": 0, "pct": 75 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/RelationshipsController.ts": {
+    "lines": { "total": 57, "covered": 39, "skipped": 0, "pct": 68.42 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 57, "covered": 39, "skipped": 0, "pct": 68.42 },
+    "branches": { "total": 6, "covered": 2, "skipped": 0, "pct": 33.33 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/RunbooksController.ts": {
+    "lines": { "total": 10, "covered": 10, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 10, "covered": 10, "skipped": 0, "pct": 100 },
+    "branches": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/SemanticController.ts": {
+    "lines": { "total": 81, "covered": 54, "skipped": 0, "pct": 66.66 },
+    "functions": { "total": 4, "covered": 3, "skipped": 0, "pct": 75 },
+    "statements": { "total": 81, "covered": 54, "skipped": 0, "pct": 66.66 },
+    "branches": { "total": 18, "covered": 12, "skipped": 0, "pct": 66.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/controllers/VoiceController.ts": {
+    "lines": { "total": 141, "covered": 97, "skipped": 0, "pct": 68.79 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 141, "covered": 97, "skipped": 0, "pct": 68.79 },
+    "branches": { "total": 23, "covered": 13, "skipped": 0, "pct": 56.52 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/do/ChatState.ts": {
+    "lines": { "total": 137, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 137, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/ai.ts": {
+    "lines": { "total": 140, "covered": 51, "skipped": 0, "pct": 36.42 },
+    "functions": { "total": 4, "covered": 2, "skipped": 0, "pct": 50 },
+    "statements": { "total": 140, "covered": 51, "skipped": 0, "pct": 36.42 },
+    "branches": { "total": 12, "covered": 5, "skipped": 0, "pct": 41.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/authContext.ts": {
+    "lines": { "total": 347, "covered": 244, "skipped": 0, "pct": 70.31 },
+    "functions": { "total": 18, "covered": 17, "skipped": 0, "pct": 94.44 },
+    "statements": { "total": 347, "covered": 244, "skipped": 0, "pct": 70.31 },
+    "branches": { "total": 101, "covered": 58, "skipped": 0, "pct": 57.42 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/base64.ts": {
+    "lines": { "total": 40, "covered": 14, "skipped": 0, "pct": 35 },
+    "functions": { "total": 6, "covered": 3, "skipped": 0, "pct": 50 },
+    "statements": { "total": 40, "covered": 14, "skipped": 0, "pct": 35 },
+    "branches": { "total": 4, "covered": 3, "skipped": 0, "pct": 75 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/gemini.ts": {
+    "lines": { "total": 39, "covered": 34, "skipped": 0, "pct": 87.17 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 39, "covered": 34, "skipped": 0, "pct": 87.17 },
+    "branches": { "total": 6, "covered": 2, "skipped": 0, "pct": 33.33 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/googleAuth.ts": {
+    "lines": { "total": 93, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 93, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/janitor.ts": {
+    "lines": { "total": 4, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 4, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/logger.ts": {
+    "lines": { "total": 35, "covered": 31, "skipped": 0, "pct": 88.57 },
+    "functions": { "total": 7, "covered": 5, "skipped": 0, "pct": 71.42 },
+    "statements": { "total": 35, "covered": 31, "skipped": 0, "pct": 88.57 },
+    "branches": { "total": 5, "covered": 5, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/metrics.ts": {
+    "lines": { "total": 33, "covered": 16, "skipped": 0, "pct": 48.48 },
+    "functions": { "total": 3, "covered": 2, "skipped": 0, "pct": 66.66 },
+    "statements": { "total": 33, "covered": 16, "skipped": 0, "pct": 48.48 },
+    "branches": { "total": 5, "covered": 2, "skipped": 0, "pct": 40 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/preferencesRegistry.ts": {
+    "lines": { "total": 43, "covered": 39, "skipped": 0, "pct": 90.69 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 43, "covered": 39, "skipped": 0, "pct": 90.69 },
+    "branches": { "total": 12, "covered": 10, "skipped": 0, "pct": 83.33 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/queue-processor.ts": {
+    "lines": { "total": 153, "covered": 137, "skipped": 0, "pct": 89.54 },
+    "functions": { "total": 5, "covered": 5, "skipped": 0, "pct": 100 },
+    "statements": { "total": 153, "covered": 137, "skipped": 0, "pct": 89.54 },
+    "branches": { "total": 21, "covered": 14, "skipped": 0, "pct": 66.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/renderer.ts": {
+    "lines": { "total": 27, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 27, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/schemas.ts": {
+    "lines": { "total": 125, "covered": 125, "skipped": 0, "pct": 100 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 125, "covered": 125, "skipped": 0, "pct": 100 },
+    "branches": { "total": 13, "covered": 9, "skipped": 0, "pct": 69.23 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/speechToText.ts": {
+    "lines": { "total": 74, "covered": 39, "skipped": 0, "pct": 52.7 },
+    "functions": { "total": 3, "covered": 1, "skipped": 0, "pct": 33.33 },
+    "statements": { "total": 74, "covered": 39, "skipped": 0, "pct": 52.7 },
+    "branches": { "total": 9, "covered": 2, "skipped": 0, "pct": 22.22 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/textToSpeech.ts": {
+    "lines": { "total": 30, "covered": 27, "skipped": 0, "pct": 90 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 30, "covered": 27, "skipped": 0, "pct": 90 },
+    "branches": { "total": 3, "covered": 1, "skipped": 0, "pct": 33.33 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/tools.ts": {
+    "lines": { "total": 66, "covered": 37, "skipped": 0, "pct": 56.06 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 66, "covered": 37, "skipped": 0, "pct": 56.06 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/vectorStore.ts": {
+    "lines": { "total": 41, "covered": 36, "skipped": 0, "pct": 87.8 },
+    "functions": { "total": 8, "covered": 7, "skipped": 0, "pct": 87.5 },
+    "statements": { "total": 41, "covered": 36, "skipped": 0, "pct": 87.8 },
+    "branches": { "total": 14, "covered": 13, "skipped": 0, "pct": 92.85 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/workersAiStt.ts": {
+    "lines": { "total": 18, "covered": 18, "skipped": 0, "pct": 100 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 18, "covered": 18, "skipped": 0, "pct": 100 },
+    "branches": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/workersAiTts.ts": {
+    "lines": { "total": 12, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 12, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/lib/wsDeny.ts": {
+    "lines": { "total": 16, "covered": 16, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 16, "covered": 16, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/middleware/auth.ts": {
+    "lines": { "total": 62, "covered": 37, "skipped": 0, "pct": 59.67 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 62, "covered": 37, "skipped": 0, "pct": 59.67 },
+    "branches": { "total": 9, "covered": 5, "skipped": 0, "pct": 55.55 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/middleware/context.ts": {
+    "lines": { "total": 36, "covered": 34, "skipped": 0, "pct": 94.44 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 36, "covered": 34, "skipped": 0, "pct": 94.44 },
+    "branches": { "total": 9, "covered": 8, "skipped": 0, "pct": 88.88 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/middleware/cors.ts": {
+    "lines": { "total": 68, "covered": 67, "skipped": 0, "pct": 98.52 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 68, "covered": 67, "skipped": 0, "pct": 98.52 },
+    "branches": { "total": 33, "covered": 30, "skipped": 0, "pct": 90.9 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/middleware/errorHandler.ts": {
+    "lines": { "total": 6, "covered": 6, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 6, "covered": 6, "skipped": 0, "pct": 100 },
+    "branches": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/middleware/rateLimit.ts": {
+    "lines": { "total": 93, "covered": 74, "skipped": 0, "pct": 79.56 },
+    "functions": { "total": 2, "covered": 1, "skipped": 0, "pct": 50 },
+    "statements": { "total": 93, "covered": 74, "skipped": 0, "pct": 79.56 },
+    "branches": { "total": 11, "covered": 8, "skipped": 0, "pct": 72.72 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/AnalyticsService.ts": {
+    "lines": { "total": 252, "covered": 64, "skipped": 0, "pct": 25.39 },
+    "functions": { "total": 9, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 252, "covered": 64, "skipped": 0, "pct": 25.39 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/ChatService.ts": {
+    "lines": { "total": 174, "covered": 11, "skipped": 0, "pct": 6.32 },
+    "functions": { "total": 3, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 174, "covered": 11, "skipped": 0, "pct": 6.32 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/ConversationsService.ts": {
+    "lines": { "total": 76, "covered": 8, "skipped": 0, "pct": 10.52 },
+    "functions": { "total": 6, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 76, "covered": 8, "skipped": 0, "pct": 10.52 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/EpisodicService.ts": {
+    "lines": { "total": 179, "covered": 11, "skipped": 0, "pct": 6.14 },
+    "functions": { "total": 6, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 179, "covered": 11, "skipped": 0, "pct": 6.14 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/IdentityService.ts": {
+    "lines": { "total": 78, "covered": 7, "skipped": 0, "pct": 8.97 },
+    "functions": { "total": 3, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 78, "covered": 7, "skipped": 0, "pct": 8.97 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/InsightsService.ts": {
+    "lines": { "total": 49, "covered": 5, "skipped": 0, "pct": 10.2 },
+    "functions": { "total": 2, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 49, "covered": 5, "skipped": 0, "pct": 10.2 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/KnowledgeService.ts": {
+    "lines": { "total": 107, "covered": 5, "skipped": 0, "pct": 4.67 },
+    "functions": { "total": 5, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 107, "covered": 5, "skipped": 0, "pct": 4.67 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/PreferencesService.ts": {
+    "lines": { "total": 29, "covered": 29, "skipped": 0, "pct": 100 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 29, "covered": 29, "skipped": 0, "pct": 100 },
+    "branches": { "total": 7, "covered": 5, "skipped": 0, "pct": 71.42 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/RelationshipsService.ts": {
+    "lines": { "total": 137, "covered": 5, "skipped": 0, "pct": 3.64 },
+    "functions": { "total": 5, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 137, "covered": 5, "skipped": 0, "pct": 3.64 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/api-worker/src/services/SemanticService.ts": {
+    "lines": { "total": 239, "covered": 40, "skipped": 0, "pct": 16.73 },
+    "functions": { "total": 5, "covered": 2, "skipped": 0, "pct": 40 },
+    "statements": { "total": 239, "covered": 40, "skipped": 0, "pct": 16.73 },
+    "branches": { "total": 8, "covered": 5, "skipped": 0, "pct": 62.5 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/hello.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/index.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ChatInput.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ChatInput.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/CommandPalette.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ConversationItem.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ConversationItem.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ConversationSearch.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ConversationSearch.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/EmptyStates.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/EmptyStates.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ErrorBoundary.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/Layout.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/MessageBubble.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/MessageBubble.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ReceiptsList.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Button.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Card.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Dialog.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/DropdownMenu.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Input.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Skeleton.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Tabs.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Toast.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/components/ui/Tooltip.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/contexts/ThemeContext.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/hooks/useKeyboardShortcuts.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/hooks/useMediaQuery.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/hooks/useWebSocket.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/hooks/useWebSocket.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/api.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/api.streamAbort.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/api.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/apiBaseUrl.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/authMode.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/errorLog.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/errorLog.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/theme.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/theme.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/lib/websocket.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Analytics.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Chat.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Identity.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Insights.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Insights.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Knowledge.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Knowledge.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Logs.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Logs.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Memory.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Receipts.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Receipts.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Settings.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/Settings.test.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/SystemStatus.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/.tsbuild/src/pages/UILab.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/App.tsx": {
+    "lines": { "total": 168, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 168, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/index.ts": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/main.tsx": {
+    "lines": { "total": 31, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 31, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/vite-env.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ChatInput.tsx": {
+    "lines": { "total": 219, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 219, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/CommandPalette.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/CommandPalette.tsx": {
+    "lines": { "total": 386, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 386, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ConversationItem.tsx": {
+    "lines": { "total": 124, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 124, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ConversationSearch.tsx": {
+    "lines": { "total": 38, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 38, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/EmptyStates.tsx": {
+    "lines": { "total": 69, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 69, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ErrorBoundary.tsx": {
+    "lines": { "total": 70, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 70, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/Layout.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/Layout.tsx": {
+    "lines": { "total": 201, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 201, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/MessageBubble.tsx": {
+    "lines": { "total": 187, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 187, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/MessageContent.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/MessageContent.tsx": {
+    "lines": { "total": 215, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 215, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ReceiptsList.tsx": {
+    "lines": { "total": 81, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 81, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Button.tsx": {
+    "lines": { "total": 56, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 56, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Card.tsx": {
+    "lines": { "total": 35, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 35, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Dialog.tsx": {
+    "lines": { "total": 135, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 135, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/DropdownMenu.tsx": {
+    "lines": { "total": 77, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 77, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Input.tsx": {
+    "lines": { "total": 54, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 54, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Skeleton.tsx": {
+    "lines": { "total": 79, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 79, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Tabs.tsx": {
+    "lines": { "total": 42, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 42, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Toast.tsx": {
+    "lines": { "total": 104, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 104, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/Tooltip.tsx": {
+    "lines": { "total": 47, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 47, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/components/ui/index.ts": {
+    "lines": { "total": 9, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 9, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/contexts/ThemeContext.tsx": {
+    "lines": { "total": 58, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 58, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/hooks/useKeyboardShortcuts.tsx": {
+    "lines": { "total": 103, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 103, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/hooks/useMediaQuery.ts": {
+    "lines": { "total": 14, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 14, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/hooks/useWebSocket.ts": {
+    "lines": { "total": 138, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 138, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/api.ts": {
+    "lines": { "total": 571, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 571, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/apiBaseUrl.ts": {
+    "lines": { "total": 25, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 25, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/authMode.ts": {
+    "lines": { "total": 31, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 31, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/errorLog.ts": {
+    "lines": { "total": 116, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 116, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/theme.ts": {
+    "lines": { "total": 34, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 34, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/lib/websocket.ts": {
+    "lines": { "total": 223, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 223, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Analytics.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Analytics.tsx": {
+    "lines": { "total": 211, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 211, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Chat.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Chat.tsx": {
+    "lines": { "total": 1398, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 1398, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Identity.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Identity.tsx": {
+    "lines": { "total": 291, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 291, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Insights.tsx": {
+    "lines": { "total": 112, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 112, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Knowledge.tsx": {
+    "lines": { "total": 115, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 115, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Logs.tsx": {
+    "lines": { "total": 205, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 205, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Memory.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Memory.tsx": {
+    "lines": { "total": 669, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 669, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Receipts.tsx": {
+    "lines": { "total": 12, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 12, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Settings.tsx": {
+    "lines": { "total": 236, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 236, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/SystemStatus.test.tsx": {
+    "lines": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/SystemStatus.tsx": {
+    "lines": { "total": 178, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 178, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/UILab.tsx": {
+    "lines": { "total": 291, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 291, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/apps/web/src/types/prismjs.d.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/memory-core/src/errors.ts": {
+    "lines": { "total": 20, "covered": 20, "skipped": 0, "pct": 100 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 20, "covered": 20, "skipped": 0, "pct": 100 },
+    "branches": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/memory-core/src/in-memory-store.ts": {
+    "lines": { "total": 42, "covered": 42, "skipped": 0, "pct": 100 },
+    "functions": { "total": 7, "covered": 7, "skipped": 0, "pct": 100 },
+    "statements": { "total": 42, "covered": 42, "skipped": 0, "pct": 100 },
+    "branches": { "total": 14, "covered": 11, "skipped": 0, "pct": 78.57 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/memory-core/src/index.ts": {
+    "lines": { "total": 4, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 4, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/memory-core/src/store.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/memory-core/src/types.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/policy/src/action-gate.ts": {
+    "lines": { "total": 34, "covered": 34, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 34, "covered": 34, "skipped": 0, "pct": 100 },
+    "branches": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/policy/src/index.ts": {
+    "lines": { "total": 3, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 3, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/policy/src/memory-gate.ts": {
+    "lines": { "total": 60, "covered": 53, "skipped": 0, "pct": 88.33 },
+    "functions": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "statements": { "total": 60, "covered": 53, "skipped": 0, "pct": 88.33 },
+    "branches": { "total": 11, "covered": 8, "skipped": 0, "pct": 72.72 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/policy/src/types.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/shared/src/hash.ts": {
+    "lines": { "total": 24, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 24, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/shared/src/index.ts": {
+    "lines": { "total": 2, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 2, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/packages/shared/src/shortcuts.ts": {
+    "lines": { "total": 9, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 9, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/index.ts": {
+    "lines": { "total": 44, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 44, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/commands/export.ts": {
+    "lines": { "total": 52, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 52, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/commands/hash-runbook.ts": {
+    "lines": { "total": 49, "covered": 45, "skipped": 0, "pct": 91.83 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 49, "covered": 45, "skipped": 0, "pct": 91.83 },
+    "branches": { "total": 10, "covered": 9, "skipped": 0, "pct": 90 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/commands/migrate.ts": {
+    "lines": { "total": 33, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 33, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/commands/seed.ts": {
+    "lines": { "total": 86, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 86, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/cli/src/commands/verify.ts": {
+    "lines": { "total": 123, "covered": 68, "skipped": 0, "pct": 55.28 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 123, "covered": 68, "skipped": 0, "pct": 55.28 },
+    "branches": { "total": 24, "covered": 12, "skipped": 0, "pct": 50 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/index.ts": {
+    "lines": { "total": 88, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 88, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/memoryIngest.ts": {
+    "lines": { "total": 45, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 45, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/paths.ts": {
+    "lines": { "total": 8, "covered": 8, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 8, "covered": 8, "skipped": 0, "pct": 100 },
+    "branches": { "total": 3, "covered": 2, "skipped": 0, "pct": 66.66 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/receipts.ts": {
+    "lines": { "total": 27, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 27, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/repoSearch.ts": {
+    "lines": { "total": 37, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 37, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  },
+  "/home/dreamboat/projects/aperion-chat-private/tools/mcp/aperion/src/secretsStatus.ts": {
+    "lines": { "total": 13, "covered": 0, "skipped": 0, "pct": 0 },
+    "functions": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 },
+    "statements": { "total": 13, "covered": 0, "skipped": 0, "pct": 0 },
+    "branches": { "total": 1, "covered": 0, "skipped": 0, "pct": 0 }
+  }
+}
