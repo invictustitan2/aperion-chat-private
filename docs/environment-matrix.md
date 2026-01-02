@@ -19,22 +19,23 @@ Notes:
 
 Path B note (same-origin API):
 
-- The repo supports a migration to mount the API under the same origin as the UI (`https://chat.aperion.cc/api/*`) to eliminate CORS.
-- Implementation exists in the repo; production should still be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` have been executed and verified.
-- Until then, production browser builds should keep using `VITE_API_BASE_URL=https://api.aperion.cc`.
+- Production browser traffic uses the same-origin Path B mount (`https://chat.aperion.cc/api/*`) to eliminate CORS.
+- `https://api.aperion.cc/*` remains supported for back-compat and non-browser tooling.
+- Production web builds should use `VITE_API_BASE_URL=/api` (relative) or leave it unset to default to `/api`.
 
 ## Secrets & Variables
 
-| Variable Name           | Description                                     | Local Source                        | Production Source                                                                                        |
-| :---------------------- | :---------------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------- |
-| `API_TOKEN`             | Worker-side bearer token secret                 | `wrangler dev`/env (Worker runtime) | `wrangler secret` (Worker)                                                                               |
-| `CLOUDFLARE_API_TOKEN`  | CI/CD deployment token                          | `.env`                              | GitHub Secrets / CI                                                                                      |
-| `VITE_API_BASE_URL`     | API base (absolute or relative)                 | `.env` (`http://127.0.0.1:8787`)    | Build Env (current: `https://api.aperion.cc`; after Path B rollout: relative `/api` or unset to default) |
-| `CF_ACCESS_TEAM_DOMAIN` | Access team domain / slug                       | n/a                                 | Worker vars                                                                                              |
-| `CF_ACCESS_AUD`         | Access app audience allowlist (comma-separated) | n/a                                 | Worker vars                                                                                              |
-| `AWS_ACCESS_KEY_ID`     | AWS Identity                                    | `~/.aws/credentials`                | `wrangler secret`                                                                                        |
-| `AWS_SECRET_ACCESS_KEY` | AWS Secret                                      | `~/.aws/credentials`                | `wrangler secret`                                                                                        |
-| `AWS_REGION`            | AWS Region (e.g., us-east-1)                    | `~/.aws/config`                     | `wrangler.toml` / Env Var                                                                                |
+| Variable Name          | Description                     | Local Source                        | Production Source                                                     |
+| :--------------------- | :------------------------------ | :---------------------------------- | :-------------------------------------------------------------------- |
+| `API_TOKEN`            | Worker-side bearer token secret | `wrangler dev`/env (Worker runtime) | `wrangler secret` (Worker)                                            |
+| `CLOUDFLARE_API_TOKEN` | CI/CD deployment token          | `.env`                              | GitHub Secrets / CI                                                   |
+| `VITE_API_BASE_URL`    | API base (absolute or relative) | `.env` (`http://127.0.0.1:8787`)    | Build Env (production: relative `/api` or unset to default to `/api`) |
+
+| `CF_ACCESS_TEAM_DOMAIN` | Access team domain / slug | n/a | Worker vars |
+| `CF_ACCESS_AUD` | Access app audience allowlist (comma-separated) | n/a | Worker vars |
+| `AWS_ACCESS_KEY_ID` | AWS Identity | `~/.aws/credentials` | `wrangler secret` |
+| `AWS_SECRET_ACCESS_KEY` | AWS Secret | `~/.aws/credentials` | `wrangler secret` |
+| `AWS_REGION` | AWS Region (e.g., us-east-1) | `~/.aws/config` | `wrangler.toml` / Env Var |
 
 ## Bindings (wrangler.toml)
 

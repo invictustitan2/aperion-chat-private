@@ -90,6 +90,12 @@ if [[ "${RUN_NETWORK_TESTS:-0}" == "1" ]]; then
   NET_ENABLED='yes'
 fi
 
+note "PLAN.NETWORK: ${NET_ENABLED}"
+note "PLAN.DEPLOY.WORKER: ${NET_ENABLED}"
+note "PLAN.DEPLOY.PAGES: ${NET_ENABLED}"
+note "PLAN.VALIDATE.BROWSER: ${NET_ENABLED}"
+note "PLAN.VALIDATE.API: ${NET_ENABLED}"
+
 # C) Pre-deploy evidence
 if [[ "$NET_ENABLED" == 'yes' ]]; then
   run_tee "${receipts_dir_abs}/pre.worker-secrets-list.txt" ./dev cf:worker:secrets:list || true
@@ -139,6 +145,64 @@ else
   run_tee "${receipts_dir_abs}/post.worker-secrets-list.txt" ./dev cf:worker:secrets:list || true
 fi
 
+# E2) Path B routing/auth validation (browser + api).
+# This command is itself network-gated and will print a stable SKIP receipt when RUN_NETWORK_TESTS!=1.
+run_tee "${receipts_dir_abs}/post.deploy-validate.browser.txt" ./dev deploy:validate --surface browser || true
+run_tee "${receipts_dir_abs}/post.deploy-validate.api.txt" ./dev deploy:validate --surface api || true
+
+kv_from_file() {
+  local file="$1"
+  local key="$2"
+  awk -F': ' -v k="$key" '$1==k {print $2; exit}' "$file" 2>/dev/null || true
+}
+
+compute_validate_ok() {
+  local file="$1"
+  if grep -q '^SKIP: ' "$file" 2>/dev/null; then
+    printf '%s' 'skip'
+    return 0
+  fi
+
+  local id_status
+  local ws_upgrade
+  local ws_connected
+  local ws_pong
+  local ws_exit
+
+  id_status="$(kv_from_file "$file" 'ENDPOINT.V1_IDENTITY')"
+  ws_upgrade="$(kv_from_file "$file" 'WS.PROBE.UPGRADE_HTTP_STATUS')"
+  ws_connected="$(kv_from_file "$file" 'WS.PROOF.CONNECTED')"
+  ws_pong="$(kv_from_file "$file" 'WS.PROOF.PONG_RECEIVED')"
+  ws_exit="$(kv_from_file "$file" 'WS.PROOF.EXIT_CODE')"
+
+  if [[ "$id_status" == '200' && "$ws_upgrade" == '101' && "$ws_connected" == 'yes' && "$ws_pong" == 'yes' && "$ws_exit" == '0' ]]; then
+    printf '%s' 'yes'
+  else
+    printf '%s' 'no'
+  fi
+}
+
+validate_browser_ok="$(compute_validate_ok "${receipts_dir_abs}/post.deploy-validate.browser.txt")"
+validate_api_ok="$(compute_validate_ok "${receipts_dir_abs}/post.deploy-validate.api.txt")"
+
+# E3) Canonical per-deploy proof index.
+index_file="${receipts_dir_abs}/INDEX.md"
+{
+  printf '%s\n' '# Deploy Proof Index'
+  printf 'UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  printf 'RECEIPTS.DIR: %s\n' "$receipts_dir_rel"
+  printf '\n'
+  printf '%s\n' '## Key Files'
+  printf '%s\n' "- SUMMARY.txt"
+  printf '%s\n' "- post.deploy-validate.browser.txt"
+  printf '%s\n' "- post.deploy-validate.api.txt"
+  printf '\n'
+  printf '%s\n' '## All Receipts'
+  (cd "$receipts_dir_abs" && ls -1) | sed 's/^/- /'
+} >"$index_file"
+
+note "RECEIPTS.INDEX: ${receipts_dir_rel}/INDEX.md"
+
 # F) Strict summary file
 summary_file="${receipts_dir_abs}/SUMMARY.txt"
 
@@ -148,10 +212,12 @@ post_semantic="$(awk -F': ' '$1=="with_service_token.V1_SEMANTIC_SEARCH.http_sta
 access_mode="$(awk -F': ' '$1=="diag.V1_IDENTITY" {print $2; exit}' "${receipts_dir_abs}/post.access-probe.txt" 2>/dev/null || true)"
 
 {
-  printf '%s\n' 'SUMMARY.VERSION: 1'
+  printf '%s\n' 'SUMMARY.VERSION: 2'
   printf 'RECEIPTS.DIR: %s\n' "$receipts_dir_rel"
   printf 'WORKER.DEPLOY.OK: %s\n' "$worker_deploy_ok"
   printf 'PAGES.DEPLOY.OK: %s\n' "$pages_deploy_ok"
+  printf 'VALIDATE.BROWSER.OK: %s\n' "$validate_browser_ok"
+  printf 'VALIDATE.API.OK: %s\n' "$validate_api_ok"
   printf 'POST.IDENTITY: %s\n' "${post_identity:-unknown}"
   printf 'POST.CONVERSATIONS: %s\n' "${post_conversations:-unknown}"
   printf 'POST.SEMANTIC_SEARCH: %s\n' "${post_semantic:-unknown}"

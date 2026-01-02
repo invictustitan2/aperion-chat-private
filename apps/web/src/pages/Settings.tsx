@@ -41,6 +41,20 @@ export function Settings() {
 
   const apiBase = useMemo(() => apiBaseUrlHints(apiBaseUrl), [apiBaseUrl]);
 
+  const apiBaseCopy = useMemo(() => {
+    if (apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin) {
+      return {
+        summary: "Cross-origin API base (CORS may apply).",
+        detail: `Cross-origin API base detected (${apiBaseUrl}); CORS may apply. Production should use /api (same-origin) or leave it unset to default to /api.`,
+      };
+    }
+
+    return {
+      summary: "Same-origin API (no CORS).",
+      detail: "Same-origin API base detected (no CORS).",
+    };
+  }, [apiBase.kind, apiBase.wouldBeSameOrigin, apiBaseUrl]);
+
   const [authCheck, setAuthCheck] = useState<
     | { status: "idle" }
     | { status: "running" }
@@ -210,17 +224,13 @@ export function Settings() {
                   <span>
                     Auth failed: {authCheck.detail}.{" "}
                     {apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin
-                      ? `Confirm CORS for ${apiBaseUrl}.`
-                      : "Confirm you have an active Access session."}
+                      ? apiBaseCopy.detail
+                      : `${apiBaseCopy.detail} Confirm you have an active Access session.`}
                   </span>
                 )}
                 {authCheck.status === "idle" && (
                   <span>
-                    Run the self-test to validate auth
-                    {apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin
-                      ? " and CORS"
-                      : ""}
-                    .
+                    Run the self-test to validate auth. {apiBaseCopy.summary}
                   </span>
                 )}
                 {authCheck.status === "running" && (
@@ -231,10 +241,14 @@ export function Settings() {
 
             <ul className="text-xs text-gray-400 list-disc pl-5 space-y-1">
               <li>In local dev, ensure you have an active Access session.</li>
-              <li>
-                Ensure the API base URL points at a Worker origin that accepts
-                your dev server origin (CORS).
-              </li>
+              {apiBase.kind === "absolute" && !apiBase.wouldBeSameOrigin ? (
+                <li>
+                  Cross-origin API bases may require CORS. Production should use
+                  /api (same-origin) or leave it unset to default to /api.
+                </li>
+              ) : (
+                <li>Same-origin /api is the production default (no CORS).</li>
+              )}
             </ul>
           </section>
         )}

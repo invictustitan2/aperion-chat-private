@@ -58,11 +58,29 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Guard Path B API base
+        run: |
+          set -euo pipefail
+
+          # Prevent drift back to cross-origin prod builds.
+          if grep -nE 'VITE_API_BASE_URL:\s*https?://' .github/workflows/deploy-web.yml; then
+            echo "❌ Production deploy must not set VITE_API_BASE_URL to an absolute URL.";
+            echo "   Use same-origin /api (or leave VITE_API_BASE_URL unset).";
+            exit 1
+          fi
+
+          if [ -n "${VITE_API_BASE_URL:-}" ] && echo "$VITE_API_BASE_URL" | grep -qE '^https?://'; then
+            echo "❌ Production deploy must not build with cross-origin VITE_API_BASE_URL=$VITE_API_BASE_URL";
+            echo "   Use same-origin /api (or unset).";
+            exit 1
+          fi
+
+          echo "✓ Path B API base guard passed"
+
       - name: Build Web App
         run: pnpm --filter @aperion/web build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-          VITE_API_BASE_URL: https://api.aperion.cc
 
       - name: Verify Build Configuration
         run: |

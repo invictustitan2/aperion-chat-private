@@ -4,12 +4,13 @@ This document describes the **HTTP API surface** (paths under `/v1/*`) implement
 
 Path B note (same-origin API):
 
-- Browser traffic can be served from `https://chat.aperion.cc/api/*` to eliminate CORS.
-- Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
-- Until then, production browser builds should keep using `https://api.aperion.cc` via `VITE_API_BASE_URL`.
-- Source of truth for the migration plan: `docs/path-b/SAME_ORIGIN_PLAN.md` and `docs/adr/0001-same-origin-api.md`.
+- Browser contract (production default): same-origin `https://chat.aperion.cc/api/v1/*` (no CORS).
+- Back-compat / tooling contract: `https://api.aperion.cc/v1/*` remains supported.
+- Source of truth for acceptance criteria: `docs/path-b/PHASE_3_MIGRATION.md`.
 
-**Base URL (external clients / current production)**: `https://api.aperion.cc`
+**Base URL (browser / Path B)**: `https://chat.aperion.cc/api`
+
+**Base URL (external clients / back-compat)**: `https://api.aperion.cc`
 
 **Base URL (local)**: `http://127.0.0.1:8787`
 

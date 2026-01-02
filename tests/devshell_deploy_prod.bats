@@ -14,7 +14,11 @@ setup() {
 
   # Should complete (no network deploy performed).
   [ "$status" -eq 0 ]
+  [[ "$output" == *"PLAN.NETWORK: no"* ]]
+  [[ "$output" == *"PLAN.VALIDATE.BROWSER: no"* ]]
+  [[ "$output" == *"PLAN.VALIDATE.API: no"* ]]
   [[ "$output" == *"RECEIPTS.DIR: receipts/deploy/"* ]]
+  [[ "$output" == *"RECEIPTS.INDEX: receipts/deploy/"*"/INDEX.md"* ]]
   [[ "$output" == *"DEPLOY.DONE: yes"* ]]
 
   latest_file="${REPO_ROOT}/receipts/deploy/latest.txt"
@@ -23,12 +27,19 @@ setup() {
   receipts_abs="$(cat "$latest_file")"
   [ -d "$receipts_abs" ]
   [ -f "$receipts_abs/SUMMARY.txt" ]
+  [ -f "$receipts_abs/INDEX.md" ]
+
+  # deploy:validate receipts should exist even when network is disabled (it prints SKIP).
+  [ -f "$receipts_abs/post.deploy-validate.browser.txt" ]
+  [ -f "$receipts_abs/post.deploy-validate.api.txt" ]
 
   # Summary should exist and be strict key/value.
   summary="$(cat "$receipts_abs/SUMMARY.txt")"
-  [[ "$summary" == *"SUMMARY.VERSION: 1"* ]]
+  [[ "$summary" == *"SUMMARY.VERSION: 2"* ]]
   [[ "$summary" == *"WORKER.DEPLOY.OK: no"* ]]
   [[ "$summary" == *"PAGES.DEPLOY.OK: no"* ]]
+  [[ "$summary" == *"VALIDATE.BROWSER.OK: skip"* ]]
+  [[ "$summary" == *"VALIDATE.API.OK: skip"* ]]
 
   # Must not leak obvious secret-like strings.
   [[ "$output" != *"Bearer "* ]]
