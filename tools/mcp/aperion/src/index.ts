@@ -3,10 +3,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { memoryIngestReceipt } from "./memoryIngest.js";
 import { appendReceipt } from "./receipts.js";
 import { repoSearch } from "./repoSearch.js";
 import { secretsStatus } from "./secretsStatus.js";
-import { memoryIngestReceipt } from "./memoryIngest.js";
 
 export type AperionMcpDeps = {
   appendReceipt: typeof appendReceipt;
@@ -57,7 +57,10 @@ export function createMcpTools(opts: {
         });
         return {
           content: [
-            { type: "text", text: `ok: appended to .ref/receipts/${rel}` },
+            {
+              type: "text" as const,
+              text: `ok: appended to .ref/receipts/${rel}`,
+            },
           ],
         };
       },
@@ -71,21 +74,23 @@ export function createMcpTools(opts: {
           return {
             content: [
               {
-                type: "text",
+                type: "text" as const,
                 text: `error: ${res.error ?? "search failed"}`,
               },
             ],
           };
         }
         const out = [res.stdout, res.stderr].filter(Boolean).join("\n").trim();
-        return { content: [{ type: "text", text: out || "(no matches)" }] };
+        return {
+          content: [{ type: "text" as const, text: out || "(no matches)" }],
+        };
       },
     },
     secretsStatus: {
       handler: async () => {
         const res = deps.secretsStatus({ repoRoot });
         const out = [res.stdout, res.stderr].filter(Boolean).join("\n").trim();
-        return { content: [{ type: "text", text: out }] };
+        return { content: [{ type: "text" as const, text: out }] };
       },
     },
     memoryIngestReceipt: {
@@ -93,7 +98,9 @@ export function createMcpTools(opts: {
       handler: async (args: z.infer<typeof MemoryIngestInput>) => {
         const { content, url } = args;
         const res = await deps.memoryIngestReceipt({ repoRoot, content, url });
-        return { content: [{ type: "text", text: JSON.stringify(res) }] };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(res) }],
+        };
       },
     },
   };

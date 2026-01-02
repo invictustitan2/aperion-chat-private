@@ -11,8 +11,6 @@ import {
   Plus,
   RotateCcw,
   Share2,
-  ToggleLeft,
-  ToggleRight,
   Wifi,
   WifiOff,
   X,
@@ -29,25 +27,28 @@ import {
 } from "../components/EmptyStates";
 import { MessageBubble } from "../components/MessageBubble";
 import { MessageContent } from "../components/MessageContent";
-import {
-  ConversationListSkeleton,
-  MessageSkeleton,
-} from "../components/ui/Skeleton";
-import { useMediaQuery } from "../hooks/useMediaQuery";
-import { useWebSocket } from "../hooks/useWebSocket";
-import { api } from "../lib/api";
 import { ReceiptsList } from "../components/ReceiptsList";
 import {
   Dialog,
   DialogContent,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
   IconButtonTooltip,
   TooltipProvider,
 } from "../components/ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/Select";
+import {
+  ConversationListSkeleton,
+  MessageSkeleton,
+} from "../components/ui/Skeleton";
+import { Switch } from "../components/ui/Switch";
+import { useMediaQuery } from "../hooks/useMediaQuery";
+import { useWebSocket } from "../hooks/useWebSocket";
+import { api } from "../lib/api";
 
 function formatDayLabel(ts: number) {
   return new Date(ts).toLocaleDateString([], {
@@ -1226,7 +1227,7 @@ export function Chat() {
                 </span>
               </div>
 
-              <p className="text-gray-400 text-xs md:text-sm hidden md:block flex-1 min-w-0 truncate">
+              <p className="text-gray-400 text-xs md:text-sm hidden xl:block truncate max-w-md">
                 Secure channel • Episodic logging active • Context: last{" "}
                 {Math.min(history?.length ?? 0, 10)} messages
               </p>
@@ -1285,39 +1286,24 @@ export function Chat() {
                 {/* Tone Selector */}
                 <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 radius-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm shrink-0">
                   <span className="text-gray-400 font-medium">Tone</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="bg-transparent text-white font-medium focus:outline-none"
-                        aria-label="Select Tone"
-                      >
-                        {tone === "default"
-                          ? "Default"
-                          : tone === "concise"
-                            ? "Concise"
-                            : "Detailed"}
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Tone</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onSelect={() => onChangeTone("default")}
-                      >
-                        {tone === "default" ? "✓ " : ""}Default
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => onChangeTone("concise")}
-                      >
-                        {tone === "concise" ? "✓ " : ""}Concise
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => onChangeTone("detailed")}
-                      >
-                        {tone === "detailed" ? "✓ " : ""}Detailed
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Select
+                    value={tone}
+                    onValueChange={(val) =>
+                      onChangeTone(val as "default" | "concise" | "detailed")
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-auto border-0 bg-transparent p-0 text-white hover:bg-transparent focus:ring-0 w-[80px]"
+                      aria-label="Select Tone"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="concise">Concise</SelectItem>
+                      <SelectItem value="detailed">Detailed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Regenerate last response */}
@@ -1399,25 +1385,22 @@ export function Chat() {
                 </button>
 
                 {/* Semantic Write Toggle */}
-                <button
-                  onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
+                <div
                   className={clsx(
                     "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
-                    isMemoryWriteEnabled
-                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
+                    "bg-white/5 border-white/10 hover:bg-white/10",
                   )}
                   title={`Semantic Write: ${isMemoryWriteEnabled ? "ON" : "OFF"}`}
                 >
-                  {isMemoryWriteEnabled ? (
-                    <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
-                  ) : (
-                    <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
-                  )}
-                  <span className="font-medium hidden md:inline">
-                    Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
+                  <Switch
+                    checked={isMemoryWriteEnabled}
+                    onCheckedChange={setIsMemoryWriteEnabled}
+                    className="scale-75 md:scale-90"
+                  />
+                  <span className="font-medium hidden lg:inline text-gray-300">
+                    Semantic Write
                   </span>
-                </button>
+                </div>
               </div>
             </header>
           </TooltipProvider>

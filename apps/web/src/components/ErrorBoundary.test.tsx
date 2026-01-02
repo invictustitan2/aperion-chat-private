@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
-import { fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 describe("ErrorBoundary", () => {
@@ -12,6 +11,7 @@ describe("ErrorBoundary", () => {
   it("renders a custom fallback", () => {
     function Thrower() {
       throw new Error("boom");
+      return null;
     }
 
     render(

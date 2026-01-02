@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
+// Typography
+import "@fontsource-variable/inter";
+import "@fontsource/jetbrains-mono";
 import { installGlobalErrorHandlers } from "./lib/errorLog";
 
 installGlobalErrorHandlers();

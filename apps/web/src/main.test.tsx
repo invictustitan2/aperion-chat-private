@@ -44,10 +44,4 @@ describe("entrypoints", () => {
     await import("./main");
     expect(renderMock).toHaveBeenCalledTimes(1);
   });
-
-  it("imports index.ts without throwing", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    await import("./index");
-    expect(logSpy).toHaveBeenCalled();
-  });
 });

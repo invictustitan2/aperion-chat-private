@@ -249,7 +249,18 @@ export function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 pt-[env(safe-area-inset-top)] md:pt-0 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0 min-w-0 min-h-0">
         <div className="flex-1 overflow-y-auto no-scrollbar p-0 min-h-0">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>
