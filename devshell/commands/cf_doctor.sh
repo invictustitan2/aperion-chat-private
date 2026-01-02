@@ -285,14 +285,17 @@ fi
 
 if [ -n "$pages_project_name" ]; then
   if [ "$wrangler_present" = 'yes' ] && [ "$authed" = 'yes' ]; then
-    if pages_list_out="$($wrangler_bin pages project list 2>/dev/null || true)"; then
-      if printf '%s' "$pages_list_out" | grep -qE "(^|[[:space:]])${pages_project_name}([[:space:]]|$)"; then
-        add_check "conflict.pages.project_exists" "PASS" "Pages project exists in account" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
-      else
-        add_check "conflict.pages.project_exists" "WARN" "Pages project not found in account (or list output format changed)" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
-      fi
+    pages_list_out="$($wrangler_bin pages project list 2>/dev/null)"
+    pages_list_rc=$?
+
+    if [ "$pages_list_rc" -ne 0 ]; then
+      add_check "conflict.pages.project_exists" "SKIP" "Unable to list Pages projects (wrangler exit $pages_list_rc)" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
+    elif [ -z "$(printf '%s' "$pages_list_out" | devshell_trim)" ]; then
+      add_check "conflict.pages.project_exists" "SKIP" "Unable to verify Pages project existence (empty list output; permissions or format may differ)" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
+    elif printf '%s' "$pages_list_out" | grep -qE "(^|[[:space:]])${pages_project_name}([[:space:]]|$)"; then
+      add_check "conflict.pages.project_exists" "PASS" "Pages project exists in account" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
     else
-      add_check "conflict.pages.project_exists" "WARN" "Unable to list Pages projects" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
+      add_check "conflict.pages.project_exists" "WARN" "Pages project not found in account" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
     fi
   else
     add_check "conflict.pages.project_exists" "SKIP" "Skipped Pages project listing (wrangler missing or unauthenticated)" "{\"project\":\"$(json_escape "$pages_project_name")\"}"
