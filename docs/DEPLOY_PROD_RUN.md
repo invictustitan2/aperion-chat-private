@@ -235,6 +235,11 @@ If missing, set them (interactive; TTY required; never prints values):
 - Preferred: `RUN_NETWORK_TESTS=1 ./dev cf:pages:deploy`
 - Fallback: `cd apps/web && pnpm build && npx wrangler pages deploy dist --project-name aperion-chat-private`
 
+Guardrails:
+
+- `./dev cf:pages:deploy` refuses to deploy if `VITE_API_BASE_URL` is set to anything other than `/api` (Path B), unless you pass `--force`.
+- Vite may print a “chunks larger than 500kB” warning during the Pages build when large optional dependencies (e.g. Mermaid/Cytoscape) are present; this is expected when those features are code-split into separate chunks.
+
 Note: Pages deploy is separate from Wrangler Worker environments.
 
 Receipts guidance (CLI deploys)

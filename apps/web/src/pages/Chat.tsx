@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle,
   Download,
+  FileText,
   Loader2,
   Menu,
   Plus,
@@ -14,6 +15,7 @@ import {
   ToggleRight,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -34,6 +36,13 @@ import {
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { api } from "../lib/api";
+import { ReceiptsList } from "../components/ReceiptsList";
+import {
+  Dialog,
+  DialogContent,
+  IconButtonTooltip,
+  TooltipProvider,
+} from "../components/ui";
 
 function formatDayLabel(ts: number) {
   return new Date(ts).toLocaleDateString([], {
@@ -101,6 +110,15 @@ export function Chat() {
   const [streamingElapsedMs, setStreamingElapsedMs] = useState(0);
 
   const [slashIndex, setSlashIndex] = useState(0);
+
+  const OPERATOR_PANEL_STORAGE_KEY = "aperion.operatorPanel.open";
+  const [isOperatorPanelOpen, setIsOperatorPanelOpen] = useState(false);
+  const [isOperatorSheetOpen, setIsOperatorSheetOpen] = useState(false);
+  const streamAbortControllerRef = useRef<AbortController | null>(null);
+  const [pendingUserMessage, setPendingUserMessage] = useState<{
+    id: string;
+    content: string;
+  } | null>(null);
 
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -367,48 +385,70 @@ export function Chat() {
       streamingStartAtRef.current = Date.now();
       setStreamingElapsedMs(0);
 
-      await api.chat.stream(
-        prompt,
-        historyForModel,
-        activeConversationId || undefined,
-        (token) => setStreamingResponse((prev) => prev + token),
-        (meta) => {
-          if (Array.isArray(meta.derived_from)) {
-            setStreamingDerivedFrom(meta.derived_from);
-          }
-        },
-        () => {
-          setIsStreaming(false);
-          const start = streamingStartAtRef.current;
-          if (start) {
-            const elapsed = Date.now() - start;
-            const derived = streamingDerivedFrom;
-            const lastUserId = lastPromptUserMessageIdRef.current;
-            const key =
-              lastUserId ||
-              (Array.isArray(derived) && derived.length > 0
-                ? derived[0]
-                : null);
-            if (key) {
-              setResponseTimeMsByUserMessageId((prev) => ({
-                ...prev,
-                [key]: elapsed,
-              }));
+      const controller = new AbortController();
+      streamAbortControllerRef.current = controller;
+
+      try {
+        await api.chat.stream(
+          prompt,
+          historyForModel,
+          activeConversationId || undefined,
+          (token) => setStreamingResponse((prev) => prev + token),
+          (meta) => {
+            if (Array.isArray(meta.derived_from)) {
+              setStreamingDerivedFrom(meta.derived_from);
             }
-          }
-          queryClient.invalidateQueries({ queryKey: ["episodic"] });
-        },
-      );
+          },
+          () => {
+            setIsStreaming(false);
+            streamAbortControllerRef.current = null;
+            const start = streamingStartAtRef.current;
+            if (start) {
+              const elapsed = Date.now() - start;
+              const derived = streamingDerivedFrom;
+              const lastUserId = lastPromptUserMessageIdRef.current;
+              const key =
+                lastUserId ||
+                (Array.isArray(derived) && derived.length > 0
+                  ? derived[0]
+                  : null);
+              if (key) {
+                setResponseTimeMsByUserMessageId((prev) => ({
+                  ...prev,
+                  [key]: elapsed,
+                }));
+              }
+            }
+            queryClient.invalidateQueries({ queryKey: ["episodic"] });
+          },
+          { signal: controller.signal },
+        );
+      } catch (e: unknown) {
+        // Treat user abort as a non-error.
+        if (e instanceof DOMException && e.name === "AbortError") {
+          return;
+        }
+        throw e;
+      } finally {
+        streamAbortControllerRef.current = null;
+      }
     },
     onError: () => {
       setIsStreaming(false);
       setStreamingResponse("");
+      streamAbortControllerRef.current = null;
     },
   });
 
   // Mutation to send message (now with streaming)
   const sendMessage = useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async ({
+      text,
+      optimisticId: _optimisticId,
+    }: {
+      text: string;
+      optimisticId: string;
+    }) => {
       // 1. Always write episodic (user message)
       const episodicRes = await api.episodic.create(
         text,
@@ -422,6 +462,9 @@ export function Chat() {
           ? { conversation_id: activeConversationId }
           : undefined,
       );
+
+      // Replace the optimistic placeholder with the real id.
+      setPendingUserMessage({ id: episodicRes.id, content: text });
 
       lastPromptUserMessageIdRef.current = episodicRes.id;
 
@@ -443,6 +486,9 @@ export function Chat() {
       streamingStartAtRef.current = Date.now();
       setStreamingElapsedMs(0);
 
+      const controller = new AbortController();
+      streamAbortControllerRef.current = controller;
+
       const historyForModel = (history || []).slice(-10).map((m) => ({
         role:
           String(m.provenance?.source_type) === "user"
@@ -451,54 +497,76 @@ export function Chat() {
         content: m.content,
       }));
 
-      await api.chat.stream(
-        text,
-        historyForModel,
-        activeConversationId || undefined,
-        (token) => {
-          // Append each token as it arrives
-          setStreamingResponse((prev) => prev + token);
-        },
-        (meta) => {
-          if (Array.isArray(meta.derived_from)) {
-            setStreamingDerivedFrom(meta.derived_from);
-          }
-        },
-        () => {
-          // Stream complete - refresh to get persisted response
-          setIsStreaming(false);
-          const start = streamingStartAtRef.current;
-          if (start) {
-            const elapsed = Date.now() - start;
-            const derived = streamingDerivedFrom;
-            const lastUserId = lastPromptUserMessageIdRef.current;
-            const key =
-              lastUserId ||
-              (Array.isArray(derived) && derived.length > 0
-                ? derived[0]
-                : null);
-            if (key) {
-              setResponseTimeMsByUserMessageId((prev) => ({
-                ...prev,
-                [key]: elapsed,
-              }));
+      try {
+        await api.chat.stream(
+          text,
+          historyForModel,
+          activeConversationId || undefined,
+          (token) => {
+            setStreamingResponse((prev) => prev + token);
+          },
+          (meta) => {
+            if (Array.isArray(meta.derived_from)) {
+              setStreamingDerivedFrom(meta.derived_from);
             }
-          }
+          },
+          () => {
+            setIsStreaming(false);
+            streamAbortControllerRef.current = null;
+            const start = streamingStartAtRef.current;
+            if (start) {
+              const elapsed = Date.now() - start;
+              const derived = streamingDerivedFrom;
+              const lastUserId = lastPromptUserMessageIdRef.current;
+              const key =
+                lastUserId ||
+                (Array.isArray(derived) && derived.length > 0
+                  ? derived[0]
+                  : null);
+              if (key) {
+                setResponseTimeMsByUserMessageId((prev) => ({
+                  ...prev,
+                  [key]: elapsed,
+                }));
+              }
+            }
+            queryClient.invalidateQueries({ queryKey: ["episodic"] });
+          },
+          { signal: controller.signal },
+        );
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          // User cancelled streaming; ensure episodic is visible.
+          setIsStreaming(false);
           queryClient.invalidateQueries({ queryKey: ["episodic"] });
-        },
-      );
+          return episodicRes;
+        }
+        throw e;
+      } finally {
+        streamAbortControllerRef.current = null;
+      }
 
       return episodicRes;
     },
     onSuccess: () => {
       setInput("");
+      setPendingUserMessage(null);
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
     },
     onError: () => {
       setIsStreaming(false);
       setStreamingResponse("");
+      streamAbortControllerRef.current = null;
+      // If the backend wrote episodic but streaming failed, the query invalidation
+      // on the next poll will still surface it.
     },
   });
+
+  useEffect(() => {
+    if (!pendingUserMessage) return;
+    const exists = (history || []).some((m) => m.id === pendingUserMessage.id);
+    if (exists) setPendingUserMessage(null);
+  }, [history, pendingUserMessage]);
 
   // Bottom-aware scroll + new message indicator
   useEffect(() => {
@@ -759,7 +827,20 @@ export function Chat() {
     }
 
     if (sendMessage.isPending) return;
-    sendMessage.mutate(input);
+
+    const optimisticId = `optimistic:${Date.now()}`;
+    setPendingUserMessage({ id: optimisticId, content: trimmed });
+    setInput("");
+    sendMessage.mutate({ text: trimmed, optimisticId });
+  };
+
+  const cancelStreaming = () => {
+    const controller = streamAbortControllerRef.current;
+    if (controller) controller.abort();
+    streamAbortControllerRef.current = null;
+    setIsStreaming(false);
+    setStreamingResponse("");
+    setStreamingDerivedFrom([]);
   };
 
   const handleCopy = async (id: string, content: string) => {
@@ -828,8 +909,42 @@ export function Chat() {
   const [isConversationsOpen, setIsConversationsOpen] = useState(false);
 
   useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(OPERATOR_PANEL_STORAGE_KEY);
+      if (v === "1") setIsOperatorPanelOpen(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleOperatorPanel = () => {
+    setIsOperatorPanelOpen((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(
+          OPERATOR_PANEL_STORAGE_KEY,
+          next ? "1" : "0",
+        );
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const isOperatorOpen = isMobile ? isOperatorSheetOpen : isOperatorPanelOpen;
+  const onOperatorToggle = () => {
+    if (isMobile) {
+      setIsOperatorSheetOpen((v) => !v);
+      return;
+    }
+    toggleOperatorPanel();
+  };
+
+  useEffect(() => {
     if (!isMobile) {
       setIsConversationsOpen(false);
+      setIsOperatorSheetOpen(false);
     }
   }, [isMobile]);
 
@@ -1060,419 +1175,535 @@ export function Chat() {
         )}
       </AnimatePresence>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
-        {/* Header */}
-        {/* Header */}
-        <header
-          className={clsx(
-            "border-b border-white/10 glass-dark z-10 shadow-subtle",
-            "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
-            "p-3 pt-[calc(0.75rem+env(safe-area-inset-top))]", // Mobile compact
-            "md:p-6 md:pt-6", // Desktop standard
-          )}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Mobile Conversations Drawer Toggle */}
-            {isMobile && (
-              <button
-                onClick={() => setIsConversationsOpen(true)}
-                className="mr-1 text-gray-400 hover:text-white tap44 flex-shrink-0"
-                aria-label="Open conversations"
-                title="Conversations"
-                data-testid="conversations-drawer-toggle"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            )}
-            <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight truncate">
-              Operator Chat
-            </h1>
-            {/* Connection Status */}
-            <span
+      {/* Main Chat Area + Operator Panel */}
+      <div className="flex-1 flex h-full min-h-0 min-w-0">
+        <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
+          {/* Header */}
+          {/* Header */}
+          <TooltipProvider>
+            <header
               className={clsx(
-                "p-1 radius-full flex-shrink-0",
-                isConnected ? "text-emerald-400" : "text-red-400",
-              )}
-              title={isConnected ? "Connected" : "Disconnected"}
-            >
-              {isConnected ? (
-                <Wifi className="w-4 h-4" />
-              ) : (
-                <WifiOff className="w-4 h-4" />
-              )}
-            </span>
-          </div>
-
-          <p className="text-gray-400 text-xs md:text-sm hidden md:block">
-            Secure channel • Episodic logging active • Context: last{" "}
-            {Math.min(history?.length ?? 0, 10)} messages
-          </p>
-
-          <div
-            className={clsx(
-              "flex items-center gap-2",
-              "overflow-x-auto no-scrollbar pb-1 -mx-3 px-3 scroll-smooth", // Mobile: Scrollable
-              "md:pb-0 md:mx-0 md:px-0 md:overflow-visible", // Desktop: Reset
-              "md:flex-wrap md:justify-end lg:flex-nowrap", // Tablet: wrap, Desktop: nowrap
-            )}
-          >
-            {/* Tone Selector */}
-            <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 radius-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm shrink-0">
-              <span className="text-gray-400 font-medium">Tone</span>
-              <select
-                value={tone}
-                onChange={(e) =>
-                  onChangeTone(
-                    e.target.value as "default" | "concise" | "detailed",
-                  )
-                }
-                className="bg-transparent text-white font-medium focus:outline-none h-8 md:h-auto"
-                aria-label="Select Tone"
-              >
-                <option value="default">Default</option>
-                <option value="concise">Concise</option>
-                <option value="detailed">Detailed</option>
-              </select>
-            </div>
-
-            {/* Regenerate last response */}
-            <button
-              onClick={() => regenerateResponse.mutate()}
-              disabled={
-                regenerateResponse.isPending ||
-                isStreaming ||
-                isLoading ||
-                !(history || []).some(
-                  (m) => String(m.provenance?.source_type) === "user",
-                )
-              }
-              className={clsx(
-                "radius-full border motion-fast backdrop-blur-sm tap44 md:p-2 shrink-0",
-                regenerateResponse.isPending || isStreaming
-                  ? "bg-white/5 border-white/10 text-gray-600"
-                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
-              )}
-              title="Regenerate last response"
-            >
-              {regenerateResponse.isPending || isStreaming ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4" />
-              )}
-            </button>
-
-            {/* Share Button (Active Convo Only) */}
-            <button
-              onClick={shareConversationLink}
-              className={clsx(
-                "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
-                activeConversationId
-                  ? "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                  : "opacity-50 cursor-not-allowed border-transparent text-gray-500",
-              )}
-              disabled={!activeConversationId}
-              title={
-                activeConversationId
-                  ? "Copy shareable conversation link"
-                  : "Select a conversation to share"
-              }
-            >
-              {copiedId === "__share_conversation__" ? (
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <Share2 className="w-4 h-4" />
-              )}
-            </button>
-
-            {/* Export Button */}
-            <button
-              onClick={handleExport}
-              disabled={isExporting || !history?.length}
-              className={clsx(
-                "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
-                isExporting
-                  ? "bg-white/5 border-white/10 text-gray-500"
-                  : exportSuccess
-                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                "border-b border-white/10 glass-dark z-10 shadow-subtle",
+                "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+                "p-3 pt-[calc(0.75rem+env(safe-area-inset-top))]", // Mobile compact
+                "md:p-6 md:pt-6", // Desktop standard
               )}
             >
-              {isExporting ? (
-                <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
-              ) : exportSuccess ? (
-                <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-              ) : (
-                <Download className="w-3 h-3 md:w-4 md:h-4" />
-              )}
-              <span className="font-medium hidden md:inline">
-                {isExporting
-                  ? "Exporting..."
-                  : exportSuccess
-                    ? "Exported!"
-                    : "Export PDF"}
-              </span>
-            </button>
-
-            {/* Semantic Write Toggle */}
-            <button
-              onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
-              className={clsx(
-                "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
-                isMemoryWriteEnabled
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
-                  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
-              )}
-              title={`Semantic Write: ${isMemoryWriteEnabled ? "ON" : "OFF"}`}
-            >
-              {isMemoryWriteEnabled ? (
-                <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
-              ) : (
-                <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
-              )}
-              <span className="font-medium hidden md:inline">
-                Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
-              </span>
-            </button>
-          </div>
-        </header>
-
-        {/* Export Error Message */}
-        {exportError && (
-          <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
-            <AlertCircle className="w-4 h-4" />
-            {exportError}
-          </div>
-        )}
-
-        {/* Chat Area */}
-        <div
-          className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6"
-          ref={scrollRef}
-        >
-          <div className="container-reading space-y-6">
-            {isLoading ? (
-              <>
-                <MessageSkeleton />
-                <MessageSkeleton isUser />
-                <MessageSkeleton />
-              </>
-            ) : error ? (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
-                <AlertCircle className="w-5 h-5" />
-                <span>Error loading history: {error.message}</span>
-              </div>
-            ) : history?.length === 0 ? (
-              !activeConversationId ? (
-                <AllMessagesEmptyState />
-              ) : (
-                <EmptyConversationState />
-              )
-            ) : (
-              history?.map((msg, idx) => {
-                const prev = idx > 0 ? history[idx - 1] : null;
-                const showDaySeparator =
-                  !prev || !isSameDay(prev.createdAt, msg.createdAt);
-                const isUser = String(msg.provenance?.source_type) === "user";
-
-                const responseMs = Array.isArray(msg.provenance?.derived_from)
-                  ? msg.provenance.derived_from
-                      .map((id) => responseTimeMsByUserMessageId[id])
-                      .find((v) => typeof v === "number")
-                  : undefined;
-
-                return (
-                  <React.Fragment key={msg.id}>
-                    {showDaySeparator && (
-                      <div className="flex items-center justify-center py-2">
-                        <div className="px-3 py-1 rounded-full text-[10px] font-mono text-white/30 bg-white/5 border border-white/10">
-                          {formatDayLabel(msg.createdAt)}
-                        </div>
-                      </div>
-                    )}
-
-                    <MessageBubble
-                      message={msg}
-                      isUser={isUser}
-                      isHighlighted={highlightMessageId === msg.id}
-                      isEditing={editingMessageId === msg.id}
-                      editingContent={editingContent}
-                      editError={editError}
-                      copiedId={copiedId}
-                      rating={ratedMessages[msg.id]}
-                      responseTimeMs={responseMs}
-                      onCopy={handleCopy}
-                      onShare={shareMessageLink}
-                      onEdit={startEditing}
-                      onCancelEdit={cancelEditing}
-                      onSaveEdit={saveEditing}
-                      onRate={handleRate}
-                      onEditingContentChange={(content) =>
-                        setEditingContent(content)
-                      }
-                      isSavingEdit={
-                        updateMessage.isPending && editingMessageId === msg.id
-                      }
-                    />
-                  </React.Fragment>
-                );
-              })
-            )}
-
-            {/* New messages indicator */}
-            {hasNewMessages && (
-              <div className="sticky bottom-4 flex justify-center pointer-events-none">
-                <button
-                  type="button"
-                  onClick={() => {
-                    scrollToBottom("smooth");
-                    setHasNewMessages(false);
-                    setNewMessagesCount(0);
-                    lastSeenLastMessageIdRef.current =
-                      (history || []).at(-1)?.id ?? null;
-                  }}
-                  className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs text-white/80 hover:bg-white/15 transition-all"
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Mobile Conversations Drawer Toggle */}
+                {isMobile && (
+                  <button
+                    onClick={() => setIsConversationsOpen(true)}
+                    className="mr-1 text-gray-400 hover:text-white tap44 flex-shrink-0"
+                    aria-label="Open conversations"
+                    title="Conversations"
+                    data-testid="conversations-drawer-toggle"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+                )}
+                <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight truncate">
+                  Operator Chat
+                </h1>
+                {/* Connection Status */}
+                <span
+                  className={clsx(
+                    "p-1 radius-full flex-shrink-0",
+                    isConnected ? "text-emerald-400" : "text-red-400",
+                  )}
+                  title={isConnected ? "Connected" : "Disconnected"}
                 >
-                  New messages
-                  {newMessagesCount > 0 ? ` (${newMessagesCount})` : ""}
-                </button>
-              </div>
-            )}
-
-            {/* Optimistic / Pending Message */}
-            {sendMessage.isPending && !isStreaming && (
-              <div className="flex flex-col gap-1 opacity-60 self-end items-end">
-                <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/80">
-                  {input}
-                </div>
-                <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Sending...
+                  {isConnected ? (
+                    <Wifi className="w-4 h-4" />
+                  ) : (
+                    <WifiOff className="w-4 h-4" />
+                  )}
                 </span>
               </div>
-            )}
 
-            {/* Streaming AI Response */}
-            {isStreaming && streamingResponse && (
-              <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
-                <div className="flex items-baseline gap-2 px-1">
-                  <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                    Aperion
-                  </span>
-                  <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-                    Streaming • {(streamingElapsedMs / 1000).toFixed(1)}s
-                  </span>
-                </div>
-                <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
-                  <MessageContent content={streamingResponse} />
-                  <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
-                </div>
-                {streamingDerivedFrom.length > 0 && (
-                  <div className="px-1 text-[10px] font-mono text-gray-500">
-                    Influenced by: {streamingDerivedFrom.length} memory
-                    {streamingDerivedFrom.length === 1 ? "" : "ies"}
-                  </div>
+              <p className="text-gray-400 text-xs md:text-sm hidden md:block">
+                Secure channel • Episodic logging active • Context: last{" "}
+                {Math.min(history?.length ?? 0, 10)} messages
+              </p>
+
+              <div
+                className={clsx(
+                  "flex items-center gap-2",
+                  "overflow-x-auto no-scrollbar pb-1 -mx-3 px-3 scroll-smooth", // Mobile: Scrollable
+                  "md:pb-0 md:mx-0 md:px-0 md:overflow-visible", // Desktop: Reset
+                  "md:flex-wrap md:justify-end lg:flex-nowrap", // Tablet: wrap, Desktop: nowrap
                 )}
-              </div>
-            )}
-
-            {/* Typing Indicator */}
-            {typingUsers.length > 0 && (
-              <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
-                <div className="flex gap-1">
-                  <span
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
-                </div>
-                <span>{typingUsers.join(", ")} is typing...</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
-          <div className="container-reading">
-            {" "}
-            {/* Added max-width to input container too */}
-            <ChatInput
-              value={input}
-              onChange={(value: string) => {
-                setSlashIndex(0);
-                setInput(value);
-                if (value) sendTyping();
-              }}
-              onSubmit={handleSubmit}
-              onFileSelect={async (file: File) => {
-                setIsUploading(true);
-                try {
-                  const { key } = await api.media.upload(file);
-                  const url = api.media.getUrl(key);
-                  setInput((prev) =>
-                    prev
-                      ? `${prev}\n![${file.name}](${url})`
-                      : `![${file.name}](${url})`,
-                  );
-                } catch (err) {
-                  console.error("Upload failed", err);
-                } finally {
-                  setIsUploading(false);
-                }
-              }}
-              onVoiceRecord={startRecording}
-              onVoiceStop={stopRecording}
-              isSubmitting={
-                sendMessage.isPending ||
-                clearAll.isPending ||
-                summarizeChat.isPending
-              }
-              isUploading={isUploading}
-              isRecording={isRecording}
-              isProcessingVoice={isProcessingVoice}
-              error={
-                sendMessage.error
-                  ? (sendMessage.error as unknown) instanceof Error
-                    ? (sendMessage.error as unknown as Error).message
-                    : String(sendMessage.error)
-                  : null
-              }
-              voiceError={voiceError}
-              disabled={
-                sendMessage.isPending ||
-                clearAll.isPending ||
-                isUploading ||
-                isProcessingVoice
-              }
-              showCharCount={true}
-              placeholder="Type a message..."
-              slashAutocomplete={
-                showSlashAutocomplete
-                  ? {
-                      matches: slashMatches,
-                      selectedIndex: slashIndex,
-                      onSelect: (cmd: string) => setInput(cmd),
-                      onNavigate: (dir: "up" | "down") =>
-                        setSlashIndex((i) =>
-                          dir === "down"
-                            ? (i + 1) % slashMatches.length
-                            : (i - 1 + slashMatches.length) %
-                              slashMatches.length,
-                        ),
+              >
+                <IconButtonTooltip
+                  label={
+                    isOperatorOpen
+                      ? "Close operator panel"
+                      : "Open operator panel"
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={onOperatorToggle}
+                    className={clsx(
+                      "radius-full border motion-fast backdrop-blur-sm tap44 md:p-2 shrink-0",
+                      isOperatorOpen
+                        ? "bg-emerald-500/15 border-emerald-500/20 text-emerald-300"
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                    )}
+                    aria-label={
+                      isOperatorOpen
+                        ? "Close operator panel"
+                        : "Open operator panel"
                     }
-                  : undefined
-              }
-            />
+                    data-testid="operator-panel-toggle"
+                  >
+                    <FileText className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </IconButtonTooltip>
+
+                {/* Cancel streaming */}
+                {isStreaming && (
+                  <button
+                    type="button"
+                    onClick={cancelStreaming}
+                    className={clsx(
+                      "radius-full border motion-fast backdrop-blur-sm tap44 md:px-3 md:py-2 shrink-0",
+                      "bg-white/5 border-white/10 text-gray-200 hover:bg-white/10",
+                    )}
+                    aria-label="Cancel response"
+                    data-testid="stream-cancel"
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {/* Tone Selector */}
+                <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 radius-full border bg-white/5 border-white/10 text-xs md:text-sm backdrop-blur-sm shrink-0">
+                  <span className="text-gray-400 font-medium">Tone</span>
+                  <select
+                    value={tone}
+                    onChange={(e) =>
+                      onChangeTone(
+                        e.target.value as "default" | "concise" | "detailed",
+                      )
+                    }
+                    className="bg-transparent text-white font-medium focus:outline-none h-8 md:h-auto"
+                    aria-label="Select Tone"
+                  >
+                    <option value="default">Default</option>
+                    <option value="concise">Concise</option>
+                    <option value="detailed">Detailed</option>
+                  </select>
+                </div>
+
+                {/* Regenerate last response */}
+                <button
+                  onClick={() => regenerateResponse.mutate()}
+                  disabled={
+                    regenerateResponse.isPending ||
+                    isStreaming ||
+                    isLoading ||
+                    !(history || []).some(
+                      (m) => String(m.provenance?.source_type) === "user",
+                    )
+                  }
+                  className={clsx(
+                    "radius-full border motion-fast backdrop-blur-sm tap44 md:p-2 shrink-0",
+                    regenerateResponse.isPending || isStreaming
+                      ? "bg-white/5 border-white/10 text-gray-600"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                  )}
+                  title="Regenerate last response"
+                >
+                  {regenerateResponse.isPending || isStreaming ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Share Button (Active Convo Only) */}
+                <button
+                  onClick={shareConversationLink}
+                  className={clsx(
+                    "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                    activeConversationId
+                      ? "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                      : "opacity-50 cursor-not-allowed border-transparent text-gray-500",
+                  )}
+                  disabled={!activeConversationId}
+                  title={
+                    activeConversationId
+                      ? "Copy shareable conversation link"
+                      : "Select a conversation to share"
+                  }
+                >
+                  {copiedId === "__share_conversation__" ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Share2 className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Export Button */}
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting || !history?.length}
+                  className={clsx(
+                    "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                    isExporting
+                      ? "bg-white/5 border-white/10 text-gray-500"
+                      : exportSuccess
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-200",
+                  )}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
+                  ) : exportSuccess ? (
+                    <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                  ) : (
+                    <Download className="w-3 h-3 md:w-4 md:h-4" />
+                  )}
+                  <span className="font-medium hidden md:inline">
+                    {isExporting
+                      ? "Exporting..."
+                      : exportSuccess
+                        ? "Exported!"
+                        : "Export PDF"}
+                  </span>
+                </button>
+
+                {/* Semantic Write Toggle */}
+                <button
+                  onClick={() => setIsMemoryWriteEnabled(!isMemoryWriteEnabled)}
+                  className={clsx(
+                    "flex items-center gap-2 radius-full border motion-fast text-xs md:text-sm backdrop-blur-sm tap44 md:p-2 md:px-4 md:h-auto md:w-auto justify-center shrink-0",
+                    isMemoryWriteEnabled
+                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10",
+                  )}
+                  title={`Semantic Write: ${isMemoryWriteEnabled ? "ON" : "OFF"}`}
+                >
+                  {isMemoryWriteEnabled ? (
+                    <ToggleRight className="w-4 h-4 md:w-5 md:h-5" />
+                  ) : (
+                    <ToggleLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  )}
+                  <span className="font-medium hidden md:inline">
+                    Semantic Write: {isMemoryWriteEnabled ? "ON" : "OFF"}
+                  </span>
+                </button>
+              </div>
+            </header>
+          </TooltipProvider>
+
+          {/* Export Error Message */}
+          {exportError && (
+            <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2 text-sm backdrop-blur-sm">
+              <AlertCircle className="w-4 h-4" />
+              {exportError}
+            </div>
+          )}
+
+          {/* Chat Area */}
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6"
+            ref={scrollRef}
+          >
+            <div className="container-reading space-y-6">
+              {isLoading ? (
+                <>
+                  <MessageSkeleton />
+                  <MessageSkeleton isUser />
+                  <MessageSkeleton />
+                </>
+              ) : error ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Error loading history: {error.message}</span>
+                </div>
+              ) : history?.length === 0 ? (
+                !activeConversationId ? (
+                  <AllMessagesEmptyState />
+                ) : (
+                  <EmptyConversationState />
+                )
+              ) : (
+                history?.map((msg, idx) => {
+                  const prev = idx > 0 ? history[idx - 1] : null;
+                  const showDaySeparator =
+                    !prev || !isSameDay(prev.createdAt, msg.createdAt);
+                  const isUser = String(msg.provenance?.source_type) === "user";
+
+                  const responseMs = Array.isArray(msg.provenance?.derived_from)
+                    ? msg.provenance.derived_from
+                        .map((id) => responseTimeMsByUserMessageId[id])
+                        .find((v) => typeof v === "number")
+                    : undefined;
+
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDaySeparator && (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="px-3 py-1 rounded-full text-[10px] font-mono text-white/30 bg-white/5 border border-white/10">
+                            {formatDayLabel(msg.createdAt)}
+                          </div>
+                        </div>
+                      )}
+
+                      <MessageBubble
+                        message={msg}
+                        isUser={isUser}
+                        isHighlighted={highlightMessageId === msg.id}
+                        isEditing={editingMessageId === msg.id}
+                        editingContent={editingContent}
+                        editError={editError}
+                        copiedId={copiedId}
+                        rating={ratedMessages[msg.id]}
+                        responseTimeMs={responseMs}
+                        onCopy={handleCopy}
+                        onShare={shareMessageLink}
+                        onEdit={startEditing}
+                        onCancelEdit={cancelEditing}
+                        onSaveEdit={saveEditing}
+                        onRate={handleRate}
+                        onEditingContentChange={(content) =>
+                          setEditingContent(content)
+                        }
+                        isSavingEdit={
+                          updateMessage.isPending && editingMessageId === msg.id
+                        }
+                      />
+                    </React.Fragment>
+                  );
+                })
+              )}
+
+              {/* New messages indicator */}
+              {hasNewMessages && (
+                <div className="sticky bottom-4 flex justify-center pointer-events-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      scrollToBottom("smooth");
+                      setHasNewMessages(false);
+                      setNewMessagesCount(0);
+                      lastSeenLastMessageIdRef.current =
+                        (history || []).at(-1)?.id ?? null;
+                    }}
+                    className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs text-white/80 hover:bg-white/15 transition-all"
+                  >
+                    New messages
+                    {newMessagesCount > 0 ? ` (${newMessagesCount})` : ""}
+                  </button>
+                </div>
+              )}
+
+              {pendingUserMessage && (
+                <div
+                  className="flex flex-col gap-1 self-end items-end"
+                  data-message-id={pendingUserMessage.id}
+                >
+                  <div className="bg-emerald-600/10 border border-emerald-500/10 rounded-2xl rounded-tr-sm p-3 md:p-4 text-emerald-100/90">
+                    {pendingUserMessage.content}
+                  </div>
+                  {(sendMessage.isPending || isStreaming) && (
+                    <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Sending...
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Streaming AI Response */}
+              {isStreaming && (
+                <div className="flex flex-col gap-1 self-start items-start animate-in fade-in">
+                  <div className="flex items-baseline gap-2 px-1">
+                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+                      Aperion
+                    </span>
+                    <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                      Streaming • {(streamingElapsedMs / 1000).toFixed(1)}s
+                    </span>
+                  </div>
+                  {streamingResponse ? (
+                    <div className="p-3 md:p-4 rounded-2xl rounded-tl-sm text-sm md:text-base shadow-sm backdrop-blur-sm border bg-purple-500/10 border-purple-500/20 text-gray-200">
+                      <MessageContent content={streamingResponse} />
+                      <span className="inline-block w-1 h-4 ml-0.5 bg-purple-400 animate-pulse" />
+                    </div>
+                  ) : (
+                    <div className="w-full">
+                      <MessageSkeleton />
+                    </div>
+                  )}
+                  {streamingDerivedFrom.length > 0 && (
+                    <div className="px-1 text-[10px] font-mono text-gray-500">
+                      Influenced by: {streamingDerivedFrom.length} memory
+                      {streamingDerivedFrom.length === 1 ? "" : "ies"}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Typing Indicator */}
+              {typingUsers.length > 0 && (
+                <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in">
+                  <div className="flex gap-1">
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
+                  </div>
+                  <span>{typingUsers.join(", ")} is typing...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <div className="container-reading">
+              {" "}
+              {/* Added max-width to input container too */}
+              <ChatInput
+                value={input}
+                onChange={(value: string) => {
+                  setSlashIndex(0);
+                  setInput(value);
+                  if (value) sendTyping();
+                }}
+                onSubmit={handleSubmit}
+                onFileSelect={async (file: File) => {
+                  setIsUploading(true);
+                  try {
+                    const { key } = await api.media.upload(file);
+                    const url = api.media.getUrl(key);
+                    setInput((prev) =>
+                      prev
+                        ? `${prev}\n![${file.name}](${url})`
+                        : `![${file.name}](${url})`,
+                    );
+                  } catch (err) {
+                    console.error("Upload failed", err);
+                  } finally {
+                    setIsUploading(false);
+                  }
+                }}
+                onVoiceRecord={startRecording}
+                onVoiceStop={stopRecording}
+                isSubmitting={
+                  sendMessage.isPending ||
+                  clearAll.isPending ||
+                  summarizeChat.isPending
+                }
+                isUploading={isUploading}
+                isRecording={isRecording}
+                isProcessingVoice={isProcessingVoice}
+                error={
+                  sendMessage.error
+                    ? (sendMessage.error as unknown) instanceof Error
+                      ? (sendMessage.error as unknown as Error).message
+                      : String(sendMessage.error)
+                    : null
+                }
+                voiceError={voiceError}
+                disabled={
+                  sendMessage.isPending ||
+                  clearAll.isPending ||
+                  isUploading ||
+                  isProcessingVoice
+                }
+                showCharCount={true}
+                placeholder="Type a message..."
+                slashAutocomplete={
+                  showSlashAutocomplete
+                    ? {
+                        matches: slashMatches,
+                        selectedIndex: slashIndex,
+                        onSelect: (cmd: string) => setInput(cmd),
+                        onNavigate: (dir: "up" | "down") =>
+                          setSlashIndex((i) =>
+                            dir === "down"
+                              ? (i + 1) % slashMatches.length
+                              : (i - 1 + slashMatches.length) %
+                                slashMatches.length,
+                          ),
+                      }
+                    : undefined
+                }
+              />
+            </div>
           </div>
         </div>
+
+        {/* Operator Panel (Desktop only, toggleable) */}
+        {!isMobile && isOperatorPanelOpen && (
+          <aside
+            className={clsx(
+              "hidden lg:flex w-96 border-l border-white/10 glass-dark flex-col h-full shrink-0 min-h-0",
+            )}
+            aria-label="Operator panel"
+            data-testid="operator-panel"
+          >
+            <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-white">Receipts</div>
+              <button
+                type="button"
+                onClick={toggleOperatorPanel}
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all tap44"
+                aria-label="Close operator panel"
+                title="Close operator panel"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="p-4 flex-1 min-h-0 overflow-y-auto no-scrollbar">
+              <ReceiptsList limit={10} compact className="gap-3" />
+            </div>
+          </aside>
+        )}
+
+        {/* Operator Sheet (Mobile) */}
+        {isMobile && (
+          <Dialog
+            open={isOperatorSheetOpen}
+            onOpenChange={setIsOperatorSheetOpen}
+          >
+            <DialogContent
+              variant="sheet"
+              sheetSide="right"
+              aria-label="Operator panel"
+              data-testid="operator-panel"
+            >
+              <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-white">Receipts</div>
+                <button
+                  type="button"
+                  onClick={() => setIsOperatorSheetOpen(false)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all tap44"
+                  aria-label="Close operator panel"
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="p-4 flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                <ReceiptsList limit={10} compact className="gap-3" />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

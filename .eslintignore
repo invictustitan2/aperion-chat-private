@@ -1,3 +1,6 @@
 
 # local reference mounts
 .ref/
+
+# Service worker (runs in SW global scope, not browser/node)
+apps/web/public/sw.js

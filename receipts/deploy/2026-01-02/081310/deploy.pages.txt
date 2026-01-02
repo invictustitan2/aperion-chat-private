@@ -1,0 +1,10 @@
+PAGES.BUILD.VITE_API_BASE_URL: /api
+PAGES.BUILD.VITE_AUTH_MODE: access
+EXPECTED_PROD_BASE: /api
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+PAGES.DEPLOY.OK: yes
+PAGES.DEPLOY.URL: https://b030adba.aperion-chat-web.pages.dev

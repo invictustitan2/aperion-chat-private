@@ -1,0 +1,5 @@
+PAGES.BUILD.VITE_API_BASE_URL: https://api.aperion.cc
+PAGES.BUILD.VITE_AUTH_MODE: access
+EXPECTED_PROD_BASE: /api
+WARN: VITE_API_BASE_URL is not production (/api).
+REFUSE: pass --force to proceed anyway.

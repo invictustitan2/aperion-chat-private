@@ -126,14 +126,18 @@ probe_one() {
 }
 
 manifest_obj="$(probe_one '/manifest.json')"
+sw_obj="$(probe_one '/sw.js')"
 favicon_obj="$(probe_one '/favicon.ico')"
 robots_obj="$(probe_one '/robots.txt')"
 
 manifest_status="$(printf '%s' "$manifest_obj" | sed -n 's/.*"http_status":\([0-9]*\).*/\1/p')"
 manifest_redirected="$(printf '%s' "$manifest_obj" | sed -n 's/.*"redirected_to_access":"\([^"]*\)".*/\1/p')"
 
+sw_status="$(printf '%s' "$sw_obj" | sed -n 's/.*"http_status":\([0-9]*\).*/\1/p')"
+sw_redirected="$(printf '%s' "$sw_obj" | sed -n 's/.*"redirected_to_access":"\([^"]*\)".*/\1/p')"
+
 pwa_public_ok='no'
-if [[ "$manifest_status" == '200' && "$manifest_redirected" != 'yes' ]]; then
+if [[ "$manifest_status" == '200' && "$manifest_redirected" != 'yes' && "$sw_status" == '200' && "$sw_redirected" != 'yes' ]]; then
   pwa_public_ok='yes'
 fi
 
@@ -145,7 +149,7 @@ latest_path="${repo_root}/receipts/pwa-probe.latest.json"
   printf '"schemaVersion":1,'
   printf '"timestamp":"%s",' "$(json_escape "$timestamp_iso")"
   printf '"origin":"%s",' "$(json_escape "$origin")"
-  printf '"probes":[%s,%s,%s],' "$manifest_obj" "$favicon_obj" "$robots_obj"
+  printf '"probes":[%s,%s,%s,%s],' "$manifest_obj" "$sw_obj" "$favicon_obj" "$robots_obj"
   printf '"summary":{'
   printf '"PWA_PUBLIC_OK":"%s"' "$pwa_public_ok"
   printf '}'
@@ -163,5 +167,5 @@ printf 'PWA.PUBLIC.OK: %s\n' "$pwa_public_ok" >&2
 printf 'RECEIPT: %s\n' "${receipt_path#${repo_root}/}" >&2
 
 if [[ "$pwa_public_ok" != 'yes' ]]; then
-  printf '%s\n' 'ACTION: Configure Cloudflare Access bypass for /manifest.json (and other static paths); see docs/ACCESS_PWA_BYPASS.md' >&2
+  printf '%s\n' 'ACTION: Configure Cloudflare Access bypass for /manifest.json, /sw.js (and other static paths); see docs/ACCESS_PWA_BYPASS.md' >&2
 fi

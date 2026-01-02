@@ -69,6 +69,13 @@
 
 ## Critical System Rules (DO NOT CHANGE LIGHTLY)
 
+### 0. Primitives (one system)
+
+- Overlays / menus / tooltips / tabs use **Radix Primitives** via wrappers in `apps/web/src/components/ui/`.
+- Do not introduce a second primitive library for these behaviors.
+- Headless UI is allowed only as a fallback if Radix cannot support an existing interaction pattern.
+- Styling: no new hard-coded colors; use existing Tailwind tokens + `.glass` / `.glass-dark`.
+
 ### 1. Motion & Performance
 
 - **Blur Caps**: Mobile surfaces MUST NOT exceed `backdrop-blur-md`.

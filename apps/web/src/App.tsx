@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { CommandPalette } from "./components/CommandPalette";
 import { Layout } from "./components/Layout";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ToastProvider, ToastViewport } from "./components/ui";
 
 // Lazy load page components for code splitting
 const Chat = lazy(() =>
@@ -79,112 +80,115 @@ function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          {/* Command Palette */}
-          <CommandPalette
-            isOpen={isCommandPaletteOpen}
-            onClose={() => setIsCommandPaletteOpen(false)}
-          />
+        <ToastProvider swipeDirection="right">
+          <BrowserRouter>
+            {/* Command Palette */}
+            <CommandPalette
+              isOpen={isCommandPaletteOpen}
+              onClose={() => setIsCommandPaletteOpen(false)}
+            />
 
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Navigate to="/chat" replace />} />
-              <Route
-                path="chat"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Chat />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="memory"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Memory />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="identity"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Identity />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="receipts"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Receipts />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="errors"
-                element={<Navigate to="/status" replace />}
-              />
-              <Route
-                path="status"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <SystemStatus />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Settings />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="logs"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Logs />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="analytics"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Analytics />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="knowledge"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Knowledge />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="insights"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Insights />
-                  </Suspense>
-                }
-              />
-              {/* UI Lab - Development Only */}
-              <Route
-                path="ui-lab"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <UILab />
-                  </Suspense>
-                }
-              />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Navigate to="/chat" replace />} />
+                <Route
+                  path="chat"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Chat />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="memory"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Memory />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="identity"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Identity />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="receipts"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Receipts />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="errors"
+                  element={<Navigate to="/status" replace />}
+                />
+                <Route
+                  path="status"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <SystemStatus />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Settings />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="logs"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Logs />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="analytics"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Analytics />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="knowledge"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Knowledge />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="insights"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Insights />
+                    </Suspense>
+                  }
+                />
+                {/* UI Lab - Development Only */}
+                <Route
+                  path="ui-lab"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <UILab />
+                    </Suspense>
+                  }
+                />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+          <ToastViewport />
+        </ToastProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

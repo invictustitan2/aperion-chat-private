@@ -1,6 +1,13 @@
 import { clsx } from "clsx";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { KeyboardEvent, useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui";
 
 /**
  * ConversationItem Component - Aperion Chat
@@ -139,28 +146,44 @@ export function ConversationItem({
       {/* Actions */}
       {!isRenaming && (
         <div className="flex items-center gap-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
-          <button
-            onClick={() => onStartRename(conversation.id, conversation.title)}
-            className="text-gray-500 hover:text-white hover:bg-white/10 radius-sm motion-fast focus-ring-visible tap44"
-            title="Rename"
-            aria-label={`Rename ${conversation.title}`}
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => onDelete(conversation.id)}
-            className="text-gray-500 hover:text-white hover:bg-white/10 radius-sm motion-fast focus-ring-visible tap44"
-            title="Delete"
-            disabled={isDeleting}
-            aria-label={`Delete ${conversation.title}`}
-          >
-            {isDeleting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                data-testid="conversation-actions-trigger"
+                className="text-gray-500 hover:text-white hover:bg-white/10 radius-sm motion-fast focus-ring-visible tap44"
+                aria-label={`Conversation actions for ${conversation.title}`}
+                title="Conversation actions"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                data-testid="conversation-action-rename"
+                onSelect={() =>
+                  onStartRename(conversation.id, conversation.title)
+                }
+              >
+                <Pencil className="w-4 h-4" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-testid="conversation-action-delete"
+                onSelect={() => onDelete(conversation.id)}
+                disabled={isDeleting}
+                className="text-red-300 focus:text-red-200"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </div>

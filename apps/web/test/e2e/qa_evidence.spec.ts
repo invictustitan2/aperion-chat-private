@@ -228,12 +228,22 @@ test.describe("Phase 5 RC: iPhone 15 Evidence Pack", () => {
         .filter({ has: page.getByText("Hello world QA") });
       await expect(bubble).toBeVisible();
 
-      const shareBtn = bubble.getByLabel("Share message");
-      await expect(shareBtn).toBeVisible();
+      const actions = bubble.getByTestId("message-actions-trigger");
+      await expect(actions).toBeVisible();
+      await actions.click();
+
+      const shareItem = page.getByTestId("message-action-share");
+      await expect(shareItem).toBeVisible();
 
       await page.screenshot({
         path: `${screenshotDir}/qa-iphone15-message-actions.png`,
       });
+
+      // Close the dropdown so it can't intercept subsequent taps/clicks.
+      await page.keyboard.press("Escape");
+      await expect(
+        page.getByRole("menu", { name: "Message actions" }),
+      ).toBeHidden();
     });
 
     await test.step("F) Header actions + safe area screenshots", async () => {

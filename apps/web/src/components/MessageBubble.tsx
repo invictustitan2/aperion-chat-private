@@ -4,6 +4,7 @@ import {
   CheckCircle,
   Copy,
   Loader2,
+  MoreHorizontal,
   Pencil,
   Share2,
   ThumbsDown,
@@ -11,6 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { MessageContent } from "./MessageContent";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui";
 
 /**
  * MessageBubble Component - Aperion Chat
@@ -200,85 +208,85 @@ export function MessageBubble({
             </button>
           </>
         ) : (
-          <>
-            {/* Share Link */}
-            {onShare && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
-                onClick={() => onShare(message.id)}
+                type="button"
+                data-testid="message-actions-trigger"
                 className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
-                title="Copy shareable message link"
-                aria-label="Share message"
+                aria-label="Message actions"
+                title="Message actions"
               >
-                {copiedId === `share:${message.id}` ? (
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Share2 className="w-3.5 h-3.5" />
-                )}
+                <MoreHorizontal className="w-4 h-4" />
               </button>
-            )}
-
-            {/* Copy Button */}
-            {onCopy && (
-              <button
-                onClick={() => onCopy(message.id, message.content)}
-                className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
-                title="Copy to clipboard"
-                aria-label="Copy message"
-              >
-                {copiedId === message.id ? (
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-              </button>
-            )}
-
-            {/* Edit Button (user messages only) */}
-            {isUser && onEdit && (
-              <button
-                onClick={() => onEdit(message.id, message.content)}
-                className="text-gray-500 hover:text-white hover:bg-white/10 rounded-md motion-fast focus-ring-visible tap44"
-                title="Edit message"
-                aria-label="Edit message"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {/* Rating Buttons (AI messages only) */}
-            {!isUser && onRate && (
-              <>
-                <button
-                  onClick={() => onRate(message.id, "up")}
-                  className={clsx(
-                    "rounded-md motion-fast focus-ring-visible tap44",
-                    rating === "up"
-                      ? "text-emerald-400 bg-emerald-500/20"
-                      : "text-gray-500 hover:text-white hover:bg-white/10",
-                  )}
-                  title="Good response"
-                  aria-label="Rate response as good"
-                  aria-pressed={rating === "up"}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isUser ? "start" : "end"}>
+              {onShare && (
+                <DropdownMenuItem
+                  data-testid="message-action-share"
+                  onSelect={() => onShare(message.id)}
                 >
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onRate(message.id, "down")}
-                  className={clsx(
-                    "rounded-md motion-fast focus-ring-visible tap44",
-                    rating === "down"
-                      ? "text-red-400 bg-red-500/20"
-                      : "text-gray-500 hover:text-white hover:bg-white/10",
+                  {copiedId === `share:${message.id}` ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Share2 className="w-4 h-4" />
                   )}
-                  title="Poor response"
-                  aria-label="Rate response as poor"
-                  aria-pressed={rating === "down"}
+                  Share link
+                </DropdownMenuItem>
+              )}
+
+              {onCopy && (
+                <DropdownMenuItem
+                  data-testid="message-action-copy"
+                  onSelect={() => onCopy(message.id, message.content)}
                 >
-                  <ThumbsDown className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </>
+                  {copiedId === message.id ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  Copy
+                </DropdownMenuItem>
+              )}
+
+              {isUser && onEdit && (
+                <DropdownMenuItem
+                  data-testid="message-action-edit"
+                  onSelect={() => onEdit(message.id, message.content)}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+
+              {!isUser && onRate && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    data-testid="message-action-rate-up"
+                    onSelect={() => onRate(message.id, "up")}
+                    className={clsx(
+                      rating === "up" &&
+                        "text-emerald-300 focus:text-emerald-200",
+                    )}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    Good
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    data-testid="message-action-rate-down"
+                    onSelect={() => onRate(message.id, "down")}
+                    className={clsx(
+                      rating === "down" && "text-red-300 focus:text-red-200",
+                    )}
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    Poor
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>

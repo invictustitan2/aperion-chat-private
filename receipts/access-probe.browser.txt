@@ -1,45 +1,45 @@
 BASE_URL: https://chat.aperion.cc/api
 with_service_token.ROOT.http_status: 404
 with_service_token.ROOT.content-type: application/json; charset=utf-8
-with_service_token.ROOT.cf-ray: 9b77d2485ff66081-ORD
+with_service_token.ROOT.cf-ray: 9b78cd5ae8fde11c-ORD
 with_service_token.ROOT.server: cloudflare
 with_service_token.ROOT.location: 
 without_service_token.ROOT.http_status: 302
 without_service_token.ROOT.content-type: 
-without_service_token.ROOT.cf-ray: 9b77d248eebe6203-ORD
+without_service_token.ROOT.cf-ray: 9b78cd5b7ff172e4-ORD
 without_service_token.ROOT.server: cloudflare
 without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
 diag.ROOT: NOT_ROUTED_API_ENDPOINT
 with_service_token.V1_IDENTITY.http_status: 200
 with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
-with_service_token.V1_IDENTITY.cf-ray: 9b77d24a1a731130-ORD
+with_service_token.V1_IDENTITY.cf-ray: 9b78cd5cdda37e6b-ORD
 with_service_token.V1_IDENTITY.server: cloudflare
 with_service_token.V1_IDENTITY.location: 
 without_service_token.V1_IDENTITY.http_status: 302
 without_service_token.V1_IDENTITY.content-type: 
-without_service_token.V1_IDENTITY.cf-ray: 9b77d24abd7c8052-ORD
+without_service_token.V1_IDENTITY.cf-ray: 9b78cd5ebfe9cd4f-LHR
 without_service_token.V1_IDENTITY.server: cloudflare
 without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
 diag.V1_IDENTITY: UNKNOWN
 with_service_token.V1_CONVERSATIONS.http_status: 200
 with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
-with_service_token.V1_CONVERSATIONS.cf-ray: 9b77d24bd9b80013-ORD
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd6039341045-ORD
 with_service_token.V1_CONVERSATIONS.server: cloudflare
 with_service_token.V1_CONVERSATIONS.location: 
 without_service_token.V1_CONVERSATIONS.http_status: 302
 without_service_token.V1_CONVERSATIONS.content-type: 
-without_service_token.V1_CONVERSATIONS.cf-ray: 9b77d24e88ceeac3-ORD
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd60ff67e157-ORD
 without_service_token.V1_CONVERSATIONS.server: cloudflare
 without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
 diag.V1_CONVERSATIONS: UNKNOWN
 with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
 with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
-with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b77d24fc913540f-ORD
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd624b7078af-ORD
 with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 with_service_token.V1_SEMANTIC_SEARCH.location: 
 without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
 without_service_token.V1_SEMANTIC_SEARCH.content-type: 
-without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b77d2517cb4e26e-ORD
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd63b862125d-ORD
 without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
 diag.V1_SEMANTIC_SEARCH: UNKNOWN

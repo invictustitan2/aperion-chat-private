@@ -21,6 +21,7 @@ Symptoms:
 This repo’s PWA assets (source of truth):
 
 - `apps/web/public/manifest.json`
+- `apps/web/public/sw.js`
 - `apps/web/public/icon-192.png`
 - `apps/web/public/icon-512.png`
 
@@ -40,7 +41,7 @@ Run:
 Acceptance:
 
 - `PWA.PUBLIC.OK: yes`
-- Receipt shows `http_status: 200` for `/manifest.json` and `location` empty
+- Receipt shows `http_status: 200` for `/manifest.json` and `/sw.js` and `location` empty
 
 Additional expectation (not currently probed by `pwa:probe`, but required for a working PWA):
 
@@ -50,7 +51,7 @@ Additional expectation (not currently probed by `pwa:probe`, but required for a 
 If not OK:
 
 - The command prints:
-  `ACTION: Configure Cloudflare Access bypass for /manifest.json (and other static paths); see docs/ACCESS_PWA_BYPASS.md`
+  `ACTION: Configure Cloudflare Access bypass for /manifest.json, /sw.js (and other static paths); see docs/ACCESS_PWA_BYPASS.md`
 
 ## Cloudflare Dashboard steps
 

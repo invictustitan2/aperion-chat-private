@@ -97,10 +97,7 @@ describe("ConversationItem", () => {
     render(<ConversationItem {...defaultProps} />);
 
     expect(
-      screen.getByLabelText("Rename Test Conversation"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Delete Test Conversation"),
+      screen.getByTestId("conversation-actions-trigger"),
     ).toBeInTheDocument();
   });
 
@@ -110,8 +107,10 @@ describe("ConversationItem", () => {
       <ConversationItem {...defaultProps} onStartRename={handleStartRename} />,
     );
 
-    const renameButton = screen.getByLabelText("Rename Test Conversation");
-    fireEvent.click(renameButton);
+    const trigger = screen.getByTestId("conversation-actions-trigger");
+    fireEvent.pointerDown(trigger);
+    const renameItem = screen.getByTestId("conversation-action-rename");
+    fireEvent.click(renameItem);
 
     expect(handleStartRename).toHaveBeenCalledWith(
       "conv-1",
@@ -123,8 +122,10 @@ describe("ConversationItem", () => {
     const handleDelete = vi.fn();
     render(<ConversationItem {...defaultProps} onDelete={handleDelete} />);
 
-    const deleteButton = screen.getByLabelText("Delete Test Conversation");
-    fireEvent.click(deleteButton);
+    const trigger = screen.getByTestId("conversation-actions-trigger");
+    fireEvent.pointerDown(trigger);
+    const deleteItem = screen.getByTestId("conversation-action-delete");
+    fireEvent.click(deleteItem);
 
     expect(handleDelete).toHaveBeenCalledWith("conv-1");
   });
@@ -132,18 +133,22 @@ describe("ConversationItem", () => {
   it("is keyboard accessible - rename button is focusable", () => {
     render(<ConversationItem {...defaultProps} />);
 
-    const renameButton = screen.getByLabelText("Rename Test Conversation");
-    renameButton.focus();
+    const trigger = screen.getByTestId("conversation-actions-trigger");
+    trigger.focus();
 
-    expect(document.activeElement).toBe(renameButton);
+    expect(document.activeElement).toBe(trigger);
   });
 
-  it("is keyboard accessible - delete button is focusable", () => {
+  it("renders rename/delete actions in the menu", () => {
     render(<ConversationItem {...defaultProps} />);
 
-    const deleteButton = screen.getByLabelText("Delete Test Conversation");
-    deleteButton.focus();
-
-    expect(document.activeElement).toBe(deleteButton);
+    const trigger = screen.getByTestId("conversation-actions-trigger");
+    fireEvent.pointerDown(trigger);
+    expect(
+      screen.getByTestId("conversation-action-rename"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("conversation-action-delete"),
+    ).toBeInTheDocument();
   });
 });

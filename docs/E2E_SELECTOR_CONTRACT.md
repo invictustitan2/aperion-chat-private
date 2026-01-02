@@ -85,6 +85,10 @@ Contract:
 
 - Row container: `data-testid="conversation-item"`
 - Primary open/select button: `data-testid="conversation-item-open"`
+- Actions menu trigger: `data-testid="conversation-actions-trigger"`
+- Actions menu items:
+  - Rename: `data-testid="conversation-action-rename"`
+  - Delete: `data-testid="conversation-action-delete"`
 
 Recommended test patterns:
 
@@ -96,10 +100,13 @@ await row.getByTestId("conversation-item-open").click();
 
 If you need rename/delete coverage in E2E:
 
-- Add explicit testids to the component:
-  - `conversation-item-rename`
-  - `conversation-item-delete`
-- Update only the tests that need them.
+Use the dropdown menu testids, scoped to the row:
+
+```ts
+const row = page.getByTestId("conversation-item").first();
+await row.getByTestId("conversation-actions-trigger").click();
+await page.getByTestId("conversation-action-rename").click();
+```
 
 ### Conversations drawer (mobile / small screens)
 
@@ -121,6 +128,27 @@ await expect(drawer).toBeVisible();
 await drawer.getByTestId("new-conversation").click();
 ```
 
+### Operator panel (desktop + mobile sheet)
+
+Component: `apps/web/src/pages/Chat.tsx`
+
+Contract:
+
+- Operator toggle: `data-testid="operator-panel-toggle"`
+- Operator container (desktop aside OR mobile sheet): `data-testid="operator-panel"`
+- Cancel streaming: `data-testid="stream-cancel"`
+
+Recommended test patterns:
+
+```ts
+await page.getByTestId("operator-panel-toggle").click();
+await expect(page.getByTestId("operator-panel")).toBeVisible();
+
+// If streaming is active
+const cancel = page.getByTestId("stream-cancel");
+if (await cancel.isVisible()) await cancel.click();
+```
+
 ### Message bubbles
 
 Component: `apps/web/src/components/MessageBubble.tsx`
@@ -130,6 +158,13 @@ Contract:
 - Bubble wrapper: `data-testid="message-bubble"`
 - Bubble content: `data-testid="message-bubble-content"`
 - Bubble has `data-message-id` for stable lookup.
+- Actions menu trigger: `data-testid="message-actions-trigger"`
+- Actions menu items (when enabled by props):
+  - `data-testid="message-action-share"`
+  - `data-testid="message-action-copy"`
+  - `data-testid="message-action-edit"`
+  - `data-testid="message-action-rate-up"`
+  - `data-testid="message-action-rate-down"`
 
 Example:
 

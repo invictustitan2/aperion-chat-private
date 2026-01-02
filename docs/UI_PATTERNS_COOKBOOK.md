@@ -127,6 +127,190 @@ import { Card } from './components/ui';
 
 ---
 
+### Dialogs / Sheets (Radix)
+
+Use the wrapper components from `apps/web/src/components/ui/` (Radix-based) for any modal, sheet, or details overlay.
+
+```tsx
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+} from "./components/ui";
+
+// Modal
+<Dialog>
+  <DialogTrigger asChild>
+    <button className="radius-full bg-white/5 border border-white/10 tap44">
+      Open
+    </button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Settings</DialogTitle>
+      <DialogDescription>Update preferences</DialogDescription>
+    </DialogHeader>
+    <DialogBody>
+      <div className="text-sm text-gray-200">…</div>
+    </DialogBody>
+    <DialogFooter>
+      <DialogClose asChild>
+        <button className="radius-full bg-white/5 border border-white/10 tap44 px-3">
+          Close
+        </button>
+      </DialogClose>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+// Sheet
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent variant="sheet" sheetSide="right">
+    <div className="p-4 border-b border-white/10">
+      <div className="text-sm font-semibold text-white">Panel</div>
+    </div>
+    <div className="p-4 flex-1 overflow-y-auto">…</div>
+  </DialogContent>
+</Dialog>
+```
+
+Rules:
+
+- No bespoke overlays; use `DialogContent` with `variant="sheet"` for drawers.
+- Focus trapping + Esc-to-close comes from Radix.
+
+---
+
+### Dropdown Menus (Radix)
+
+```tsx
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "./components/ui";
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <button className="radius-full bg-white/5 border border-white/10 tap44">
+      Actions
+    </button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuItem onSelect={() => doThing()}>Rename</DropdownMenuItem>
+    <DropdownMenuItem onSelect={() => doThingElse()}>Delete</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem disabled>Disabled item</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>;
+```
+
+Recommended for composite rows (conversation/message actions):
+
+- Put a single actions trigger in the row.
+- Put stable `data-testid` hooks on trigger + items.
+- Use `onSelect` (Radix) rather than `onClick`.
+
+```tsx
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <button
+      type="button"
+      data-testid="conversation-actions-trigger"
+      aria-label="Conversation actions"
+      className="tap44"
+    >
+      …
+    </button>
+  </DropdownMenuTrigger>
+
+  <DropdownMenuContent align="end">
+    <DropdownMenuItem
+      data-testid="conversation-action-rename"
+      onSelect={() => onStartRename(id, title)}
+    >
+      Rename
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      data-testid="conversation-action-delete"
+      onSelect={() => onDelete(id)}
+    >
+      Delete
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+---
+
+### Tooltips (Radix)
+
+Use tooltips for icon-only buttons (desktop/keyboard discoverability). Provide `aria-label` always.
+
+```tsx
+import { IconButtonTooltip } from "./components/ui";
+
+<IconButtonTooltip label="Open operator panel">
+  <button aria-label="Open operator panel" className="radius-full tap44">
+    …
+  </button>
+</IconButtonTooltip>;
+```
+
+Note: tooltips degrade gracefully on coarse pointers (mobile).
+
+---
+
+### Tabs (Radix)
+
+```tsx
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui";
+
+<Tabs value={tab} onValueChange={setTab}>
+  <TabsList>
+    <TabsTrigger value="a">A</TabsTrigger>
+    <TabsTrigger value="b">B</TabsTrigger>
+  </TabsList>
+  <TabsContent value="a">A content</TabsContent>
+  <TabsContent value="b">B content</TabsContent>
+</Tabs>;
+```
+
+---
+
+### Toasts / Notices (Radix)
+
+The app exposes a single global Toast system (Radix). Use it for transient notices (errors, success, “saved”).
+
+```tsx
+import { useSimpleToast } from "./components/ui";
+
+const { show, toast } = useSimpleToast();
+
+return (
+  <>
+    {toast}
+    <button
+      onClick={() =>
+        show({ title: "Saved", description: "Preferences updated" })
+      }
+    >
+      Save
+    </button>
+  </>
+);
+```
+
+---
+
 ### Skeletons
 
 ```tsx
@@ -206,17 +390,22 @@ import {
 ### Colors
 
 ```tsx
-// Primary actions (emerald/teal)
-className = "bg-primary-500 text-white";
-className = "text-primary-400 hover:text-primary-300";
+// Rule: do not invent new palette tokens.
+// Use existing Tailwind primitives already used in the app, and the shared utilities.
 
-// Semantic colors
-className = "bg-success text-white";
-className = "text-error";
-className = "border-warning/50";
+// Glass surfaces
+className = "glass";
+className = "glass-dark";
 
-// Accent (special states)
-className = "bg-accent-purple text-white"; // Streaming indicator
+// Text + borders (existing neutrals)
+className = "text-gray-200";
+className = "text-gray-500";
+className = "border-white/10";
+
+// State accents (existing)
+className = "text-emerald-400";
+className = "bg-emerald-600/20 border-emerald-500/20";
+className = "text-red-400 bg-red-500/20";
 ```
 
 ### Typography

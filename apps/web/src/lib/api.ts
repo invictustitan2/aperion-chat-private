@@ -481,6 +481,7 @@ export const api = {
       onToken: (token: string) => void,
       onMeta?: (meta: { derived_from?: string[] }) => void,
       onDone?: () => void,
+      opts?: { signal?: AbortSignal },
     ): Promise<void> => {
       const response = await fetch(
         `${API_BASE_URL}/v1/chat/stream`,
@@ -492,6 +493,7 @@ export const api = {
             history,
             conversation_id: conversationId,
           }),
+          signal: opts?.signal,
         }),
       );
 

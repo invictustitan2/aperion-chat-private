@@ -1,37 +1,58 @@
 PREFLIGHT.GIT.STATUS.PORCELAIN: begin
- M apps/api-worker/src/lib/authContext.ts
- M apps/api-worker/test/lib/authContext.test.ts
- M devshell/commands/deploy_validate.sh
- M devshell/entry.sh
- M docs/DEPLOY_PROD.md
- M docs/authentication-setup.md
- M docs/environment-matrix.md
+ M apps/web/package.json
+ M apps/web/src/App.tsx
+ M apps/web/src/components/ConversationItem.test.tsx
+ M apps/web/src/components/ConversationItem.tsx
+ M apps/web/src/components/MessageBubble.tsx
+ M apps/web/src/components/ui/index.ts
+ M apps/web/src/lib/api.ts
+ M apps/web/src/main.tsx
+ M apps/web/src/pages/Chat.tsx
+ M apps/web/src/pages/Memory.tsx
+ M apps/web/src/pages/Receipts.tsx
+ M apps/web/test/e2e/qa_evidence.spec.ts
+ M apps/web/vite.config.ts
+ M devshell/commands/pwa_probe.sh
+ M docs/ACCESS_PWA_BYPASS.md
+ M docs/E2E_SELECTOR_CONTRACT.md
+ M docs/UI_PATTERNS_COOKBOOK.md
+ M docs/UI_VIBE_RULES.md
+ M pnpm-lock.yaml
+ M receipts/access-probe.api.latest.txt
+ M receipts/access-probe.api.txt
+ M receipts/access-probe.browser.latest.txt
+ M receipts/access-probe.browser.txt
+ M receipts/deploy.prod.txt
  M receipts/deploy/latest.txt
  M receipts/validate/latest.api.txt
  M receipts/validate/latest.browser.txt
- M scripts/smoke-ws.mjs
-?? devshell/commands/ws_probe.sh
-?? receipts/cf-doctor.post-manual.json
-?? receipts/cf-doctor.predeploy.json
-?? receipts/deploy.pages.post-manual.env-override.txt
-?? receipts/deploy.pages.post-manual.txt
-?? receipts/deploy.prod.stdout.txt
-?? receipts/deploy.prod.txt
-?? receipts/deploy.worker.post-manual.txt
-?? receipts/deploy/2026-01-01/191921/
-?? receipts/deploy/2026-01-01/191943/
-?? receipts/validate.api.access-probe.txt
-?? receipts/validate.api.ws.txt
-?? receipts/validate.browser.access-probe.txt
-?? receipts/validate.browser.worker-smoke.txt
-?? receipts/validate.browser.ws.txt
-?? receipts/validate.deploy-validate.api.post-ws-auth.txt
-?? receipts/validate.deploy-validate.api.txt
-?? receipts/validate.deploy-validate.browser.post-ws-auth.txt
-?? receipts/validate.deploy-validate.browser.txt
-?? receipts/worker.secrets.list.post-manual.txt
-?? receipts/ws-probe.api.txt
-?? receipts/ws-probe.browser.txt
+ M receipts/ws-probe.api.latest.txt
+ M receipts/ws-probe.api.txt
+ M receipts/ws-probe.browser.latest.txt
+ M receipts/ws-probe.browser.txt
+ M receipts/ws-proof.api.latest.json
+ M receipts/ws-proof.browser.latest.json
+?? apps/web/apps/
+?? apps/web/public/sw.js
+?? apps/web/src/components/ReceiptsList.tsx
+?? apps/web/src/components/ui/Dialog.tsx
+?? apps/web/src/components/ui/DropdownMenu.tsx
+?? apps/web/src/components/ui/Tabs.tsx
+?? apps/web/src/components/ui/Toast.tsx
+?? apps/web/src/components/ui/Tooltip.tsx
+?? apps/web/src/lib/api.streamAbort.test.ts
+?? apps/web/test/e2e/operator-panel.spec.ts
+?? apps/web/test/e2e/smoke-pack.spec.ts
+?? apps/web/test/e2e/stream-cancel.spec.ts
+?? receipts/access-probe.api.20260102-080955Z.txt
+?? receipts/access-probe.api.20260102-081027Z.txt
+?? receipts/access-probe.api.20260102-081058Z.txt
+?? receipts/access-probe.browser.20260102-081038Z.txt
+?? receipts/deploy/2026-01-02/
+?? receipts/ws-probe.api.20260102-081059Z.txt
+?? receipts/ws-probe.browser.20260102-081040Z.txt
+?? receipts/ws-proof.api.20260102-081115Z.json
+?? receipts/ws-proof.browser.20260102-081055Z.json
 PREFLIGHT.GIT.STATUS.PORCELAIN: end
 == Secrets/status (redacted) ==
 .env: present
@@ -93,7 +114,7 @@ PASS: wrangler whoami
 PASS: access test
 ================================================================
 OK: doctor checks passed
-1..31
+1..36
 ok 1 missing secrets file prints mkdir/cat/chmod instructions
 ok 2 env-only secrets pass even when secrets file is missing
 ok 3 missing vars fails with list
@@ -129,6 +150,11 @@ ok 28 cf:pages:deploy prints VITE vars
 ok 29 cf:pages:deploy refuses without --force when base url is not prod
 ok 30 deploy:validate skips cleanly without RUN_NETWORK_TESTS and prints schema
 ok 31 deploy:prod creates receipts and latest.txt when network disabled
+ok 32 ws:proof skips without RUN_NETWORK_TESTS
+ok 33 ws:proof does not rely on executable bit
+ok 34 ws:proof headless blocks without service token env
+ok 35 ws:proof blocks without a GUI display
+ok 36 pwa:probe skips cleanly without RUN_NETWORK_TESTS
 
  RUN  v3.2.4 /home/dreamboat/projects/aperion-chat-private
 
@@ -151,7 +177,8 @@ stdout | apps/api-worker/test/auth.test.ts > Authentication Middleware
 Attempt 1: Got response with status 401
 ✓ Worker ready after 1 attempts (~0.5s)
 
- ✓ apps/api-worker/test/auth.test.ts (23 tests) 7864ms
+ ✓ apps/api-worker/test/auth.test.ts (23 tests) 6338ms
+   ✓ Authentication Middleware > Protected Endpoints > should allow authenticated GET /v1/semantic/search?query=test  671ms
 
  ⛅️ wrangler 4.55.0
 ───────────────────
@@ -160,253 +187,281 @@ Resource location: local
 Use --remote if you want to access the remote instance.
 
 ✅ No migrations to apply!
- ✓ apps/api-worker/test/index.test.ts (7 tests) 6411ms
-   ✓ API Worker Integration > Missing Authorization -> 401 with exact error shape  3495ms
- ✓ apps/api-worker/test/lib/authContext.test.ts (5 tests) 1451ms
-   ✓ getAuthContext (Cloudflare Access) > verifies CF-Access-Jwt-Assertion via JWKS and caches keys  495ms
-   ✓ getAuthContext (Cloudflare Access) > refreshes JWKS once when kid is unknown  322ms
-   ✓ getAuthContext (Cloudflare Access) > accepts a comma-separated audience allowlist  615ms
- ✓ test/verify-ci.test.ts (3 tests) 701ms
-   ✓ verify:ci > local mode does not hard-fail when Cloudflare account id is missing  426ms
- ✓ test/cf-doctor.test.ts (1 test) 219ms
- ✓ tools/cli/test/cli.test.ts (4 tests) 102ms
- ✓ test/guard-config-drift.test.ts (3 tests) 39ms
+ ✓ apps/api-worker/test/index.test.ts (7 tests) 5076ms
+   ✓ API Worker Integration > Missing Authorization -> 401 with exact error shape  2215ms
+ ✓ apps/api-worker/test/lib/authContext.test.ts (5 tests) 1400ms
+   ✓ getAuthContext (Cloudflare Access) > verifies CF-Access-Jwt-Assertion via JWKS and caches keys  327ms
+   ✓ getAuthContext (Cloudflare Access) > refreshes JWKS once when kid is unknown  665ms
+   ✓ getAuthContext (Cloudflare Access) > accepts a comma-separated audience allowlist  393ms
+ ✓ test/verify-ci.test.ts (3 tests) 828ms
+   ✓ verify:ci > local mode does not hard-fail when Cloudflare account id is missing  531ms
+ ✓ test/cf-doctor.test.ts (1 test) 213ms
+ ✓ tools/cli/test/cli.test.ts (4 tests) 117ms
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
-{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"9c0add3d-d836-4dfc-a74e-6a622343e15f","source":"api-worker","timestamp":"2026-01-01T20:48:32.302Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
-
-stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
-{"level":"warn","message":"Auth outcome","traceId":"9c0add3d-d836-4dfc-a74e-6a622343e15f","source":"api-worker","timestamp":"2026-01-01T20:48:32.303Z","event":"auth.outcome","outcome":"deny","mode":"token","method":"GET","path":"/v1/conversations","status":401,"reason":"Unauthorized (missing bearer token)","durationMs":0}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"2a14a1cb-b46f-4541-aff6-72e588a7c7c4","source":"api-worker","timestamp":"2026-01-02T08:13:09.019Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
-{"level":"info","message":"Request completed","traceId":"9c0add3d-d836-4dfc-a74e-6a622343e15f","source":"api-worker","timestamp":"2026-01-01T20:48:32.305Z","status":401,"durationMs":3.076662999999826}
+{"level":"warn","message":"Auth outcome","traceId":"2a14a1cb-b46f-4541-aff6-72e588a7c7c4","source":"api-worker","timestamp":"2026-01-02T08:13:09.020Z","event":"auth.outcome","outcome":"deny","mode":"token","method":"GET","path":"/v1/conversations","status":401,"reason":"Unauthorized (missing bearer token)","durationMs":0}
+
+stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Missing Authorization -> 401 (auth middleware wired)
+{"level":"info","message":"Request completed","traceId":"2a14a1cb-b46f-4541-aff6-72e588a7c7c4","source":"api-worker","timestamp":"2026-01-02T08:13:09.022Z","status":401,"durationMs":2.8198149999989255}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
-{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"72c61509-8b7d-4b19-b155-620483f08a37","source":"api-worker","timestamp":"2026-01-01T20:48:32.307Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/conversations","traceId":"341f2724-55d4-4f44-9e70-4286b1a3646f","source":"api-worker","timestamp":"2026-01-02T08:13:09.023Z","method":"GET","url":"http://local.test/v1/conversations","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
-{"level":"warn","message":"Auth outcome","traceId":"72c61509-8b7d-4b19-b155-620483f08a37","source":"api-worker","timestamp":"2026-01-01T20:48:32.307Z","event":"auth.outcome","outcome":"deny","mode":"access","method":"GET","path":"/v1/conversations","status":401,"reason":"Missing Access assertion (expected CF-Access-Jwt-Assertion header or CF_Authorization cookie)","durationMs":0}
+{"level":"warn","message":"Auth outcome","traceId":"341f2724-55d4-4f44-9e70-4286b1a3646f","source":"api-worker","timestamp":"2026-01-02T08:13:09.024Z","event":"auth.outcome","outcome":"deny","mode":"access","method":"GET","path":"/v1/conversations","status":401,"reason":"Missing Access assertion (expected CF-Access-Jwt-Assertion header or CF_Authorization cookie)","durationMs":0}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Access mode missing assertion -> 401 (fail-closed canary)
-{"level":"info","message":"Request completed","traceId":"72c61509-8b7d-4b19-b155-620483f08a37","source":"api-worker","timestamp":"2026-01-01T20:48:32.308Z","status":401,"durationMs":1.253670999998576}
+{"level":"info","message":"Request completed","traceId":"341f2724-55d4-4f44-9e70-4286b1a3646f","source":"api-worker","timestamp":"2026-01-02T08:13:09.025Z","status":401,"durationMs":1.59171200000128}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > OPTIONS -> 204 and includes CORS headers
-{"level":"info","message":"Incoming request: OPTIONS http://local.test/v1/conversations","traceId":"c1e6cf7a-e343-41fe-8d1e-417a61d21a47","source":"api-worker","timestamp":"2026-01-01T20:48:32.310Z","method":"OPTIONS","url":"http://local.test/v1/conversations","userAgent":null}
+{"level":"info","message":"Incoming request: OPTIONS http://local.test/v1/conversations","traceId":"c9c66864-fe32-4491-be59-87f76272c57d","source":"api-worker","timestamp":"2026-01-02T08:13:09.028Z","method":"OPTIONS","url":"http://local.test/v1/conversations","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > OPTIONS -> 204 and includes CORS headers
-{"level":"info","message":"Request completed","traceId":"c1e6cf7a-e343-41fe-8d1e-417a61d21a47","source":"api-worker","timestamp":"2026-01-01T20:48:32.311Z","status":204,"durationMs":0.7596960000009858}
+{"level":"info","message":"Request completed","traceId":"c9c66864-fe32-4491-be59-87f76272c57d","source":"api-worker","timestamp":"2026-01-02T08:13:09.029Z","status":204,"durationMs":0.842848000000231}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> includes strict CORS headers for allowed origin
-{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"a5b24cd2-080f-4244-b4ef-43f648473975","source":"api-worker","timestamp":"2026-01-01T20:48:32.312Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"e6a771b5-7a43-4842-b40b-78f479a2196c","source":"api-worker","timestamp":"2026-01-02T08:13:09.030Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> includes strict CORS headers for allowed origin
-{"level":"info","message":"Request completed","traceId":"a5b24cd2-080f-4244-b4ef-43f648473975","source":"api-worker","timestamp":"2026-01-01T20:48:32.314Z","status":404,"durationMs":1.3956770000004326}
+{"level":"info","message":"Request completed","traceId":"e6a771b5-7a43-4842-b40b-78f479a2196c","source":"api-worker","timestamp":"2026-01-02T08:13:09.031Z","status":404,"durationMs":0.8985890000003565}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> does not include allow-origin for unknown origin
-{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"ce7666c9-92dd-49fd-99f3-79e89343fee0","source":"api-worker","timestamp":"2026-01-01T20:48:32.315Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"b94cafc4-e614-430b-87a6-76bd15025a6b","source":"api-worker","timestamp":"2026-01-02T08:13:09.032Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > GET -> does not include allow-origin for unknown origin
-{"level":"info","message":"Request completed","traceId":"ce7666c9-92dd-49fd-99f3-79e89343fee0","source":"api-worker","timestamp":"2026-01-01T20:48:32.316Z","status":404,"durationMs":0.6823629999998957}
+{"level":"info","message":"Request completed","traceId":"b94cafc4-e614-430b-87a6-76bd15025a6b","source":"api-worker","timestamp":"2026-01-02T08:13:09.033Z","status":404,"durationMs":0.599396000001434}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Unknown route -> 404
-{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"9943f5e2-d267-40f6-890f-5b8ff1be56b6","source":"api-worker","timestamp":"2026-01-01T20:48:32.317Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/nope","traceId":"85cd4fbe-731a-4fda-b0a8-d63dceb4a149","source":"api-worker","timestamp":"2026-01-02T08:13:09.034Z","method":"GET","url":"http://local.test/v1/nope","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > Unknown route -> 404
-{"level":"info","message":"Request completed","traceId":"9943f5e2-d267-40f6-890f-5b8ff1be56b6","source":"api-worker","timestamp":"2026-01-01T20:48:32.318Z","status":404,"durationMs":0.48690999999962514}
+{"level":"info","message":"Request completed","traceId":"85cd4fbe-731a-4fda-b0a8-d63dceb4a149","source":"api-worker","timestamp":"2026-01-02T08:13:09.035Z","status":404,"durationMs":0.44936199999938253}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> 503 if ChatState not configured
-{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"b7797fb2-ac71-423f-be26-c2f058fc5451","source":"api-worker","timestamp":"2026-01-01T20:48:32.319Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"ac4a6884-6bdc-4f0f-80f2-b14e2b70d680","source":"api-worker","timestamp":"2026-01-02T08:13:09.036Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> 503 if ChatState not configured
-{"level":"info","message":"Request completed","traceId":"b7797fb2-ac71-423f-be26-c2f058fc5451","source":"api-worker","timestamp":"2026-01-01T20:48:32.320Z","status":503,"durationMs":0.956612000001769}
+{"level":"info","message":"Request completed","traceId":"ac4a6884-6bdc-4f0f-80f2-b14e2b70d680","source":"api-worker","timestamp":"2026-01-02T08:13:09.037Z","status":503,"durationMs":1.721940999999788}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> delegates to Durable Object
-{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"5b15116f-cf15-4c1d-a0ee-50c382813b51","source":"api-worker","timestamp":"2026-01-01T20:48:32.321Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
+{"level":"info","message":"Incoming request: GET http://local.test/v1/ws","traceId":"3ae8d478-89b2-4d0b-980c-1bd93267c3c6","source":"api-worker","timestamp":"2026-01-02T08:13:09.040Z","method":"GET","url":"http://local.test/v1/ws","userAgent":null}
 
 stdout | apps/api-worker/test/app.wiring.test.ts > API Worker wiring (in-process coverage) > WebSocket route -> delegates to Durable Object
-{"level":"info","message":"Request completed","traceId":"5b15116f-cf15-4c1d-a0ee-50c382813b51","source":"api-worker","timestamp":"2026-01-01T20:48:32.321Z","status":200,"durationMs":0.5567659999978787}
+{"level":"info","message":"Request completed","traceId":"3ae8d478-89b2-4d0b-980c-1bd93267c3c6","source":"api-worker","timestamp":"2026-01-02T08:13:09.040Z","status":200,"durationMs":0.5572499999980209}
 
  ✓ apps/api-worker/test/app.wiring.test.ts (8 tests) 25ms
- ✓ apps/api-worker/src/lib/speechToText.test.ts (1 test) 13ms
- ✓ apps/api-worker/test/controllers/VoiceController.test.ts (4 tests) 10ms
- ✓ apps/api-worker/src/lib/textToSpeech.test.ts (1 test) 11ms
- ✓ apps/api-worker/test/controllers/AnalyticsController.test.ts (2 tests) 4ms
- ✓ apps/api-worker/test/controllers/EpisodicController.test.ts (9 tests) 9ms
+ ✓ test/guard-config-drift.test.ts (3 tests) 48ms
+ ✓ apps/api-worker/src/lib/speechToText.test.ts (1 test) 18ms
+ ✓ apps/api-worker/test/controllers/ChatController.test.ts (5 tests) 10ms
+ ✓ apps/api-worker/src/lib/textToSpeech.test.ts (1 test) 20ms
+ ✓ apps/api-worker/test/controllers/EpisodicController.test.ts (9 tests) 14ms
 stdout | apps/api-worker/test/queue.test.ts > Queue Processor > should process semantic messages and generate embeddings
-Generated embedding for semantic record rec-2 in 0.17ms
+Generated embedding for semantic record rec-2 in 0.11ms
 
- ✓ apps/api-worker/test/queue.test.ts (3 tests) 9ms
- ✓ apps/api-worker/test/controllers/ChatController.test.ts (5 tests) 8ms
- ✓ apps/api-worker/test/controllers/SemanticController.test.ts (7 tests) 9ms
- ✓ apps/api-worker/test/controllers/IdentityController.test.ts (4 tests) 7ms
- ✓ apps/api-worker/test/controllers/LogsController.test.ts (7 tests) 6ms
- ✓ packages/policy/test/policy.test.ts (9 tests) 4ms
+ ✓ apps/api-worker/test/queue.test.ts (3 tests) 10ms
+ ✓ apps/api-worker/test/middleware/cors.test.ts (7 tests) 3ms
+ ✓ apps/api-worker/test/controllers/VoiceController.test.ts (4 tests) 6ms
+ ✓ apps/api-worker/test/controllers/SemanticController.test.ts (7 tests) 8ms
+ ✓ apps/api-worker/test/controllers/IdentityController.test.ts (4 tests) 5ms
+ ✓ apps/api-worker/test/controllers/LogsController.test.ts (7 tests) 7ms
  ✓ apps/api-worker/test/middleware/rateLimit.test.ts (5 tests) 4ms
- ✓ apps/api-worker/test/controllers/MediaController.test.ts (5 tests) 5ms
+ ✓ packages/policy/test/policy.test.ts (9 tests) 4ms
  ✓ apps/api-worker/test/controllers/PreferencesController.test.ts (6 tests) 5ms
- ✓ apps/api-worker/test/controllers/ConversationsController.test.ts (4 tests) 4ms
- ✓ apps/api-worker/test/controllers/RelationshipsController.test.ts (2 tests) 4ms
-stdout | apps/api-worker/test/queue-job.test.ts > Queue Processor Jobs > should process embed job
-Generated embedding for job job-456 in 0.05ms
-
- ✓ apps/api-worker/test/queue-job.test.ts (2 tests) 3ms
- ✓ packages/memory-core/test/store.test.ts (6 tests) 4ms
- ✓ apps/api-worker/test/controllers/JobsController.test.ts (3 tests) 3ms
- ✓ apps/api-worker/src/lib/gemini.test.ts (1 test) 3ms
- ✓ apps/api-worker/test/controllers/ReceiptsController.test.ts (2 tests) 2ms
- ✓ apps/api-worker/test/middleware/errorHandler.test.ts (2 tests) 2ms
- ✓ apps/api-worker/test/controllers/InsightsController.test.ts (2 tests) 2ms
- ✓ apps/api-worker/src/lib/workersAiStt.test.ts (3 tests) 2ms
  ✓ apps/api-worker/test/controllers/KnowledgeController.test.ts (2 tests) 2ms
- ✓ apps/api-worker/test/middleware/cors.test.ts (7 tests) 2ms
- ✓ apps/api-worker/test/ai.test.ts (2 tests) 2ms
+ ✓ packages/memory-core/test/store.test.ts (6 tests) 8ms
+ ✓ apps/api-worker/test/controllers/MediaController.test.ts (5 tests) 4ms
+ ✓ apps/api-worker/test/controllers/RelationshipsController.test.ts (2 tests) 6ms
+ ✓ apps/api-worker/test/preferences-theme.test.ts (3 tests) 4ms
+ ✓ apps/api-worker/test/controllers/ConversationsController.test.ts (4 tests) 4ms
+stdout | apps/api-worker/test/queue-job.test.ts > Queue Processor Jobs > should process embed job
+Generated embedding for job job-456 in 0.02ms
+
+ ✓ apps/api-worker/test/queue-job.test.ts (2 tests) 4ms
+ ✓ apps/api-worker/test/controllers/ReceiptsController.test.ts (2 tests) 4ms
+ ✓ apps/api-worker/test/controllers/JobsController.test.ts (3 tests) 3ms
+ ✓ apps/api-worker/src/lib/gemini.test.ts (1 test) 2ms
+ ✓ apps/api-worker/test/controllers/InsightsController.test.ts (2 tests) 3ms
 stdout | apps/api-worker/test/middleware/context.test.ts > withContext Middleware > should attach logger and metrics to request
-{"level":"info","message":"Incoming request: undefined undefined","traceId":"7a2877e4-18b0-4839-abff-ba2c7f386b3f","source":"api-worker","timestamp":"2026-01-01T20:48:33.317Z"}
+{"level":"info","message":"Incoming request: undefined undefined","traceId":"99dec8c8-832f-40e9-b1ae-ac155b611fa4","source":"api-worker","timestamp":"2026-01-02T08:13:10.306Z"}
 
 stdout | apps/api-worker/test/middleware/context.test.ts > withContext Middleware > should use existing cf-ray as traceId if present
-{"level":"info","message":"Incoming request: undefined undefined","traceId":"existing-trace-id","source":"api-worker","timestamp":"2026-01-01T20:48:33.318Z","userAgent":"existing-trace-id"}
+{"level":"info","message":"Incoming request: undefined undefined","traceId":"existing-trace-id","source":"api-worker","timestamp":"2026-01-02T08:13:10.307Z","userAgent":"existing-trace-id"}
 
  ✓ apps/api-worker/test/middleware/context.test.ts (2 tests) 2ms
+ ✓ apps/api-worker/test/controllers/AnalyticsController.test.ts (2 tests) 3ms
+ ✓ apps/api-worker/test/middleware/errorHandler.test.ts (2 tests) 3ms
+ ✓ apps/api-worker/src/lib/workersAiStt.test.ts (3 tests) 2ms
+ ✓ test/docs_path_b_defaults.test.ts (2 tests) 1ms
+ ✓ apps/api-worker/test/ai.test.ts (2 tests) 1ms
+ ✓ test/docs_deployment_contract.test.ts (2 tests) 1ms
+ ✓ test/workflows_deploy_web_path_b.test.ts (4 tests) 2ms
  ✓ apps/api-worker/test/controllers/RunbooksController.test.ts (2 tests) 2ms
- ✓ packages/memory-core/test/hash.test.ts (6 tests) 3ms
+ ✓ packages/memory-core/test/hash.test.ts (6 tests) 2ms
+ ✓ test/no-network.test.ts (1 test) 1ms
+ ✓ tools/mcp/aperion/src/paths.test.ts (2 tests) 1ms
  ✓ apps/api-worker/test/lib/wsDeny.test.ts (1 test) 1ms
  ✓ apps/api-worker/test/identity-preferences.test.ts (1 test) 1ms
- ✓ tools/mcp/aperion/src/paths.test.ts (2 tests) 1ms
  ✓ apps/api-worker/src/lib/vectorStore.test.ts (1 test) 1ms
- ✓ test/no-network.test.ts (1 test) 1ms
- ✓ apps/api-worker/test/hello.test.ts (2 tests) 0ms
+ ✓ apps/api-worker/test/hello.test.ts (2 tests) 1ms
 
- Test Files  44 passed (44)
-      Tests  178 passed (178)
-   Start at  20:48:12
-   Duration  21.08s (transform 873ms, setup 200ms, collect 3.30s, tests 16.96s, environment 0ms, prepare 102ms)
+ Test Files  48 passed (48)
+      Tests  189 passed (189)
+   Start at  08:12:51
+   Duration  18.81s (transform 1.04s, setup 208ms, collect 3.66s, tests 14.23s, environment 0ms, prepare 100ms)
 
-RECEIPTS.DIR: receipts/deploy/2026-01-01/204833
+RECEIPTS.DIR: receipts/deploy/2026-01-02/081310
+PLAN.NETWORK: yes
+PLAN.DEPLOY.WORKER: yes
+PLAN.DEPLOY.PAGES: yes
+PLAN.VALIDATE.BROWSER: yes
+PLAN.VALIDATE.API: yes
 WRANGLER.ENV.EFFECTIVE: none
 WRANGLER.ENV.VALID: yes
 WRANGLER.ENV.AVAILABLE: preview,test
 WORKER.NAME: aperion-api-worker
-SECRETS.COUNT: 3
+SECRETS.COUNT: 5
 SECRETS.NAMES.0: APERION_AUTH_MODE
 SECRETS.NAMES.1: CF_ACCESS_AUD
-SECRETS.NAMES.2: CF_ACCESS_TEAM_DOMAIN
+SECRETS.NAMES.2: CF_ACCESS_SERVICE_TOKEN_ID
+SECRETS.NAMES.3: CF_ACCESS_SERVICE_TOKEN_SECRET
+SECRETS.NAMES.4: CF_ACCESS_TEAM_DOMAIN
 REQUIRED_PRESENT.APERION_AUTH_MODE: yes
 REQUIRED_PRESENT.CF_ACCESS_TEAM_DOMAIN: yes
 REQUIRED_PRESENT.CF_ACCESS_AUD: yes
 REQUIRED_PRESENT: yes
 BASE_URL: https://api.aperion.cc
+curl: (18) transfer closed with 34 bytes remaining to read
 with_service_token.ROOT.http_status: 404
 with_service_token.ROOT.content-type: application/json; charset=utf-8
-with_service_token.ROOT.cf-ray: 9b74e0e32f196169-ORD
+with_service_token.ROOT.cf-ray: 9b78cbbd3fc510ff-ORD
 with_service_token.ROOT.server: cloudflare
 with_service_token.ROOT.location: 
 without_service_token.ROOT.http_status: 302
 without_service_token.ROOT.content-type: 
-without_service_token.ROOT.cf-ray: 9b74e0e3bf9f2267-ORD
+without_service_token.ROOT.cf-ray: 9b78cbbddff2e812-ORD
 without_service_token.ROOT.server: cloudflare
 without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.ROOT: NOT_ROUTED_API_ENDPOINT
 with_service_token.V1_IDENTITY.http_status: 200
 with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
-with_service_token.V1_IDENTITY.cf-ray: 9b74e0e4dffd21a9-ORD
+with_service_token.V1_IDENTITY.cf-ray: 9b78cbbefa7c5314-ORD
 with_service_token.V1_IDENTITY.server: cloudflare
 with_service_token.V1_IDENTITY.location: 
 without_service_token.V1_IDENTITY.http_status: 302
 without_service_token.V1_IDENTITY.content-type: 
-without_service_token.V1_IDENTITY.cf-ray: 9b74e0e60c780ed2-ORD
+without_service_token.V1_IDENTITY.cf-ray: 9b78cbbfc9fcc667-ORD
 without_service_token.V1_IDENTITY.server: cloudflare
 without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_IDENTITY: UNKNOWN
 with_service_token.V1_CONVERSATIONS.http_status: 200
 with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
-with_service_token.V1_CONVERSATIONS.cf-ray: 9b74e0e74a2ce938-ORD
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b78cbc0edd4eb07-ORD
 with_service_token.V1_CONVERSATIONS.server: cloudflare
 with_service_token.V1_CONVERSATIONS.location: 
 without_service_token.V1_CONVERSATIONS.http_status: 302
 without_service_token.V1_CONVERSATIONS.content-type: 
-without_service_token.V1_CONVERSATIONS.cf-ray: 9b74e0e97d88cd6f-LHR
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b78cbc1882b7a44-ORD
 without_service_token.V1_CONVERSATIONS.server: cloudflare
 without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_CONVERSATIONS: UNKNOWN
 with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
 with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
-with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e0eafa290011-ORD
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cbc2bf9df85a-ORD
 with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 with_service_token.V1_SEMANTIC_SEARCH.location: 
 without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
 without_service_token.V1_SEMANTIC_SEARCH.content-type: 
-without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e0ee2817eac0-ORD
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cbc44aaaf7d2-ORD
 without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_SEMANTIC_SEARCH: UNKNOWN
 BASE_URL: https://api.aperion.cc
 with_service_token.ROOT.http_status: 404
 with_service_token.ROOT.content-type: application/json; charset=utf-8
-with_service_token.ROOT.cf-ray: 9b74e0efb9a86072-ORD
+with_service_token.ROOT.cf-ray: 9b78cbc60a4f5774-IAD
 with_service_token.ROOT.server: cloudflare
 with_service_token.ROOT.location: 
 without_service_token.ROOT.http_status: 302
 without_service_token.ROOT.content-type: 
-without_service_token.ROOT.cf-ray: 9b74e0f05865110a-ORD
+without_service_token.ROOT.cf-ray: 9b78cbc6ddc41b6a-ORD
 without_service_token.ROOT.server: cloudflare
 without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.ROOT: NOT_ROUTED_API_ENDPOINT
 with_service_token.V1_IDENTITY.http_status: 200
 with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
-with_service_token.V1_IDENTITY.cf-ray: 9b74e0f1c973f603-ORD
+with_service_token.V1_IDENTITY.cf-ray: 9b78cbc97c184887-LHR
 with_service_token.V1_IDENTITY.server: cloudflare
 with_service_token.V1_IDENTITY.location: 
 without_service_token.V1_IDENTITY.http_status: 302
 without_service_token.V1_IDENTITY.content-type: 
-without_service_token.V1_IDENTITY.cf-ray: 9b74e0f27a7ff824-ORD
+without_service_token.V1_IDENTITY.cf-ray: 9b78cbcafcea115d-ORD
 without_service_token.V1_IDENTITY.server: cloudflare
 without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_IDENTITY: UNKNOWN
 with_service_token.V1_CONVERSATIONS.http_status: 200
 with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
-with_service_token.V1_CONVERSATIONS.cf-ray: 9b74e0f399159d58-ORD
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b78cbcc3cf1dcf3-ORD
 with_service_token.V1_CONVERSATIONS.server: cloudflare
 with_service_token.V1_CONVERSATIONS.location: 
 without_service_token.V1_CONVERSATIONS.http_status: 302
 without_service_token.V1_CONVERSATIONS.content-type: 
-without_service_token.V1_CONVERSATIONS.cf-ray: 9b74e0f47f56620e-ORD
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b78cbce2e7271f0-LHR
 without_service_token.V1_CONVERSATIONS.server: cloudflare
 without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_CONVERSATIONS: UNKNOWN
 with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
 with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
-with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e0f5bf11e7f9-ORD
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cbcfab61eade-ORD
 with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 with_service_token.V1_SEMANTIC_SEARCH.location: 
 without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
 without_service_token.V1_SEMANTIC_SEARCH.content-type: 
-without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e0f868b3dade-ORD
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cbd17d17eb09-ORD
 without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_SEMANTIC_SEARCH: UNKNOWN
+RECEIPT: receipts/access-probe.api.20260102-081314Z.txt
+RECEIPT_LATEST: receipts/access-probe.api.latest.txt
 CF_ACCESS_AUDIT_VERSION: 1
 CLOUDFLARE_ACCOUNT_ID: 21ec8c…7374
 ACCESS_ORG.TEAM_DOMAIN: aperiondev.cloudflareaccess.com
-INV.APPS.COUNT: 4
-INV.APPS.DOMAIN_ROWS: 4
-INV.APPS.DOMAIN_MATCHES_APERION_CC: 2
-INV.APPS.APERION.0.NAME: Aperion Chat (UI)
-INV.APPS.APERION.0.DOMAIN: chat.aperion.cc/*
-INV.APPS.APERION.1.NAME: Aperion API
-INV.APPS.APERION.1.DOMAIN: api.aperion.cc/*
+INV.APPS.COUNT: 5
+INV.APPS.DOMAIN_ROWS: 9
+INV.APPS.DOMAIN_MATCHES_APERION_CC: 7
+INV.APPS.APERION.0.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.0.DOMAIN: chat.aperion.cc/manifest.json
+INV.APPS.APERION.1.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.1.DOMAIN: chat.aperion.cc/icon-192.png
+INV.APPS.APERION.2.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.2.DOMAIN: chat.aperion.cc/icon-512.png
+INV.APPS.APERION.3.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.3.DOMAIN: chat.aperion.cc/favicon.ico
+INV.APPS.APERION.4.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.4.DOMAIN: chat.aperion.cc/robots.txt
+INV.APPS.APERION.5.NAME: Aperion Chat (UI)
+INV.APPS.APERION.5.DOMAIN: chat.aperion.cc/*
+INV.APPS.APERION.6.NAME: Aperion API
+INV.APPS.APERION.6.DOMAIN: api.aperion.cc/*
 SERVICE_TOKENS.HTTP_STATUS: 200
 SERVICE_TOKENS.CONFIGURED_ID_SOURCE: secrets-file
 SERVICE_TOKENS.COUNT: 1
 SERVICE_TOKENS.TOKEN_LIST.HAS_CLIENT_ID: yes
 SERVICE_TOKENS.TOKEN_LIST.HAS_ID: yes
 SERVICE_TOKENS.CONFIGURED_CLIENT_ID_PRESENT: yes
+SERVICE_TOKENS.CONFIGURED_CLIENT_ID_REDACTED: "eccd1…ess"
 SERVICE_TOKENS.CONFIGURED_CLIENT_ID_MATCHES_TOKEN: no
+SERVICE_TOKENS.TOKEN.0.NAME: aperion-api-prod-smoke
+SERVICE_TOKENS.TOKEN.0.CLIENT_ID_REDACTED: eccd1f…cess
+SERVICE_TOKENS.TOKEN.0.ID_REDACTED: 85c654…2e90
 HOST.API: api.aperion.cc
 APP_MATCH_COUNT.API: 1
 APP.API.0.ID: b6b814…3e5b
 APP.API.0.NAME: Aperion API
 APP.API.0.DOMAINS: api.aperion.cc/*
 APP.API.0.PATHS: -
-APP.API.0.AUD: -
+APP.API.0.AUD: 38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
 APP.API.0.TYPE: self_hosted
 APP.API.0.SESSION_DURATION: 24h
 APP.API.0.SELF_HOSTED_DOMAIN_COUNT: 1
@@ -415,7 +470,8 @@ APP.API.0.DETAILS.APP_TYPE: self_hosted
 APP.API.0.DETAILS.DOMAIN: api.aperion.cc/*
 APP.API.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
 APP.API.0.DETAILS.SELF_HOSTED_DOMAINS.0: api.aperion.cc/*
-APP.API.0.DETAILS.AUD.COUNT: 0
+APP.API.0.DETAILS.AUD.COUNT: 1
+APP.API.0.DETAILS.AUD.0: 38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
 APP.API.0.DETAILS.ALLOWED_IDPS.COUNT: 0
 APP.API.0.DETAILS.SESSION_DURATION: 24h
 APP.API.0.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
@@ -436,23 +492,28 @@ APP.API.0.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
 EVIDENCE.API.HAS_ANY_SERVICE_TOKEN_REF: yes
 EVIDENCE.API.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 EVIDENCE.API.HAS_ANY_SERVICE_AUTH_DECISION: yes
-EVIDENCE.API.PATHS_COVER_V1: no
+EVIDENCE.API.PATHS_COVER_V1: yes
 HOST.CHAT: chat.aperion.cc
-APP_MATCH_COUNT.CHAT: 1
-APP.CHAT.0.ID: 8a528a…df06
-APP.CHAT.0.NAME: Aperion Chat (UI)
-APP.CHAT.0.DOMAINS: chat.aperion.cc/*
+APP_MATCH_COUNT.CHAT: 2
+APP.CHAT.0.ID: 17967c…362b
+APP.CHAT.0.NAME: ACESS_PWA_BYPASS
+APP.CHAT.0.DOMAINS: chat.aperion.cc/manifest.json,chat.aperion.cc/icon-192.png,chat.aperion.cc/icon-512.png,chat.aperion.cc/favicon.ico,chat.aperion.cc/robots.txt
 APP.CHAT.0.PATHS: -
-APP.CHAT.0.AUD: -
+APP.CHAT.0.AUD: a78f8e76720001faa116caa8ab913550e65902e252a8210b4ff7f0c11f62523a
 APP.CHAT.0.TYPE: self_hosted
 APP.CHAT.0.SESSION_DURATION: 24h
-APP.CHAT.0.SELF_HOSTED_DOMAIN_COUNT: 1
+APP.CHAT.0.SELF_HOSTED_DOMAIN_COUNT: 5
 APP.CHAT.0.DETAILS.HTTP_STATUS: 200
 APP.CHAT.0.DETAILS.APP_TYPE: self_hosted
-APP.CHAT.0.DETAILS.DOMAIN: chat.aperion.cc/*
-APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
-APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/*
-APP.CHAT.0.DETAILS.AUD.COUNT: 0
+APP.CHAT.0.DETAILS.DOMAIN: chat.aperion.cc/manifest.json
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 5
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/manifest.json
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.1: chat.aperion.cc/icon-192.png
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.2: chat.aperion.cc/icon-512.png
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.3: chat.aperion.cc/favicon.ico
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.4: chat.aperion.cc/robots.txt
+APP.CHAT.0.DETAILS.AUD.COUNT: 1
+APP.CHAT.0.DETAILS.AUD.0: a78f8e76720001faa116caa8ab913550e65902e252a8210b4ff7f0c11f62523a
 APP.CHAT.0.DETAILS.ALLOWED_IDPS.COUNT: 0
 APP.CHAT.0.DETAILS.SESSION_DURATION: 24h
 APP.CHAT.0.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
@@ -460,20 +521,57 @@ APP.CHAT.0.DETAILS.APP_LAUNCHER_VISIBLE: yes
 APP.CHAT.0.DETAILS.HTTP_ONLY_COOKIE_ATTRIBUTE: true
 APP.CHAT.0.DETAILS.SAME_SITE_COOKIE_ATTRIBUTE: 
 APP.CHAT.0.POLICIES.HTTP_STATUS: 200
-APP.CHAT.0.POLICY.0.ID: 5399b1…61ea
-APP.CHAT.0.POLICY.0.NAME: Allow service token: aperion-api-prod-smoke
-APP.CHAT.0.POLICY.0.DECISION: NON_IDENTITY
-APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.0.POLICY.0.ID: 0446ad…8976
+APP.CHAT.0.POLICY.0.NAME: ACCESS_PWA_BYPASS
+APP.CHAT.0.POLICY.0.DECISION: BYPASS
+APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_REF: no
 APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_ID_VALUES: no
 APP.CHAT.0.POLICY.1.ID: b1c071…eb3f
 APP.CHAT.0.POLICY.1.NAME: Allow emails: 12/16/2025
 APP.CHAT.0.POLICY.1.DECISION: ALLOW
 APP.CHAT.0.POLICY.1.HAS_SERVICE_TOKEN_REF: no
 APP.CHAT.0.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.0.POLICY.2.ID: 5399b1…61ea
+APP.CHAT.0.POLICY.2.NAME: Allow service token: aperion-api-prod-smoke
+APP.CHAT.0.POLICY.2.DECISION: NON_IDENTITY
+APP.CHAT.0.POLICY.2.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.0.POLICY.2.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.1.ID: 8a528a…df06
+APP.CHAT.1.NAME: Aperion Chat (UI)
+APP.CHAT.1.DOMAINS: chat.aperion.cc/*
+APP.CHAT.1.PATHS: -
+APP.CHAT.1.AUD: f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb
+APP.CHAT.1.TYPE: self_hosted
+APP.CHAT.1.SESSION_DURATION: 24h
+APP.CHAT.1.SELF_HOSTED_DOMAIN_COUNT: 1
+APP.CHAT.1.DETAILS.HTTP_STATUS: 200
+APP.CHAT.1.DETAILS.APP_TYPE: self_hosted
+APP.CHAT.1.DETAILS.DOMAIN: chat.aperion.cc/*
+APP.CHAT.1.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
+APP.CHAT.1.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/*
+APP.CHAT.1.DETAILS.AUD.COUNT: 1
+APP.CHAT.1.DETAILS.AUD.0: f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb
+APP.CHAT.1.DETAILS.ALLOWED_IDPS.COUNT: 0
+APP.CHAT.1.DETAILS.SESSION_DURATION: 24h
+APP.CHAT.1.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
+APP.CHAT.1.DETAILS.APP_LAUNCHER_VISIBLE: yes
+APP.CHAT.1.DETAILS.HTTP_ONLY_COOKIE_ATTRIBUTE: true
+APP.CHAT.1.DETAILS.SAME_SITE_COOKIE_ATTRIBUTE: 
+APP.CHAT.1.POLICIES.HTTP_STATUS: 200
+APP.CHAT.1.POLICY.0.ID: 5399b1…61ea
+APP.CHAT.1.POLICY.0.NAME: Allow service token: aperion-api-prod-smoke
+APP.CHAT.1.POLICY.0.DECISION: NON_IDENTITY
+APP.CHAT.1.POLICY.0.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.1.POLICY.0.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.1.POLICY.1.ID: b1c071…eb3f
+APP.CHAT.1.POLICY.1.NAME: Allow emails: 12/16/2025
+APP.CHAT.1.POLICY.1.DECISION: ALLOW
+APP.CHAT.1.POLICY.1.HAS_SERVICE_TOKEN_REF: no
+APP.CHAT.1.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
 EVIDENCE.CHAT.HAS_ANY_SERVICE_TOKEN_REF: yes
 EVIDENCE.CHAT.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 EVIDENCE.CHAT.HAS_ANY_SERVICE_AUTH_DECISION: yes
-EVIDENCE.CHAT.PATHS_COVER_V1: no
+EVIDENCE.CHAT.PATHS_COVER_V1: yes
 SERVICE_TOKENS.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 CONCLUSION.302.REASON.NO_SERVICE_AUTH_POLICY: unknown
 CONCLUSION.302.REASON.HOSTNAME_CONFLICT: unknown
@@ -486,16 +584,17 @@ WRANGLER.ENV.EFFECTIVE: none
 WRANGLER.ENV.VALID: yes
 WRANGLER.ENV.AVAILABLE: preview,test
 WORKER.DEPLOY.OK: yes
-WORKER.DEPLOY.VERSION_ID: be1e6426-7ff7-4c5e-b6c5-2b1247294c6c
-PAGES.BUILD.VITE_API_BASE_URL: https://api.aperion.cc
+WORKER.DEPLOY.VERSION_ID: 18a108a4-acfb-4c80-ac17-b423fd60f7d3
+PAGES.BUILD.VITE_API_BASE_URL: /api
 PAGES.BUILD.VITE_AUTH_MODE: access
+EXPECTED_PROD_BASE: /api
 
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
 PAGES.DEPLOY.OK: yes
-PAGES.DEPLOY.URL: https://ef7aa148.aperion-chat-web.pages.dev
+PAGES.DEPLOY.URL: https://b030adba.aperion-chat-web.pages.dev
 HOSTNAME: api.aperion.cc
 ZONE_NAME: aperion.cc
 WORKER.INTENDED_NAME: aperion-api-worker
@@ -516,125 +615,141 @@ WORKER_DOMAINS.MATCH.0.HOSTNAME: api.aperion.cc
 WORKER_DOMAINS.MATCH.0.SERVICE: aperion-api-worker
 WORKER_DOMAINS.MATCH.0.ENVIRONMENT: production
 WRANGLER.DEPLOYMENTS.COUNT: 10
-WRANGLER.DEPLOYMENTS.LATEST.ID: 4d119815-042f-4aad-b0a8-53b8f107ec74
-WRANGLER.DEPLOYMENTS.LATEST.CREATED_ON: 2026-01-01T17:49:41.157353Z
+WRANGLER.DEPLOYMENTS.LATEST.ID: 15e35c09-af1e-49eb-a4e6-84a0c6b99f18
+WRANGLER.DEPLOYMENTS.LATEST.CREATED_ON: 2026-01-01T20:48:59.30462Z
 ORIGIN.OK: yes
 ORIGIN.MISMATCH: no
 ORIGIN.SERVED_BY: aperion-api-worker
 BASE_URL: https://api.aperion.cc
 with_service_token.ROOT.http_status: 404
 with_service_token.ROOT.content-type: application/json; charset=utf-8
-with_service_token.ROOT.cf-ray: 9b74e2894a5ccd5c-LHR
+with_service_token.ROOT.cf-ray: 9b78cd0f6cac1160-ORD
 with_service_token.ROOT.server: cloudflare
 with_service_token.ROOT.location: 
 without_service_token.ROOT.http_status: 302
 without_service_token.ROOT.content-type: 
-without_service_token.ROOT.cf-ray: 9b74e28a382c1b65-ORD
+without_service_token.ROOT.cf-ray: 9b78cd10492b0010-ORD
 without_service_token.ROOT.server: cloudflare
 without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.ROOT: NOT_ROUTED_API_ENDPOINT
 with_service_token.V1_IDENTITY.http_status: 200
 with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
-with_service_token.V1_IDENTITY.cf-ray: 9b74e28b58687a44-ORD
+with_service_token.V1_IDENTITY.cf-ray: 9b78cd116bc5608d-ORD
 with_service_token.V1_IDENTITY.server: cloudflare
 with_service_token.V1_IDENTITY.location: 
 without_service_token.V1_IDENTITY.http_status: 302
 without_service_token.V1_IDENTITY.content-type: 
-without_service_token.V1_IDENTITY.cf-ray: 9b74e28d7e69442f-ORD
+without_service_token.V1_IDENTITY.cf-ray: 9b78cd152970cd40-LHR
 without_service_token.V1_IDENTITY.server: cloudflare
 without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_IDENTITY: UNKNOWN
 with_service_token.V1_CONVERSATIONS.http_status: 200
 with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
-with_service_token.V1_CONVERSATIONS.cf-ray: 9b74e28eccdaaef5-ORD
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd1779d2b4b8-ORD
 with_service_token.V1_CONVERSATIONS.server: cloudflare
 with_service_token.V1_CONVERSATIONS.location: 
 without_service_token.V1_CONVERSATIONS.http_status: 302
 without_service_token.V1_CONVERSATIONS.content-type: 
-without_service_token.V1_CONVERSATIONS.cf-ray: 9b74e28f7c62eae3-ORD
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd19d90d71fe-LHR
 without_service_token.V1_CONVERSATIONS.server: cloudflare
 without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_CONVERSATIONS: UNKNOWN
 with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
 with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
-with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e2910d48cdc7-ORD
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd1b8ebfe174-ORD
 with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 with_service_token.V1_SEMANTIC_SEARCH.location: 
 without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
 without_service_token.V1_SEMANTIC_SEARCH.content-type: 
-without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e2933c07f14b-ORD
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd1d5bbf0008-ORD
 without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_SEMANTIC_SEARCH: UNKNOWN
 BASE_URL: https://api.aperion.cc
 with_service_token.ROOT.http_status: 404
 with_service_token.ROOT.content-type: application/json; charset=utf-8
-with_service_token.ROOT.cf-ray: 9b74e294eb5df571-ORD
+with_service_token.ROOT.cf-ray: 9b78cd1f0f0772e2-ORD
 with_service_token.ROOT.server: cloudflare
 with_service_token.ROOT.location: 
 without_service_token.ROOT.http_status: 302
 without_service_token.ROOT.content-type: 
-without_service_token.ROOT.cf-ray: 9b74e2957aafe822-ORD
+without_service_token.ROOT.cf-ray: 9b78cd1f896fc474-ORD
 without_service_token.ROOT.server: cloudflare
 without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.ROOT: NOT_ROUTED_API_ENDPOINT
 with_service_token.V1_IDENTITY.http_status: 200
 with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
-with_service_token.V1_IDENTITY.cf-ray: 9b74e296afa6fa0f-ORD
+with_service_token.V1_IDENTITY.cf-ray: 9b78cd20dd1af15f-ORD
 with_service_token.V1_IDENTITY.server: cloudflare
 with_service_token.V1_IDENTITY.location: 
 without_service_token.V1_IDENTITY.http_status: 302
 without_service_token.V1_IDENTITY.content-type: 
-without_service_token.V1_IDENTITY.cf-ray: 9b74e297be85141c-ORD
+without_service_token.V1_IDENTITY.cf-ray: 9b78cd232c1f4197-LHR
 without_service_token.V1_IDENTITY.server: cloudflare
 without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_IDENTITY: UNKNOWN
 with_service_token.V1_CONVERSATIONS.http_status: 200
 with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
-with_service_token.V1_CONVERSATIONS.cf-ray: 9b74e298ca530f96-ORD
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd24cc6aaef5-ORD
 with_service_token.V1_CONVERSATIONS.server: cloudflare
 with_service_token.V1_CONVERSATIONS.location: 
 without_service_token.V1_CONVERSATIONS.http_status: 302
 without_service_token.V1_CONVERSATIONS.content-type: 
-without_service_token.V1_CONVERSATIONS.cf-ray: 9b74e2997d7ae1d3-ORD
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b78cd257ce92986-ORD
 without_service_token.V1_CONVERSATIONS.server: cloudflare
 without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_CONVERSATIONS: UNKNOWN
 with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
 with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
-with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e29abf1d1149-ORD
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd26ccc550d9-ORD
 with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 with_service_token.V1_SEMANTIC_SEARCH.location: 
 without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
 without_service_token.V1_SEMANTIC_SEARCH.content-type: 
-without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b74e29c8eb6f155-ORD
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b78cd28fb795d77-ORD
 without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
 without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
 diag.V1_SEMANTIC_SEARCH: UNKNOWN
+RECEIPT: receipts/access-probe.api.20260102-081409Z.txt
+RECEIPT_LATEST: receipts/access-probe.api.latest.txt
 CF_ACCESS_AUDIT_VERSION: 1
 CLOUDFLARE_ACCOUNT_ID: 21ec8c…7374
 ACCESS_ORG.TEAM_DOMAIN: aperiondev.cloudflareaccess.com
-INV.APPS.COUNT: 4
-INV.APPS.DOMAIN_ROWS: 4
-INV.APPS.DOMAIN_MATCHES_APERION_CC: 2
-INV.APPS.APERION.0.NAME: Aperion Chat (UI)
-INV.APPS.APERION.0.DOMAIN: chat.aperion.cc/*
-INV.APPS.APERION.1.NAME: Aperion API
-INV.APPS.APERION.1.DOMAIN: api.aperion.cc/*
+INV.APPS.COUNT: 5
+INV.APPS.DOMAIN_ROWS: 9
+INV.APPS.DOMAIN_MATCHES_APERION_CC: 7
+INV.APPS.APERION.0.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.0.DOMAIN: chat.aperion.cc/manifest.json
+INV.APPS.APERION.1.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.1.DOMAIN: chat.aperion.cc/icon-192.png
+INV.APPS.APERION.2.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.2.DOMAIN: chat.aperion.cc/icon-512.png
+INV.APPS.APERION.3.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.3.DOMAIN: chat.aperion.cc/favicon.ico
+INV.APPS.APERION.4.NAME: ACESS_PWA_BYPASS
+INV.APPS.APERION.4.DOMAIN: chat.aperion.cc/robots.txt
+INV.APPS.APERION.5.NAME: Aperion Chat (UI)
+INV.APPS.APERION.5.DOMAIN: chat.aperion.cc/*
+INV.APPS.APERION.6.NAME: Aperion API
+INV.APPS.APERION.6.DOMAIN: api.aperion.cc/*
 SERVICE_TOKENS.HTTP_STATUS: 200
 SERVICE_TOKENS.CONFIGURED_ID_SOURCE: secrets-file
 SERVICE_TOKENS.COUNT: 1
 SERVICE_TOKENS.TOKEN_LIST.HAS_CLIENT_ID: yes
 SERVICE_TOKENS.TOKEN_LIST.HAS_ID: yes
 SERVICE_TOKENS.CONFIGURED_CLIENT_ID_PRESENT: yes
+SERVICE_TOKENS.CONFIGURED_CLIENT_ID_REDACTED: "eccd1…ess"
 SERVICE_TOKENS.CONFIGURED_CLIENT_ID_MATCHES_TOKEN: no
+SERVICE_TOKENS.TOKEN.0.NAME: aperion-api-prod-smoke
+SERVICE_TOKENS.TOKEN.0.CLIENT_ID_REDACTED: eccd1f…cess
+SERVICE_TOKENS.TOKEN.0.ID_REDACTED: 85c654…2e90
 HOST.API: api.aperion.cc
 APP_MATCH_COUNT.API: 1
 APP.API.0.ID: b6b814…3e5b
 APP.API.0.NAME: Aperion API
 APP.API.0.DOMAINS: api.aperion.cc/*
 APP.API.0.PATHS: -
-APP.API.0.AUD: -
+APP.API.0.AUD: 38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
 APP.API.0.TYPE: self_hosted
 APP.API.0.SESSION_DURATION: 24h
 APP.API.0.SELF_HOSTED_DOMAIN_COUNT: 1
@@ -643,7 +758,8 @@ APP.API.0.DETAILS.APP_TYPE: self_hosted
 APP.API.0.DETAILS.DOMAIN: api.aperion.cc/*
 APP.API.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
 APP.API.0.DETAILS.SELF_HOSTED_DOMAINS.0: api.aperion.cc/*
-APP.API.0.DETAILS.AUD.COUNT: 0
+APP.API.0.DETAILS.AUD.COUNT: 1
+APP.API.0.DETAILS.AUD.0: 38a3ebe3b4b34d60bc120526a0925cd0cf838575af089575c427bf9be0a4bf62
 APP.API.0.DETAILS.ALLOWED_IDPS.COUNT: 0
 APP.API.0.DETAILS.SESSION_DURATION: 24h
 APP.API.0.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
@@ -664,23 +780,28 @@ APP.API.0.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
 EVIDENCE.API.HAS_ANY_SERVICE_TOKEN_REF: yes
 EVIDENCE.API.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 EVIDENCE.API.HAS_ANY_SERVICE_AUTH_DECISION: yes
-EVIDENCE.API.PATHS_COVER_V1: no
+EVIDENCE.API.PATHS_COVER_V1: yes
 HOST.CHAT: chat.aperion.cc
-APP_MATCH_COUNT.CHAT: 1
-APP.CHAT.0.ID: 8a528a…df06
-APP.CHAT.0.NAME: Aperion Chat (UI)
-APP.CHAT.0.DOMAINS: chat.aperion.cc/*
+APP_MATCH_COUNT.CHAT: 2
+APP.CHAT.0.ID: 17967c…362b
+APP.CHAT.0.NAME: ACESS_PWA_BYPASS
+APP.CHAT.0.DOMAINS: chat.aperion.cc/manifest.json,chat.aperion.cc/icon-192.png,chat.aperion.cc/icon-512.png,chat.aperion.cc/favicon.ico,chat.aperion.cc/robots.txt
 APP.CHAT.0.PATHS: -
-APP.CHAT.0.AUD: -
+APP.CHAT.0.AUD: a78f8e76720001faa116caa8ab913550e65902e252a8210b4ff7f0c11f62523a
 APP.CHAT.0.TYPE: self_hosted
 APP.CHAT.0.SESSION_DURATION: 24h
-APP.CHAT.0.SELF_HOSTED_DOMAIN_COUNT: 1
+APP.CHAT.0.SELF_HOSTED_DOMAIN_COUNT: 5
 APP.CHAT.0.DETAILS.HTTP_STATUS: 200
 APP.CHAT.0.DETAILS.APP_TYPE: self_hosted
-APP.CHAT.0.DETAILS.DOMAIN: chat.aperion.cc/*
-APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
-APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/*
-APP.CHAT.0.DETAILS.AUD.COUNT: 0
+APP.CHAT.0.DETAILS.DOMAIN: chat.aperion.cc/manifest.json
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 5
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/manifest.json
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.1: chat.aperion.cc/icon-192.png
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.2: chat.aperion.cc/icon-512.png
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.3: chat.aperion.cc/favicon.ico
+APP.CHAT.0.DETAILS.SELF_HOSTED_DOMAINS.4: chat.aperion.cc/robots.txt
+APP.CHAT.0.DETAILS.AUD.COUNT: 1
+APP.CHAT.0.DETAILS.AUD.0: a78f8e76720001faa116caa8ab913550e65902e252a8210b4ff7f0c11f62523a
 APP.CHAT.0.DETAILS.ALLOWED_IDPS.COUNT: 0
 APP.CHAT.0.DETAILS.SESSION_DURATION: 24h
 APP.CHAT.0.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
@@ -688,20 +809,57 @@ APP.CHAT.0.DETAILS.APP_LAUNCHER_VISIBLE: yes
 APP.CHAT.0.DETAILS.HTTP_ONLY_COOKIE_ATTRIBUTE: true
 APP.CHAT.0.DETAILS.SAME_SITE_COOKIE_ATTRIBUTE: 
 APP.CHAT.0.POLICIES.HTTP_STATUS: 200
-APP.CHAT.0.POLICY.0.ID: 5399b1…61ea
-APP.CHAT.0.POLICY.0.NAME: Allow service token: aperion-api-prod-smoke
-APP.CHAT.0.POLICY.0.DECISION: NON_IDENTITY
-APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.0.POLICY.0.ID: 0446ad…8976
+APP.CHAT.0.POLICY.0.NAME: ACCESS_PWA_BYPASS
+APP.CHAT.0.POLICY.0.DECISION: BYPASS
+APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_REF: no
 APP.CHAT.0.POLICY.0.HAS_SERVICE_TOKEN_ID_VALUES: no
 APP.CHAT.0.POLICY.1.ID: b1c071…eb3f
 APP.CHAT.0.POLICY.1.NAME: Allow emails: 12/16/2025
 APP.CHAT.0.POLICY.1.DECISION: ALLOW
 APP.CHAT.0.POLICY.1.HAS_SERVICE_TOKEN_REF: no
 APP.CHAT.0.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.0.POLICY.2.ID: 5399b1…61ea
+APP.CHAT.0.POLICY.2.NAME: Allow service token: aperion-api-prod-smoke
+APP.CHAT.0.POLICY.2.DECISION: NON_IDENTITY
+APP.CHAT.0.POLICY.2.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.0.POLICY.2.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.1.ID: 8a528a…df06
+APP.CHAT.1.NAME: Aperion Chat (UI)
+APP.CHAT.1.DOMAINS: chat.aperion.cc/*
+APP.CHAT.1.PATHS: -
+APP.CHAT.1.AUD: f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb
+APP.CHAT.1.TYPE: self_hosted
+APP.CHAT.1.SESSION_DURATION: 24h
+APP.CHAT.1.SELF_HOSTED_DOMAIN_COUNT: 1
+APP.CHAT.1.DETAILS.HTTP_STATUS: 200
+APP.CHAT.1.DETAILS.APP_TYPE: self_hosted
+APP.CHAT.1.DETAILS.DOMAIN: chat.aperion.cc/*
+APP.CHAT.1.DETAILS.SELF_HOSTED_DOMAINS.COUNT: 1
+APP.CHAT.1.DETAILS.SELF_HOSTED_DOMAINS.0: chat.aperion.cc/*
+APP.CHAT.1.DETAILS.AUD.COUNT: 1
+APP.CHAT.1.DETAILS.AUD.0: f00765f3d5e62d166d6e61c603bcc8629529f695981fe09df4ef3e0479221afb
+APP.CHAT.1.DETAILS.ALLOWED_IDPS.COUNT: 0
+APP.CHAT.1.DETAILS.SESSION_DURATION: 24h
+APP.CHAT.1.DETAILS.AUTO_REDIRECT_TO_IDENTITY: no
+APP.CHAT.1.DETAILS.APP_LAUNCHER_VISIBLE: yes
+APP.CHAT.1.DETAILS.HTTP_ONLY_COOKIE_ATTRIBUTE: true
+APP.CHAT.1.DETAILS.SAME_SITE_COOKIE_ATTRIBUTE: 
+APP.CHAT.1.POLICIES.HTTP_STATUS: 200
+APP.CHAT.1.POLICY.0.ID: 5399b1…61ea
+APP.CHAT.1.POLICY.0.NAME: Allow service token: aperion-api-prod-smoke
+APP.CHAT.1.POLICY.0.DECISION: NON_IDENTITY
+APP.CHAT.1.POLICY.0.HAS_SERVICE_TOKEN_REF: yes
+APP.CHAT.1.POLICY.0.HAS_SERVICE_TOKEN_ID_VALUES: no
+APP.CHAT.1.POLICY.1.ID: b1c071…eb3f
+APP.CHAT.1.POLICY.1.NAME: Allow emails: 12/16/2025
+APP.CHAT.1.POLICY.1.DECISION: ALLOW
+APP.CHAT.1.POLICY.1.HAS_SERVICE_TOKEN_REF: no
+APP.CHAT.1.POLICY.1.HAS_SERVICE_TOKEN_ID_VALUES: no
 EVIDENCE.CHAT.HAS_ANY_SERVICE_TOKEN_REF: yes
 EVIDENCE.CHAT.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 EVIDENCE.CHAT.HAS_ANY_SERVICE_AUTH_DECISION: yes
-EVIDENCE.CHAT.PATHS_COVER_V1: no
+EVIDENCE.CHAT.PATHS_COVER_V1: yes
 SERVICE_TOKENS.POLICY_REFERENCES_SERVICE_TOKEN_IDS: no
 CONCLUSION.302.REASON.NO_SERVICE_AUTH_POLICY: unknown
 CONCLUSION.302.REASON.HOSTNAME_CONFLICT: unknown
@@ -714,12 +872,53 @@ WRANGLER.ENV.EFFECTIVE: none
 WRANGLER.ENV.VALID: yes
 WRANGLER.ENV.AVAILABLE: preview,test
 WORKER.NAME: aperion-api-worker
-SECRETS.COUNT: 3
+SECRETS.COUNT: 5
 SECRETS.NAMES.0: APERION_AUTH_MODE
 SECRETS.NAMES.1: CF_ACCESS_AUD
-SECRETS.NAMES.2: CF_ACCESS_TEAM_DOMAIN
+SECRETS.NAMES.2: CF_ACCESS_SERVICE_TOKEN_ID
+SECRETS.NAMES.3: CF_ACCESS_SERVICE_TOKEN_SECRET
+SECRETS.NAMES.4: CF_ACCESS_TEAM_DOMAIN
 REQUIRED_PRESENT.APERION_AUTH_MODE: yes
 REQUIRED_PRESENT.CF_ACCESS_TEAM_DOMAIN: yes
 REQUIRED_PRESENT.CF_ACCESS_AUD: yes
 REQUIRED_PRESENT: yes
+VALIDATE.VERSION: 2
+SURFACE: browser
+STEP.1: cf:worker:smoke
+STEP.2: access:probe
+STEP.3: ws:probe
+STEP.4: ws:proof --mode headless
+ENDPOINT.V1_IDENTITY: 200
+ENDPOINT.V1_CONVERSATIONS: 200
+ENDPOINT.V1_SEMANTIC_SEARCH: 200
+WS.PROBE.URL: https://chat.aperion.cc/api/v1/ws
+WS.PROBE.UPGRADE_HTTP_STATUS: 101
+WS.PROBE.SEC_WEBSOCKET_ACCEPT: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+WS.PROOF.URL: wss://chat.aperion.cc/api/v1/ws
+WS.PROOF.MODE: headless
+WS.PROOF.CONNECTED: yes
+WS.PROOF.PONG_RECEIVED: yes
+WS.PROOF.HANDSHAKE_HTTP_STATUS: 101
+WS.PROOF.EXIT_CODE: 0
+DIAG: UNKNOWN
+VALIDATE.VERSION: 2
+SURFACE: api
+STEP.1: cf:worker:smoke
+STEP.2: access:probe
+STEP.3: ws:probe
+STEP.4: ws:proof --mode headless
+ENDPOINT.V1_IDENTITY: 200
+ENDPOINT.V1_CONVERSATIONS: 200
+ENDPOINT.V1_SEMANTIC_SEARCH: 200
+WS.PROBE.URL: https://api.aperion.cc/v1/ws
+WS.PROBE.UPGRADE_HTTP_STATUS: 101
+WS.PROBE.SEC_WEBSOCKET_ACCEPT: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+WS.PROOF.URL: wss://api.aperion.cc/v1/ws
+WS.PROOF.MODE: headless
+WS.PROOF.CONNECTED: yes
+WS.PROOF.PONG_RECEIVED: yes
+WS.PROOF.HANDSHAKE_HTTP_STATUS: 101
+WS.PROOF.EXIT_CODE: 0
+DIAG: UNKNOWN
+RECEIPTS.INDEX: receipts/deploy/2026-01-02/081310/INDEX.md
 DEPLOY.DONE: yes
