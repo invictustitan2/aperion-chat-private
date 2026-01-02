@@ -132,7 +132,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
+          # Do not enable pnpm cache here: this job may not run pnpm install,
+          # and setup-node will fail the post-job cache save if the store path
+          # doesn't exist.
 
       - name: Bootstrap devshell tools (apt)
         run: ./scripts/bootstrap-dev.sh
