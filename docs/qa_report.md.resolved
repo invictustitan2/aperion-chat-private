@@ -1,0 +1,81 @@
+# QA Verification Report: chat.aperion.cc
+
+## Overview
+
+Verified the UI of `chat.aperion.cc` against the expectations defined in [apps/web/test/e2e/qa_evidence.spec.ts](file:///home/dreamboat/projects/aperion-chat-private/apps/web/test/e2e/qa_evidence.spec.ts).
+
+## Methodology
+
+1.  **Authentication**: Authenticated via Cloudflare Access using `invictustitan2@icloud.com`.
+2.  **Viewport**: Resized browser to **393x852** (iPhone 15) to match the test specification.
+3.  **Comparison**: visually and programmatically verified elements against test selectors.
+
+## Findings
+
+| Component          | Expectation ([qa_evidence.spec.ts](file:///home/dreamboat/projects/aperion-chat-private/apps/web/test/e2e/qa_evidence.spec.ts))     | Actual UI (Production)          | Status   |
+| :----------------- | :-------------------------------------- | :------------------------------ | :------- |
+| **Viewport**       | iPhone 15 (393x852)                     | Mobile Layout Triggered         | ✅ MATCH |
+| **Drawer Toggle**  | `conversations-drawer-toggle` (visible) | Present (Hamburger Menu)        | ✅ MATCH |
+| **Input Area**     | Placeholder "Type a message..."         | Visible                         | ✅ MATCH |
+| **Send Button**    | Label "Send message"                    | Visible (Arrow Icon)            | ✅ MATCH |
+| **General Layout** | Mobile Chat Interface                   | Valid Mobile UI with Bottom Nav | ✅ MATCH |
+
+## Recent Changes Investigation (Radix & New Features)
+
+Analysis of the codebase ([Chat.tsx](file:///home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Chat.tsx)) and deployed UI reveals a **Mix of Implementations**, which likely causes the "not as expected" experience.
+
+| Feature             | Implementation in Code        | Visual Result                         | Status                                            |
+| :------------------ | :---------------------------- | :------------------------------------ | :------------------------------------------------ |
+| **Message Actions** | **Radix UI** (`DropdownMenu`) | Styled Dark Glass Menu                | ✅ MODERN (Radix)                                 |
+| **Tone Selector**   | **Native HTML `<select>`**    | Native OS Dropdown (Unstyled options) | ⚠️ **DISCREPANCY** (Likely expected Radix Select) |
+| **Semantic Write**  | **Manual Button + Icon**      | Icon Toggle (Non-standard Switch)     | ⚠️ **DISCREPANCY** (Likely expected Radix Switch) |
+| **Styling**         | `glass-dark` class            | Dark Glassmorphism                    | ✅ MATCH                                          |
+
+### Discrepancy Details
+
+1.  **Tone Selector**: Currently uses a native `<select>` element (Line 1283 in [Chat.tsx](file:///home/dreamboat/projects/aperion-chat-private/apps/web/src/pages/Chat.tsx)). This results in a jarring experience where clicking "Tone" opens a native OS menu instead of a styled dark-mode dropdown constant with the rest of the app.
+2.  **Semantic Write**: Implemented as a `<button>` with `ToggleLeft`/`ToggleRight` icons (Line 1378). A standard Radix `Switch` component would provide a smoother, more recognizable interaction.
+
+## Comprehensive UI Audit
+Performed a deep-dive verification of the entire application structure, visiting all tabs and analyzing layout/rendering.
+
+### 1. "3 Pane Toggle" Investigation
+The user reported a missing "3 pane toggle".
+- **Finding**: The **Operator Panel** (acts as the 3rd pane) **DOES EXIST** in the code and UI.
+- **Issue**: The toggle button is **visually obscured** by the header text ("Secure channel...").
+- **Evidence**: `audit_chat_operator_pane.png` shows the pane open, but the header layout is crowded, causing the text to run over the buttons.
+
+### 2. Text Display & Typography
+The user reported "all text does not display properly".
+- **Finding**: The application is falling back to specific system fonts because the custom fonts defined in [tailwind.config.js](file:///home/dreamboat/projects/aperion-chat-private/apps/web/tailwind.config.js) (`InterVariable`, `JetBrains Mono`) are **NOT imported** in [index.html](file:///home/dreamboat/projects/aperion-chat-private/apps/web/index.html).
+- **Impact**: Typography looks generic and lacks the intended premium feel.
+
+### 3. Tab Verification Status
+Visited all application routes to ensure they load and render basic structure.
+
+| Route | Status | Notes |
+| :--- | :--- | :--- |
+| `/chat` | ⚠️ **Issues** | Header overlap, fonts missing, mixed Radix/Native controls. |
+| `/memory` | ✅ **Loaded** | Functional. |
+| `/analytics` | ✅ **Loaded** | Charts rendering. |
+| `/knowledge` | ✅ **Loaded** | Functional. |
+| `/insights` | ✅ **Loaded** | Functional. |
+| `/identity` | ✅ **Loaded** | Functional. |
+| `/receipts` | ✅ **Loaded** | Functional. |
+| `/status` | ⚠️ **Loaded** | **API Errors**: 404 on `ai.tone` preference fetch. |
+| `/logs` | ✅ **Loaded** | Functional. |
+| `/settings` | ✅ **Loaded** | Functional. |
+
+## Discrepancy Summary (Action Items)
+1.  **Fix Typography**: Add font imports for Inter/JetBrains Mono to `index.html` or CSS.
+2.  **Fix Header Layout**: Resolve overlap between status text and action buttons in `Chat.tsx` (Operator Panel toggle).
+3.  **Modernize Controls**: Replace native `<select>` and manual toggle with Radix `Select` and `Switch` components.
+4.  **Fix API Errors**: Investigate why `ai.tone` preference fails (404) on the Status page.
+
+## Evidence
+
+### Header Overlap & 3rd Pane
+![Operator Pane & Header Overlap](/home/dreamboat/.gemini/antigravity/brain/fc6914ae-b336-42f5-8526-660e99e11f83/audit_chat_operator_pane_1767344846395.png)
+
+### Missing Fonts (System Status)
+![System Status](/home/dreamboat/.gemini/antigravity/brain/fc6914ae-b336-42f5-8526-660e99e11f83/audit_status_1767344947572.png)
