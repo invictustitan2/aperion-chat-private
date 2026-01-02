@@ -1,5 +1,5 @@
-VALIDATE.UTC: 2026-01-02T16:33:18Z
-SURFACE: api
+VALIDATE.VERSION: 2
+SURFACE: browser
 STEP.1: cf:worker:smoke
 STEP.2: access:probe
 STEP.3: ws:probe
@@ -7,10 +7,10 @@ STEP.4: ws:proof --mode headless
 ENDPOINT.V1_IDENTITY: 200
 ENDPOINT.V1_CONVERSATIONS: 200
 ENDPOINT.V1_SEMANTIC_SEARCH: 200
-WS.PROBE.URL: https://api.aperion.cc/v1/ws
+WS.PROBE.URL: https://chat.aperion.cc/api/v1/ws
 WS.PROBE.UPGRADE_HTTP_STATUS: 101
 WS.PROBE.SEC_WEBSOCKET_ACCEPT: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-WS.PROOF.URL: wss://api.aperion.cc/v1/ws
+WS.PROOF.URL: wss://chat.aperion.cc/api/v1/ws
 WS.PROOF.MODE: headless
 WS.PROOF.CONNECTED: yes
 WS.PROOF.PONG_RECEIVED: yes

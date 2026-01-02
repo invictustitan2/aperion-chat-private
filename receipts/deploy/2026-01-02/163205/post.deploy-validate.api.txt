@@ -1,4 +1,4 @@
-VALIDATE.UTC: 2026-01-02T16:33:18Z
+VALIDATE.VERSION: 2
 SURFACE: api
 STEP.1: cf:worker:smoke
 STEP.2: access:probe
