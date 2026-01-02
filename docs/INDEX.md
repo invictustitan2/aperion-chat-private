@@ -18,6 +18,7 @@ If two docs disagree, prefer the ones labeled **Full (canonical)**.
 - **Environment variables by environment:** [docs/environment-matrix.md](./environment-matrix.md)
 - **Docs refactor tracking (canonical for this effort):** [docs/DOCS_REFACTOR_TRACKING.md](./DOCS_REFACTOR_TRACKING.md)
 - **Proof report (evidence-backed):** [docs/PROOF_REPORT.md](./PROOF_REPORT.md)
+- **Verification checklist (canonical):** [docs/VERIFICATION_CHECKLIST.md](./VERIFICATION_CHECKLIST.md)
 
 ## Operator runbooks
 

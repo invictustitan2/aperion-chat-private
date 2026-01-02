@@ -211,15 +211,28 @@ main() {
     exit 3
   fi
 
-  printf 'BASE_URL: %s\n' "$BASE_URL"
+  mkdir -p "${repo_root}/receipts" >/dev/null 2>&1 || true
 
-  # Canonical endpoint list for evidence:
-  # - ROOT is NOT a routed API endpoint; keep HEAD.
-  # - Routed endpoints must use GET to avoid false 404s.
-  probe_one 'ROOT' '/' 'HEAD'
-  probe_one 'V1_IDENTITY' '/v1/identity' 'GET'
-  probe_one 'V1_CONVERSATIONS' '/v1/conversations' 'GET'
-  probe_one 'V1_SEMANTIC_SEARCH' '/v1/semantic/search?query=test' 'GET'
+  local timestamp_compact receipt_path latest_path compat_path
+  timestamp_compact="$(date -u +%Y%m%d-%H%M%SZ)"
+  receipt_path="${repo_root}/receipts/access-probe.${surface}.${timestamp_compact}.txt"
+  latest_path="${repo_root}/receipts/access-probe.${surface}.latest.txt"
+  compat_path="${repo_root}/receipts/access-probe.${surface}.txt"
+
+  {
+    printf 'BASE_URL: %s\n' "$BASE_URL"
+
+    # Canonical endpoint list for evidence:
+    # - ROOT is NOT a routed API endpoint; keep HEAD.
+    # - Routed endpoints must use GET to avoid false 404s.
+    probe_one 'ROOT' '/' 'HEAD'
+    probe_one 'V1_IDENTITY' '/v1/identity' 'GET'
+    probe_one 'V1_CONVERSATIONS' '/v1/conversations' 'GET'
+    probe_one 'V1_SEMANTIC_SEARCH' '/v1/semantic/search?query=test' 'GET'
+  } |& tee "$receipt_path" "$latest_path" "$compat_path"
+
+  printf 'RECEIPT: %s\n' "${receipt_path#${repo_root}/}" >&2
+  printf 'RECEIPT_LATEST: %s\n' "${latest_path#${repo_root}/}" >&2
 }
 
 main "$@"

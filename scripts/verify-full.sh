@@ -10,7 +10,9 @@ fi
 
 WORKER_PID=""
 LOG_FILE="worker.log"
-API_URL="${VITE_API_BASE_URL:-http://127.0.0.1:8787}"
+# This script is for local verification against the local worker.
+# Do not implicitly inherit VITE_API_BASE_URL (often set to production).
+API_URL="${API_URL:-http://127.0.0.1:8787}"
 AUTH_TOKEN="${AUTH_TOKEN:-}"
 
 cleanup() {

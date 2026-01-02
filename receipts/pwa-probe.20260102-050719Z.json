@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-01-02T05:11:54Z",
+  "timestamp": "2026-01-02T05:07:19Z",
   "origin": "https://chat.aperion.cc",
   "probes": [
     {
@@ -10,28 +10,28 @@
       "curl_exit_code": 0,
       "location": "",
       "content_type": "application/json",
-      "cf_ray": "9b77c2261f11cca4-ORD",
+      "cf_ray": "9b77bb708b2c6215-ORD",
       "redirected_to_access": "no"
     },
     {
       "path": "/favicon.ico",
       "url": "https://chat.aperion.cc/favicon.ico",
-      "http_status": 200,
+      "http_status": 302,
       "curl_exit_code": 0,
-      "location": "",
-      "content_type": "text/html; charset=utf-8",
-      "cf_ray": "9b77c226f9e12317-ORD",
-      "redirected_to_access": "no"
+      "location": "https://aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc",
+      "content_type": "",
+      "cf_ray": "9b77bb72493713ce-ORD",
+      "redirected_to_access": "yes"
     },
     {
       "path": "/robots.txt",
       "url": "https://chat.aperion.cc/robots.txt",
-      "http_status": 200,
+      "http_status": 302,
       "curl_exit_code": 0,
-      "location": "",
-      "content_type": "text/html; charset=utf-8",
-      "cf_ray": "9b77c228eb1fe10c-ORD",
-      "redirected_to_access": "no"
+      "location": "https://aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc",
+      "content_type": "",
+      "cf_ray": "9b77bb72fba2e250-ORD",
+      "redirected_to_access": "yes"
     }
   ],
   "summary": { "PWA_PUBLIC_OK": "yes" }

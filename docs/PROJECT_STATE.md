@@ -60,8 +60,8 @@ Proof report (evidence-backed): `docs/PROOF_REPORT.md`
   - Canonical runbook: `docs/ACCESS_PWA_BYPASS.md`
   - Probe: `RUN_NETWORK_TESTS=1 ./dev pwa:probe`
 
-  Current status (evidence-backed, 2026-01-02): public assets are still being redirected to Access.
-  - Proof: `receipts/pwa-probe.20260102-021015Z.json`
+  Current status (evidence-backed, 2026-01-02): public assets are **public** (no Access redirect).
+  - Proof: `receipts/pwa-probe.20260102-051154Z.json`
 
 - **WS close code 1006:** commonly happens when the browser is not actually authenticated (or is being redirected).
   - The web client performs an identity preflight before opening WS and logs a single operator-grade diagnostic line when it refuses to connect.
@@ -77,7 +77,7 @@ Proof report (evidence-backed): `docs/PROOF_REPORT.md`
 
 Local gate (CI-grade):
 
-- `pnpm -s run verify:ci`
+- `./dev verify:ci`
 
 Networked validations (opt-in):
 
@@ -95,9 +95,11 @@ Networked validations (opt-in):
 Evidence-backed snapshot (2026-01-02):
 
 - `docs/PROOF_REPORT.md`
-- `receipts/reality.2026-01-02T020958Z.access-probe.browser.txt`
-- `receipts/reality.2026-01-02T020958Z.ws-probe.browser.txt`
-- `receipts/pwa-probe.20260102-021015Z.json`
+- `receipts/reality.2026-01-02T05:29:31Z.cf-doctor.json`
+- `receipts/access-probe.browser.20260102-052132Z.txt`
+- `receipts/ws-probe.browser.20260102-052140Z.txt`
+- `receipts/ws-proof.browser.20260102-051558Z.json`
+- `receipts/pwa-probe.20260102-051154Z.json`
 
 ## If you only remember one thing
 

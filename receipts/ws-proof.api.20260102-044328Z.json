@@ -1,6 +1,6 @@
 {
   "receipt_version": 1,
-  "created_utc": "2026-01-02T05:23:36.263Z",
+  "created_utc": "2026-01-02T04:43:28.863Z",
   "mode": "headless",
   "surface": "api",
   "ws_url": "wss://api.aperion.cc/v1/ws",
@@ -12,7 +12,7 @@
   },
   "service_token_present": true,
   "connected": true,
-  "open_time_ms": 273,
+  "open_time_ms": 343,
   "first_message_received": true,
   "first_message": {
     "received": true,
@@ -22,11 +22,11 @@
   "close_event": null,
   "handshake": {
     "http_status": 101,
-    "sec_websocket_accept": "oZ2L6IyY2tMjlmBwzcGa6PF1sz0=",
+    "sec_websocket_accept": "ENXyDq3uxPyhM87EyhyLS3zWV9A=",
     "accept_ok": true
   },
   "pong_received": true,
-  "total_time_ms": 5280,
+  "total_time_ms": 5350,
   "notes": [
     "Headless proof uses a raw TLS + RFC6455 WebSocket client with Access service token headers.",
     "This does not rely on browser cookies or interactive login."

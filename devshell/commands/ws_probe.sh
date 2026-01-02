@@ -51,6 +51,13 @@ if [[ "${RUN_NETWORK_TESTS:-0}" != "1" ]]; then
   exit 3
 fi
 
+mkdir -p "${repo_root}/receipts" >/dev/null 2>&1 || true
+
+timestamp_compact="$(date -u +%Y%m%d-%H%M%SZ)"
+receipt_path="${repo_root}/receipts/ws-probe.${surface}.${timestamp_compact}.txt"
+latest_path="${repo_root}/receipts/ws-probe.${surface}.latest.txt"
+compat_path="${repo_root}/receipts/ws-probe.${surface}.txt"
+
 BASE_URL="$(devshell_api_base_url_resolve "$surface" "$base_url_override")"
 URL="${BASE_URL}/v1/ws"
 
@@ -206,23 +213,28 @@ print_case() {
   fi
 }
 
-printf 'BASE_URL: %s\n' "$BASE_URL"
-printf 'URL: %s\n' "$URL"
+{
+  printf 'BASE_URL: %s\n' "$BASE_URL"
+  printf 'URL: %s\n' "$URL"
 
-headers_with="$(curl_headers_only yes "$URL" || true)"
-headers_without="$(curl_headers_only no "$URL" || true)"
+  headers_with="$(curl_headers_only yes "$URL" || true)"
+  headers_without="$(curl_headers_only no "$URL" || true)"
 
-print_case 'with_service_token' yes "$headers_with"
-print_case 'without_service_token' no "$headers_without"
+  print_case 'with_service_token' yes "$headers_with"
+  print_case 'without_service_token' no "$headers_without"
 
-# Upgrade handshake evidence (service-token only; unauth will just redirect).
-upgrade_headers="$(curl_headers_upgrade yes "$URL" || true)"
-upgrade_status="$(status_from_headers "$upgrade_headers")"
-upgrade_ct="$(header_value_from_headers "$upgrade_headers" content-type)"
-upgrade_loc="$(location_sanitized_from_headers "$upgrade_headers")"
-upgrade_accept="$(header_value_from_headers "$upgrade_headers" sec-websocket-accept)"
+  # Upgrade handshake evidence (service-token only; unauth will just redirect).
+  upgrade_headers="$(curl_headers_upgrade yes "$URL" || true)"
+  upgrade_status="$(status_from_headers "$upgrade_headers")"
+  upgrade_ct="$(header_value_from_headers "$upgrade_headers" content-type)"
+  upgrade_loc="$(location_sanitized_from_headers "$upgrade_headers")"
+  upgrade_accept="$(header_value_from_headers "$upgrade_headers" sec-websocket-accept)"
 
-printf 'with_service_token.upgrade.http_status: %s\n' "${upgrade_status:-unknown}"
-printf 'with_service_token.upgrade.content-type: %s\n' "${upgrade_ct:-}"
-printf 'with_service_token.upgrade.location: %s\n' "${upgrade_loc:-}"
-printf 'with_service_token.upgrade.sec-websocket-accept: %s\n' "${upgrade_accept:-}"
+  printf 'with_service_token.upgrade.http_status: %s\n' "${upgrade_status:-unknown}"
+  printf 'with_service_token.upgrade.content-type: %s\n' "${upgrade_ct:-}"
+  printf 'with_service_token.upgrade.location: %s\n' "${upgrade_loc:-}"
+  printf 'with_service_token.upgrade.sec-websocket-accept: %s\n' "${upgrade_accept:-}"
+} |& tee "$receipt_path" "$latest_path" "$compat_path"
+
+printf 'RECEIPT: %s\n' "${receipt_path#${repo_root}/}" >&2
+printf 'RECEIPT_LATEST: %s\n' "${latest_path#${repo_root}/}" >&2

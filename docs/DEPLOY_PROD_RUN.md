@@ -64,10 +64,10 @@ Canonical Phase 3 command (includes REST probes + WS upgrade + headless data-pla
 
 Run from repo root:
 
-- `RUN_NETWORK_TESTS=1 ./dev pwa:probe | tee receipts/pwa-probe.predeploy.json`
+- `RUN_NETWORK_TESTS=1 ./dev pwa:probe` (writes `receipts/pwa-probe.*.json` + `receipts/pwa-probe.latest.json`)
 - `RUN_NETWORK_TESTS=1 ./dev deploy:prod | tee receipts/deploy.prod.txt`
-- `RUN_NETWORK_TESTS=1 ./dev access:probe --surface browser | tee receipts/validate.browser.access-probe.txt`
-- `RUN_NETWORK_TESTS=1 ./dev ws:probe --surface browser | tee receipts/validate.browser.ws-probe.txt`
+- `RUN_NETWORK_TESTS=1 ./dev access:probe --surface browser` (writes `receipts/access-probe.browser.*.txt` + `receipts/access-probe.browser.latest.txt`)
+- `RUN_NETWORK_TESTS=1 ./dev ws:probe --surface browser` (writes `receipts/ws-probe.browser.*.txt` + `receipts/ws-probe.browser.latest.txt`)
 
 ### Required configuration (where each value lives)
 

@@ -73,15 +73,16 @@ Legend:
 
 ### Canonical docs (must be correct)
 
-| Area           | File                        | Target status | Action | Canonical replacement | Evidence to verify / update against                                                      |
-| -------------- | --------------------------- | ------------: | ------ | --------------------- | ---------------------------------------------------------------------------------------- |
-| Docs entry     | `docs/INDEX.md`             |          Full | Keep   | n/a                   | Must link only to real canonical docs                                                    |
-| Project truth  | `docs/PROJECT_STATE.md`     |          Full | Keep   | n/a                   | Must match code/config/tests                                                             |
-| Deploy config  | `docs/DEPLOY_PROD.md`       |          Full | Keep   | n/a                   | `scripts/guard-config-drift.mjs`, `scripts/guard-prod-secrets.mjs`, web/worker auth code |
-| Deploy runbook | `docs/DEPLOY_PROD_RUN.md`   |          Full | Keep   | n/a                   | Must match `./dev deploy:prod` + `./dev deploy:validate` + receipts                      |
-| PWA bypass     | `docs/ACCESS_PWA_BYPASS.md` |          Full | Keep   | n/a                   | Must match `./dev pwa:probe` + Access UI reality                                         |
-| Devshell       | `docs/devshell.md`          |          Full | Keep   | n/a                   | Must match actual commands in `./dev`                                                    |
-| API ref        | `docs/API_REFERENCE.md`     |          Full | Keep   | n/a                   | Must match worker routes/controllers/schemas                                             |
+| Area           | File                             | Target status | Action | Canonical replacement | Evidence to verify / update against                                                      |
+| -------------- | -------------------------------- | ------------: | ------ | --------------------- | ---------------------------------------------------------------------------------------- |
+| Docs entry     | `docs/INDEX.md`                  |          Full | Keep   | n/a                   | Must link only to real canonical docs                                                    |
+| Project truth  | `docs/PROJECT_STATE.md`          |          Full | Keep   | n/a                   | Must match code/config/tests                                                             |
+| Deploy config  | `docs/DEPLOY_PROD.md`            |          Full | Keep   | n/a                   | `scripts/guard-config-drift.mjs`, `scripts/guard-prod-secrets.mjs`, web/worker auth code |
+| Deploy runbook | `docs/DEPLOY_PROD_RUN.md`        |          Full | Keep   | n/a                   | Must match `./dev deploy:prod` + `./dev deploy:validate` + receipts                      |
+| PWA bypass     | `docs/ACCESS_PWA_BYPASS.md`      |          Full | Keep   | n/a                   | Must match `./dev pwa:probe` + Access UI reality                                         |
+| Devshell       | `docs/devshell.md`               |          Full | Keep   | n/a                   | Must match actual commands in `./dev`                                                    |
+| API ref        | `docs/API_REFERENCE.md`          |          Full | Keep   | n/a                   | Must match worker routes/controllers/schemas                                             |
+| Verification   | `docs/VERIFICATION_CHECKLIST.md` |          Full | Keep   | n/a                   | `package.json` scripts, `./scripts/verify-full.sh`, devshell probes, drift traps         |
 
 ### High-churn docs (need truth pass)
 
@@ -166,3 +167,4 @@ Iteration 3 (architecture/reference):
 - 2026-01-02 (Iteration 13): Path B docs consistency pass: ensured all `docs/path-b/*` files have explicit “historical snapshot” disclaimers and point to canonical current docs (`docs/PROJECT_STATE.md`, `docs/DEPLOY_PROD_RUN.md`).
 - 2026-01-02 (Iteration 14): Rewrote `docs/DEPLOY_PROD.md` as an evidence-only configuration contract (no runbook steps); grounded claims in guard scripts and auth/WS code paths; evidence: `scripts/guard-config-drift.mjs`, `scripts/guard-prod-secrets.mjs`, `apps/web/src/lib/apiBaseUrl.ts`, `apps/api-worker/src/lib/authContext.ts`, `apps/api-worker/src/do/ChatState.ts`.
 - 2026-01-02 (Iteration 14b): Tightened `docs/DEPLOY_PROD_RUN.md` Preconditions to explicitly treat `docs/DEPLOY_PROD.md` as the configuration contract it depends on (no runbook duplication).
+- 2026-01-02 (Iteration 15): Added `docs/VERIFICATION_CHECKLIST.md` as the canonical evidence-first verification plan; grounded steps in existing scripts, devshell probes, and drift traps; updated `docs/INDEX.md` to link it.
