@@ -1,5 +1,21 @@
 # Transformational Upgrades Roadmap: Aperion Chat 2.0
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This roadmap is a historical snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/API_REFERENCE.md`
+
 ## Executive Summary
 
 This document serves as a comprehensive roadmap to evolve `chat.aperion.cc` into a robust, one-of-a-kind command center. The goal is to create a premium, mobile-first experience optimized for iPhone 15, leverage the full capabilities of Cloudflare's platform, and implement advanced AI orchestration and observability.

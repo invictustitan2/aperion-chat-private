@@ -1,249 +1,36 @@
 # Authentication System Overhaul - Implementation Summary
 
-Note: this document is a historical implementation summary. The current production posture is Cloudflare Access (JWKS) with an Access-session-only web UI. The planned Path B change (same-origin API under `https://chat.aperion.cc/api/*`) is tracked in `docs/path-b/SAME_ORIGIN_PLAN.md`.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Historical context only
 
-For current operator-facing setup instructions, prefer:
+For current reality and operator commands, start with:
+
+- `docs/PROJECT_STATE.md`
+- `docs/authentication-setup.md`
+- `docs/DEPLOY_PROD_RUN.md`
+
+Note: this document is a historical implementation summary. It is intentionally **not** kept in sync with current code/config.
+
+For current operator-facing setup instructions, use:
 
 - `docs/authentication-setup.md`
 - `docs/auth-debugging.md`
 - `docs/DEPLOY_PROD_RUN.md`
 
-## Overview
+## What this doc is (and is not)
 
-Successfully implemented a comprehensive, production-ready authentication system for Aperion Chat with proper token generation, secrets management, environment-aware CORS, and extensive verification tooling.
+This file exists only as historical context for how auth was implemented during an earlier overhaul.
 
-## Changes Made
+- It may describe paths, env vars, workflows, or scripts that have since changed.
+- It must not be used as a source of truth for production or local-dev setup.
 
-### 1. Fixed TypeScript Errors (PR Blocker) ✅
+For archaeology, use git history on this file.
 
-**File:** `apps/web/src/lib/api.ts`
-
-**Problem:** Conditional header construction created union type `{ Authorization?: undefined }` incompatible with `HeadersInit`
-
-**Solution:** Added explicit type annotation `Record<string, string>` to `authHeaders`
-
-```typescript
-const authHeaders: Record<string, string> = AUTH_TOKEN
-  ? { Authorization: `Bearer ${AUTH_TOKEN}` }
-  : {};
-```
-
-**Verification:** TypeScript compilation passes without errors
-
-### 2. Enhanced Worker Authentication Middleware ✅
-
-**File:** `apps/api-worker/src/index.ts`
-
-**Improvements:**
-
-- ✅ Detailed error logging for authentication failures
-- ✅ Separate validation for missing header, missing config, invalid scheme, empty token
-- ✅ Specific error messages for each failure case
-- ✅ Token prefix logging (first 8 chars) for debugging
-- ✅ Request URL and method logging
-
-**Example enhanced error:**
-
-```
-Authentication failed: Invalid Authorization scheme
-{ url: "https://api.aperion.cc/v1/identity", scheme: "Basic" }
-Error: Unauthorized: Invalid authentication scheme. Use 'Bearer <token>'
-```
-
-### 3. Environment-Aware CORS Configuration ✅
-
-**File:** `apps/api-worker/src/index.ts`
-
-**Replaced:** Static wildcard `*` CORS
-**With:** Dynamic origin-based CORS
-
-**Allowed Origins:**
-
-- `http://localhost:5173` (local Vite dev)
-- `http://127.0.0.1:5173` (local Vite dev IP)
-- `https://chat.aperion.cc` (production)
-- `*.pages.dev` (Cloudflare Pages previews)
-
-**Security Benefits:**
-
-- Prevents unauthorized cross-origin requests
-- Maintains development workflow flexibility
-- Supports preview deployments
-- Adds preflight caching (24 hours)
-
-### 4. Secure Token Generation Script ✅
-
-**File:** `scripts/generate-api-token.ts`
-
-**Features:**
-
-- Generates 256-bit cryptographically secure tokens
-- Uses Node.js `crypto.randomBytes()`
-- Base64url encoding (URL-safe)
-- Comprehensive setup instructions for all 4 environments
-- Security best practices guidance
-
-**Usage:**
-
-```bash
-npx tsx scripts/generate-api-token.ts
-```
-
-### 5. Authentication Verification Script ✅
-
-**File:** `scripts/verify-auth-setup.sh`
-
-**Checks:**
-
-- ✅ Local `.env` file exists and has valid token
-- ✅ Token length is adequate (≥32 characters)
-- ✅ `VITE_API_BASE_URL` is configured
-- ✅ `wrangler.toml` exists and has custom domain
-- ✅ Wrangler CLI is installed
-- ✅ Worker `API_TOKEN` secret is set (if authenticated)
-- ✅ Local worker is running and requires auth
-- ✅ Authentication succeeds with local token
-- ✅ Production API is accessible (optional)
-- ✅ CORS configuration is restrictive
-
-**Usage:**
-
-```bash
-./scripts/verify-auth-setup.sh
-```
-
-### 6. Enhanced CI/CD Workflows ✅
-
-#### API Deployment (`deploy-api.yml`)
-
-**Added:** Post-deployment authentication verification
-
-```bash
-# Test without auth (should return 401)
-curl https://api.aperion.cc/v1/identity
-
-# Test with auth (should return 200)
-curl -H "Authorization: Bearer $API_TOKEN" https://api.aperion.cc/v1/identity
-```
-
-**Benefits:**
-
-- Catches misconfigured secrets immediately
-- Verifies deployment before marking as successful
-- Prevents silent authentication failures
-
-#### Web Deployment (`deploy-web.yml`)
-
-**Added:**
-
-- `VITE_AUTH_TOKEN` injection at build time
-- Build output verification step
-
-**Benefits:**
-
-- Ensures token is baked into production build
-- Catches build failures early
-- Verifies dist directory structure
-
-### 7. Comprehensive Test Suite ✅
-
-**File:** `apps/api-worker/test/auth.test.ts`
-
-**Coverage:**
-
-- ✅ Valid Bearer token authentication succeeds
-- ✅ Missing Authorization header returns 401
-- ✅ Empty Authorization header returns 401
-- ✅ Wrong token returns 403
-- ✅ Missing Bearer prefix returns 403
-- ✅ Malformed Bearer token returns 403
-- ✅ Tokens with extra whitespace fail
-- ✅ OPTIONS requests don't require auth
-- ✅ CORS headers present on OPTIONS
-- ✅ All protected endpoints require auth
-- ✅ All protected endpoints allow valid auth
-
-**Run tests:**
-
-```bash
-pnpm --filter @aperion/api-worker test auth.test.ts
-```
-
-### 8. Environment Configuration Template ✅
-
-**File:** `.env.example`
-
-**Contents:**
-
-- API configuration (URL, token)
-- Cloudflare credentials
-- Optional Google Cloud services
-- Optional Gemini AI
-- Comprehensive comments and setup instructions
-
-**Usage:**
-
-```bash
-cp .env.example .env
-# Edit .env with your values
-```
-
-### 9. Documentation ✅
-
-#### New: Authentication Setup Guide
-
-**File:** `docs/authentication-setup.md`
-
-**Sections:**
-
-- Architecture overview
-- Token generation
-- Environment configuration (all 4 environments)
-- CORS configuration
-- Verification procedures
-- Token rotation process
-- Troubleshooting guide
-- Security considerations
-
-#### Updated: Auth Debugging Guide
-
-**File:** `docs/auth-debugging.md`
-
-**Additions:**
-
-- Reference to comprehensive setup guide
-- Token generation instructions
-- Automated verification script usage
-- Common issues and fixes
-- Manual verification examples
-
-## Deployment Checklist
-
-### Before Deploying
-
-- [ ] Generate secure token: `npx tsx scripts/generate-api-token.ts`
-- [ ] Set GitHub Secret: `API_TOKEN`
-- [ ] Set Worker Secret: `wrangler secret put API_TOKEN`
-- [ ] Set Pages Env Var: `VITE_AUTH_TOKEN` and `VITE_API_BASE_URL`
-- [ ] Update local `.env` file
-- [ ] Run verification: `./scripts/verify-auth-setup.sh`
-
-### After Deploying
-
-- [ ] Verify API authentication: `curl https://api.aperion.cc/v1/identity`
-- [ ] Check GitHub Actions logs for verification steps
-- [ ] Test from production frontend: Settings → Authentication Debug
-- [ ] Verify CORS works from `https://chat.aperion.cc`
-- [ ] Check Cloudflare Worker logs for any auth failures
-
-## Security Improvements
-
-### Before
-
-- ❌ CORS allowed all origins (`*`)
-- ❌ Generic authentication error messages
-- ❌ No authentication logging
-- ❌ No deployment verification
 - ❌ Manual token generation (prone to weak tokens)
 
 ### After

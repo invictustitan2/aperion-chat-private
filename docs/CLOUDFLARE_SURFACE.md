@@ -1,5 +1,13 @@
 # Cloudflare Surface Map (Private)
 
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Cloudflare surfaces (names only) and where they are defined
+
 This document records the authoritative Cloudflare “surfaces” this repo owns and deploys to.
 
 Rules:
@@ -20,6 +28,7 @@ Rules:
   - `test` (local/unit tests)
 - Expected custom domain:
   - `api.aperion.cc` (Worker Custom Domain via `routes` in Wrangler config)
+  - Path B mount (same-origin API): `chat.aperion.cc/api/*` (route served by this Worker)
 
 ## Pages
 
@@ -41,12 +50,14 @@ Rules:
 - Frontend (Pages): `https://chat.aperion.cc`
 - API (Worker): `https://api.aperion.cc`
 
-Path B note (same-origin API): mount the API under the same origin as the UI:
+Path B note (same-origin API): the browser-facing API is served under the same origin as the UI:
 
-- Planned browser-facing API: `https://chat.aperion.cc/api/*`
-- Implementation exists in the repo, but this is not assumed to be configured/live until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+- `https://chat.aperion.cc/api/*`
+
+Evidence: `apps/api-worker/wrangler.toml` `routes = [...]` includes `chat.aperion.cc/api/*`.
 
 ## Where These Names Appear
 
 - Pages project name: `.github/workflows/deploy-web.yml`, `.github/workflows/preview.yml`
-- Worker name(s) and domains: `apps/api-worker/wrangler.toml`
+- Worker name(s) and routes: `apps/api-worker/wrangler.toml`
+- Deploy workflows: `.github/workflows/deploy-api.yml` (Worker), `.github/workflows/deploy-web.yml` (Pages)

@@ -1,5 +1,21 @@
 # Aperion Chat: Phase 2 Roadmap
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This roadmap is a historical snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/API_REFERENCE.md`
+
 ## Executive Summary
 
 With the core platform stabilized (Transformational Roadmap v1 complete), Phase 2 focuses on **performance optimization**, **enhanced real-time capabilities**, **advanced AI features**, and **operational maturity**. The goal is to evolve from a functional command center to a best-in-class, enterprise-ready AI assistant.

@@ -1,0 +1,16 @@
+BASE_URL: https://chat.aperion.cc/api
+URL: https://chat.aperion.cc/api/v1/ws
+with_service_token.http_status: 426
+with_service_token.content-type: text/plain;charset=UTF-8
+with_service_token.cf-ray: 9b76b84e1aa3cd12-LHR
+with_service_token.server: cloudflare
+with_service_token.location: 
+without_service_token.http_status: 302
+without_service_token.content-type: 
+without_service_token.cf-ray: 9b76b8512a1c338f-ORD
+without_service_token.server: cloudflare
+without_service_token.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
+with_service_token.upgrade.http_status: 101
+with_service_token.upgrade.content-type: 
+with_service_token.upgrade.location: 
+with_service_token.upgrade.sec-websocket-accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=

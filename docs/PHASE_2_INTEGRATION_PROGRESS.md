@@ -1,5 +1,20 @@
 # Phase 2 Integration Progress
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical integration notes only
+
+This document is a historical snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+
 **Status:** In Progress  
 **Started:** 2025-12-20  
 **File:** apps/web/src/pages/Chat.tsx

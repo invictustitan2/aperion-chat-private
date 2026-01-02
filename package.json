@@ -13,7 +13,7 @@
     "lint:sh": "./scripts/shell-files.sh shellcheck | xargs -0 -r shellcheck",
     "lint:md": "markdownlint-cli2",
     "fmt:md": "markdownlint-cli2 --fix",
-    "test:devshell": "bats tests/devshell_secrets.bats tests/devshell_secrets_where.bats tests/devshell_secrets_set.bats tests/devshell_secrets_wizard.bats tests/devshell_access.bats tests/devshell_access_audit.bats tests/devshell_worker_audit.bats tests/devshell_worker_smoke.bats tests/devshell_worker_ensure_domain.bats tests/devshell_worker_secrets.bats tests/devshell_worker_deploy.bats tests/devshell_pages_deploy.bats tests/devshell_deploy_validate.bats tests/devshell_deploy_prod.bats tests/devshell_ws_proof.bats",
+    "test:devshell": "bats tests/devshell_secrets.bats tests/devshell_secrets_where.bats tests/devshell_secrets_set.bats tests/devshell_secrets_wizard.bats tests/devshell_access.bats tests/devshell_access_audit.bats tests/devshell_worker_audit.bats tests/devshell_worker_smoke.bats tests/devshell_worker_ensure_domain.bats tests/devshell_worker_secrets.bats tests/devshell_worker_deploy.bats tests/devshell_pages_deploy.bats tests/devshell_deploy_validate.bats tests/devshell_deploy_prod.bats tests/devshell_ws_proof.bats tests/devshell_pwa_probe.bats",
     "verify:devshell": "pnpm -s run fmt:sh:check && pnpm -s run lint:sh && pnpm -s run test:devshell",
     "lint": "eslint .",
     "format": "prettier --write .",

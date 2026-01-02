@@ -1,5 +1,20 @@
 # Path B — Same-Origin API Mount Plan (Phase 1: Inventory & Truth-Finding)
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Archaeology / design intent (not current operating procedure)
+
+This plan is a historical snapshot and is not maintained as current truth.
+
+For current production posture and operator commands, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+
 ## Goal
 
 Eliminate browser CORS as a problem class by making the web app call the API on the **same origin** as the frontend:
@@ -12,10 +27,7 @@ Maintain backward compatibility:
 
 - Existing API origin remains supported: `https://api.aperion.cc/*`
 
-Status note (current repo state):
-
-- The Phase 4 implementation work for Path B has landed in the repo (Worker route + conditional `/api/v1/*` rewrite, plus web support for a relative `/api` base).
-- Production rollout/validation is still a separate step and is not assumed complete until the Cloudflare routing + deploy steps in `docs/path-b/PHASE_3_MIGRATION.md` have been executed.
+Status note: Path B is now treated as the production browser contract.
 
 ---
 
@@ -67,9 +79,9 @@ Status note (current repo state):
 
 ### Docs: current production contract
 
-- Today’s documented production base URL is `https://api.aperion.cc`:
-  - `docs/environment-matrix.md`: production `VITE_API_BASE_URL` is `https://api.aperion.cc`.
-  - `docs/API_REFERENCE.md`: base URL is `https://api.aperion.cc`.
+- Production browser base is same-origin `/api` (or unset to default to `/api`):
+  - `docs/environment-matrix.md`
+  - `docs/API_REFERENCE.md`
 
 ### Additional Phase 1 sweeps (to reduce “hidden assumption” risk)
 
@@ -91,7 +103,7 @@ Status note (current repo state):
       - `./dev cf:access:audit --surface browser` (checks Access app paths for `/api/v1/*`)
     - `./dev cf:doctor` is read-only and supports overriding expected hostnames (useful for preview/test validation) without changing any routing:
       - `./dev cf:doctor --pages-host chat.aperion.cc --worker-host api.aperion.cc`
-    - `devshell/commands/cf_pages_deploy.sh` currently treats `VITE_API_BASE_URL=https://api.aperion.cc` as the expected production value.
+    - `devshell/commands/cf_pages_deploy.sh` treats `/api` (or unset) as the expected production browser base.
   - Tools CLI:
     - `tools/cli` uses `process.env.VITE_API_BASE_URL || "http://127.0.0.1:8787"` (so it is compatible with the same-origin base if you set `VITE_API_BASE_URL=/api` explicitly; otherwise it will default to local dev).
   - Worker OpenAPI generation:

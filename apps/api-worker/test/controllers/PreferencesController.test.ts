@@ -61,7 +61,7 @@ describe("PreferencesController", () => {
   });
 
   it("returns 404 for unknown keys", async () => {
-    mockRequest.params = { key: "theme" };
+    mockRequest.params = { key: "nope" };
 
     const res = await PreferencesController.get(mockRequest, mockEnv);
     expect(res.status).toBe(404);
@@ -92,7 +92,7 @@ describe("PreferencesController", () => {
   });
 
   it("returns 404 on set for unknown keys", async () => {
-    mockRequest.params = { key: "theme" };
+    mockRequest.params = { key: "nope" };
     mockRequest.json.mockResolvedValue({ value: "dark" });
 
     const res = await PreferencesController.set(mockRequest, mockEnv);

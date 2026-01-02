@@ -1,46 +1,74 @@
 # Policy & Governance
 
-The `policy` package acts as the "Superego" of the Aperion system. It enforces rules and invariants to ensure safety, privacy, and data quality.
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** What policy gates exist and how they behave today
 
-## Philosophy
+This document describes the policy gates as implemented in `packages/policy` and how they are integrated into the Worker.
 
-1.  **Safety First**: Destructive actions are denied by default.
-2.  **Explicit Consent**: Changes to identity or high-stakes memory require explicit user confirmation.
-3.  **Quality Control**: Semantic memory (knowledge) is only finalized when confidence is high and patterns recur.
-4.  **Auditability**: Every decision produces a `Receipt` containing the decision, reasons, timestamp, and input hash.
+Evidence anchors:
 
-## Gates
+- Policy package: `packages/policy/src/*`
+- Worker write paths that persist receipts: `apps/api-worker/src/services/*` and `apps/api-worker/src/controllers/VoiceController.ts`
+- Receipts API: `apps/api-worker/src/controllers/ReceiptsController.ts` + `apps/api-worker/src/app.ts` (`GET /v1/receipts`)
 
-### MemoryWriteGate
+## Receipt model (implemented)
 
-Controls writes to the memory system.
+The policy package defines a minimal receipt type:
 
-| Memory Type | Rule | Reason |
-| :--- | :--- | :--- |
-| **Episodic** | `DEFAULT_ALLOW` | Raw experience is always recorded. |
-| **Semantic** | `CONFIDENCE > 0.7` AND `RECURRENCE` | Only high-quality, verified facts become knowledge. |
-| **Identity** | `EXPLICIT_CONFIRMATION` | Core beliefs and user traits are sacred. |
+- `decision`: `allow` | `deny` | `defer`
+- `reasonCodes`: string[]
+- `timestamp`: number
+- `inputsHash`: string
 
-### ActionGate
+Evidence: `packages/policy/src/types.ts`.
 
-Controls tool execution.
+## MemoryWriteGate (implemented + used)
 
-| Action Type | Rule | Example |
-| :--- | :--- | :--- |
-| **Safe** | `DEFAULT_ALLOW` | `read_file`, `search`, `calculate` |
-| **Destructive** | `EXPLICIT_CONFIRMATION` | `delete_file`, `execute_command`, `delete_memory` |
+`MemoryWriteGate` is used by the Worker’s memory write paths and the resulting receipt is persisted to D1 (`receipts` table).
 
-## Receipt Model
+Evidence: `apps/api-worker/src/services/EpisodicService.ts`, `apps/api-worker/src/services/SemanticService.ts`, `apps/api-worker/src/services/IdentityService.ts`.
 
-Every policy decision returns a receipt:
+### Rules
 
-```typescript
-interface Receipt {
-  decision: 'allow' | 'deny' | 'defer';
-  reasonCodes: string[];
-  timestamp: number;
-  inputsHash: string;
-}
-```
+- **Episodic**: always `allow` (`DEFAULT_ALLOW`).
+  - Evidence: `packages/policy/src/memory-gate.ts` (`shouldWriteEpisodic`).
+- **Semantic**:
+  - If `explicit_confirm === true` in the policy context, `allow` with reason `EXPLICIT_CONFIRMATION`.
+  - Otherwise:
+    - if `confidence < 0.7` → `defer` with `LOW_CONFIDENCE`
+    - if `recurrence !== true` → `defer` with `NO_RECURRENCE`
+    - if both checks pass → `allow` with reasons `CONFIDENCE_MET`, `RECURRENCE_VERIFIED`
+  - Evidence: `packages/policy/src/memory-gate.ts` (`shouldWriteSemantic`).
+- **Identity**: requires user confirmation; if `userConfirmation !== true` → `deny` with `MISSING_CONFIRMATION`, else `allow` with `CONFIRMED`.
+  - Evidence: `packages/policy/src/memory-gate.ts` (`shouldWriteIdentity`).
 
-This receipt can be logged for audit trails or used to explain refusals to the user.
+### How the Worker supplies policy context
+
+- Semantic: Worker merges `policyContext` from the request body with `explicit_confirm` extracted from `provenance`.
+  - Evidence: `apps/api-worker/src/services/SemanticService.ts`.
+- Identity: Worker maps the request field `explicit_confirm` to `userConfirmation`.
+  - Evidence: `apps/api-worker/src/services/IdentityService.ts`.
+
+### Current behavior on `deny` / `defer`
+
+In the current Worker implementation, semantic `defer` and identity `deny` both result in a non-`allow` receipt being written and an error returned to the caller (HTTP 403).
+
+Evidence:
+
+- `apps/api-worker/src/services/SemanticService.ts` throws on non-`allow` (`Policy denied/deferred`)
+- `apps/api-worker/src/controllers/SemanticController.ts` maps `Policy denied` to HTTP 403
+- `apps/api-worker/src/services/IdentityService.ts` throws on non-`allow` (`Policy denied`)
+- `apps/api-worker/src/controllers/IdentityController.ts` maps `Policy denied` to HTTP 403
+
+## ActionGate (implemented, not currently wired into the Worker)
+
+`ActionGate` exists in `packages/policy` and can deny a small allow-list of destructive actions unless `userConfirmation === true`.
+
+Evidence: `packages/policy/src/action-gate.ts`.
+
+However, there are no in-repo references to `ActionGate` from the Worker at the moment, so this gate is **available but not actively enforced** by the API runtime.

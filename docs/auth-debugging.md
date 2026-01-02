@@ -1,8 +1,16 @@
 # Authentication Verification & Debugging
 
-These steps help diagnose Cloudflare Access session issues and CORS failures.
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator
+> \
+> **Canonical for:** Debugging Access session/redirect failures
 
-Path B note (same-origin API): CORS troubleshooting applies to the **current** cross-origin setup where the browser calls `https://api.aperion.cc`. The repo supports a same-origin surface at `https://chat.aperion.cc/api/*` (implementation exists), but production should not be assumed to be on that surface until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified.
+These steps help diagnose Cloudflare Access session issues, redirect-to-login failures, and WebSocket preflight skips.
+
+Path B note (same-origin API): production browser traffic is same-origin under `https://chat.aperion.cc/api/*` (no CORS). `https://api.aperion.cc` remains supported for tooling/back-compat.
 
 > **📚 For comprehensive setup instructions**, see [Authentication Setup Guide](./authentication-setup.md)
 
@@ -12,8 +20,8 @@ Path B note (same-origin API): CORS troubleshooting applies to the **current** c
 2. Ensure `VITE_API_BASE_URL` is set correctly (build-time).
 
    Notes:
-   - Cross-origin mode (current production): `VITE_API_BASE_URL=https://api.aperion.cc`
-   - Same-origin mode (after rollout): `VITE_API_BASE_URL=/api` or unset to use the production default `/api`
+   - Production browser base should be same-origin: `VITE_API_BASE_URL=/api` or unset to use the production default `/api`.
+   - `https://api.aperion.cc` is for tooling/back-compat and rollback only.
 
 3. Verify the repo guardrails are green:
 
@@ -30,13 +38,7 @@ Run the comprehensive verification script:
 ./scripts/verify-auth-setup.sh
 ```
 
-This checks:
-
-- ✓ Local `.env` configuration
-- ✓ Worker secrets
-- ✓ API connectivity
-- ✓ Authentication flow
-- ✓ CORS configuration
+This script is intentionally conservative: it flags client-baked token patterns and performs best-effort checks.
 
 ## Manual Local Verification
 
@@ -48,9 +50,15 @@ cat .env | grep VITE_
 ./scripts/verify-full.sh
 ```
 
+Evidence pointer: `scripts/verify-full.sh` (applies local D1 migrations + starts Worker on `127.0.0.1:8787`).
+
 ## UI-level check
 
-The Settings auth debug panel is intentionally hidden in production. Use the browser network tab to confirm requests to the API are receiving Access-protected responses (not CORS failures).
+In the browser devtools Network tab, check requests to:
+
+- `/api/v1/identity` (production browser contract)
+
+If you see `302` responses to an Access login URL, you do not have a usable Access session for that surface.
 
 ## Common Issues
 
@@ -58,16 +66,34 @@ The Settings auth debug panel is intentionally hidden in production. Use the bro
 
 **Cause:** Missing/invalid Cloudflare Access session (or Access policy misconfiguration).
 
+Operator probe (network-gated):
+
+```bash
+RUN_NETWORK_TESTS=1 ./dev access:probe --surface browser
+```
+
 ### CORS Errors
 
-**Cause (current cross-origin mode):** origin not allowed or wrong `VITE_API_BASE_URL`.
-
-If/when Path B is rolled out (same-origin `/api/*`), browser CORS failures should no longer be part of normal operation.
+If you are seeing CORS failures in the browser, treat it as a strong signal that the web build is misconfigured (e.g. using a cross-origin base) or that public assets are being redirected by Access.
 
 **Fix:** Check that you're accessing from:
 
 - Local: `http://localhost:5173` or `http://127.0.0.1:5173`
 - Production: `https://chat.aperion.cc`
+
+Operator probe (network-gated):
+
+```bash
+RUN_NETWORK_TESTS=1 ./dev pwa:probe
+```
+
+Evidence pointer: `devshell/commands/pwa_probe.sh`.
+
+### WebSocket closes / skips
+
+The web client performs an identity preflight before attempting WebSocket connect. If `/v1/identity` is redirected (Access login) or returns `401/403`, it will skip the WS connection and emit a single diagnostic line.
+
+Evidence pointer: `apps/web/src/hooks/useWebSocket.ts`.
 
 ## Further Reading
 

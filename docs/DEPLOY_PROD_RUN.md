@@ -1,8 +1,16 @@
 # Production Deploy Runbook (Worker + Pages + Access)
 
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator (solo)
+> \
+> **Canonical for:** Production deploy + validation sequence
+
 This runbook is meant to be executed top-to-bottom when deploying production.
 
-Path B note (same-origin API): the long-term browser contract is **same-origin** `https://chat.aperion.cc/api` (Pages uses `VITE_API_BASE_URL=/api`). Keep `https://api.aperion.cc` as a backward-compatible/tooling surface.
+Path B note (same-origin API): the browser contract is **same-origin** `https://chat.aperion.cc/api` (Pages uses `VITE_API_BASE_URL=/api` or leaves it unset to default to `/api`). Keep `https://api.aperion.cc` as a backward-compatible/tooling surface.
 
 ### Manual Access UI gate (Path B)
 
@@ -46,9 +54,20 @@ Canonical Phase 3 command (includes REST probes + WS upgrade + headless data-pla
 
 ## Preconditions (must already be true)
 
-- Cloudflare Access is configured as described in [docs/DEPLOY_PROD.md](docs/DEPLOY_PROD.md).
+- Production config satisfies the contract in [docs/DEPLOY_PROD.md](docs/DEPLOY_PROD.md) (Access + required Worker/Pages vars).
 - Worker production vars are set (at minimum: `APERION_AUTH_MODE=access`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`).
-- Pages production env var is set (current cross-origin): `VITE_API_BASE_URL=https://api.aperion.cc`.
+- Pages production env var uses Path B same-origin API:
+  - `VITE_API_BASE_URL=/api` (preferred), or
+  - unset `VITE_API_BASE_URL` to use the production default `/api`.
+
+## Operator next commands (receipt-backed)
+
+Run from repo root:
+
+- `RUN_NETWORK_TESTS=1 ./dev pwa:probe | tee receipts/pwa-probe.predeploy.json`
+- `RUN_NETWORK_TESTS=1 ./dev deploy:prod | tee receipts/deploy.prod.txt`
+- `RUN_NETWORK_TESTS=1 ./dev access:probe --surface browser | tee receipts/validate.browser.access-probe.txt`
+- `RUN_NETWORK_TESTS=1 ./dev ws:probe --surface browser | tee receipts/validate.browser.ws-probe.txt`
 
 ### Required configuration (where each value lives)
 
@@ -58,7 +77,15 @@ Cloudflare Worker production vars (required):
 - `CF_ACCESS_TEAM_DOMAIN`
 - `CF_ACCESS_AUD`
 - `NODE_ENV=production`
-- `API_TOKEN` (secret)
+
+Cloudflare Worker secrets (optional):
+
+- `CF_ACCESS_SERVICE_TOKEN_ID` (optional; used for automation/smoke)
+- `CF_ACCESS_SERVICE_TOKEN_SECRET` (optional; used for automation/smoke)
+
+Legacy token auth (dev/test/emergency only):
+
+- `API_TOKEN` (secret; only required for `APERION_AUTH_MODE=token|hybrid`)
 
 Cloudflare Pages production env vars (required):
 

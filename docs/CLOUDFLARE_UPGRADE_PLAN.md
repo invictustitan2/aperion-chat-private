@@ -1,5 +1,21 @@
 # 🌩️ Cloudflare Platform Upgrade Plan
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This document is a historical snapshot and is not maintained as current truth.
+
+For current Cloudflare surfaces and deploy/runbooks, prefer:
+
+- `docs/CLOUDFLARE_SURFACE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/PROJECT_STATE.md`
+
 Based on your verified Cloudflare Token permissions, we can unlock significant native capabilities for Aperion Chat. This plan outlines how to leverage the full Cloudflare Developer Platform to increase privacy, performance, and functionality while reducing external dependencies.
 
 ## 🔑 Permissions Analysis

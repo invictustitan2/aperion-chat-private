@@ -1,246 +1,28 @@
 # Deployment Guide
 
-This guide covers deploying the Aperion Chat system to Cloudflare, including GitHub Actions workflows, secrets configuration, and domain setup.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Deprecated; use the receipts-first runbook
 
-Path B note (same-origin API): the repo supports a same-origin browser API surface at `https://chat.aperion.cc/api/*` to eliminate CORS. Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, browser builds typically call `https://api.aperion.cc` (configured via `VITE_API_BASE_URL`).
+This file used to describe Cloudflare/GitHub setup and provisioning steps. Those details are environment-specific and drift-prone, so this document is now a pointer page.
 
-## Architecture Overview
+Canonical execution runbook (exact commands + receipts):
 
-Aperion Chat consists of two main components deployed to Cloudflare:
+- [docs/DEPLOY_PROD_RUN.md](./docs/DEPLOY_PROD_RUN.md)
 
-1. **API Worker** (`apps/api-worker`)
-   - Deployed to: Cloudflare Workers
+Cloudflare surfaces (names only):
 
-- Domain (current surface): `api.aperion.cc`
-- Route: `api.aperion.cc/*`
+- [docs/CLOUDFLARE_SURFACE.md](./docs/CLOUDFLARE_SURFACE.md)
 
-2. **Web App** (`apps/web`)
-   - Deployed to: Cloudflare Pages
-   - Domain: `chat.aperion.cc`
+Authoritative sources (where the truth lives in-repo):
 
-- Project: `aperion-chat-private`
-
-## Prerequisites
-
-- Cloudflare account with Workers and Pages enabled
-- Domain (`aperion.cc`) managed by Cloudflare
-- GitHub repository access with Actions enabled
-- Node.js 20+ and pnpm 9.15.0 installed locally
-
-## Required GitHub Secrets
-
-Navigate to: **Repository → Settings → Secrets and variables → Actions**
-
-### Core Secrets
-
-| Secret Name             | Description                                    | Where to Get It                                                        |
-| ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Cloudflare API token with required permissions | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID                     | Cloudflare Dashboard → Workers & Pages → Overview                      |
-
-Optional (only if you want deploy-time smoke tests to call the API through Access without a browser session):
-
-| Secret Name                      | Description                                   |
-| -------------------------------- | --------------------------------------------- |
-| `CF_ACCESS_SERVICE_TOKEN_ID`     | Cloudflare Access service token client id     |
-| `CF_ACCESS_SERVICE_TOKEN_SECRET` | Cloudflare Access service token client secret |
-
-### Cloudflare API Token Permissions
-
-Create a token at [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) with:
-
-- **Account** permissions:
-  - Workers Scripts: Edit
-  - Workers KV Storage: Edit
-  - D1: Edit
-  - Cloudflare Pages: Edit
-  - Account Analytics: Read
-- **Zone** permissions (for `aperion.cc`):
-  - Workers Routes: Edit
-  - DNS: Edit (if using custom domains)
-
-## GitHub Environments
-
-The workflows use GitHub Environments for better organization and protection:
-
-### Production Environment
-
-- **Name:** `production`
-- **Protection rules (recommended):**
-  - Required reviewers: 1 (yourself)
-  - Restrict to `main` branch only
-
-Configure at: **Repository → Settings → Environments → New environment**
-
-## Domain Configuration
-
-### API Worker Domain (api.aperion.cc)
-
-The API Worker uses Cloudflare Worker Custom Domains configured in `wrangler.toml`:
-
-```toml
-routes = [
-  { pattern = "api.aperion.cc", custom_domain = true, zone_name = "aperion.cc" }
-]
-```
-
-This automatically creates the necessary DNS records when deployed.
-
-### Web App Domain (chat.aperion.cc)
-
-Configure in Cloudflare Dashboard:
-
-1. Go to **Pages → aperion-chat-private → Custom domains**
-2. Click **Set up a custom domain**
-3. Enter `chat.aperion.cc`
-4. Cloudflare will automatically create a CNAME record
-
-## Cloudflare Worker Secrets
-
-Production auth is Cloudflare Access (JWT/JWKS). The API Worker does **not** require an `API_TOKEN` secret in production.
-
-If you choose to enable optional service-token-based smoke tests, set these Worker secrets:
-
-```bash
-cd apps/api-worker
-npx wrangler secret put CF_ACCESS_SERVICE_TOKEN_ID
-npx wrangler secret put CF_ACCESS_SERVICE_TOKEN_SECRET
-```
-
-## Cloudflare Pages Environment Variables
-
-The web app needs environment variables for build-time configuration.
-
-### Set in Cloudflare Dashboard
-
-1. Go to **Pages → aperion-chat-private → Settings → Environment variables**
-2. Add the following variables for **Production**:
-
-| Variable Name       | Value                    | Description                                               |
-| ------------------- | ------------------------ | --------------------------------------------------------- |
-| `VITE_API_BASE_URL` | `https://api.aperion.cc` | API endpoint URL (current; Path B will change this later) |
-
-The web UI is **Access-session-only** and must not ship any `VITE_AUTH_TOKEN` references.
-
-## Cloudflare Resources Setup
-
-Before first deployment, ensure these resources exist:
-
-### D1 Database
-
-```bash
-# Create database (if not exists)
-npx wrangler d1 create aperion-memory
-
-# Update wrangler.toml with the database_id returned
-# Then apply migrations
-cd apps/api-worker
-npx wrangler d1 migrations apply aperion-memory --remote
-```
-
-### KV Namespace
-
-```bash
-# Create KV namespace
-npx wrangler kv:namespace create CACHE_KV
-
-# Update wrangler.toml with the id returned
-```
-
-### Vectorize Index
-
-```bash
-# Create vectorize index
-npx wrangler vectorize create aperion-vectors --dimensions 768 --metric cosine
-```
-
-### R2 Bucket
-
-```bash
-# Create R2 bucket
-npx wrangler r2 bucket create aperion-media
-```
-
-### Queue
-
-```bash
-# Create queue
-npx wrangler queues create aperion-memory-queue
-```
-
-## Deployment Workflows
-
-### Automatic Deployments
-
-Deployments are triggered automatically by GitHub Actions **after CI passes**:
-
-#### Production API Worker
-
-- **Trigger:** After CI workflow completes successfully on `main` branch
-- **Conditions:**
-  - CI must pass
-  - Changes detected in:
-    - `apps/api-worker/**`
-    - `packages/**`
-    - `pnpm-lock.yaml`
-    - `.github/workflows/deploy-api.yml`
-- **Workflow:** `.github/workflows/deploy-api.yml`
-- **Environment:** `production`
-- **URL (current API surface):** https://api.aperion.cc
-
-#### Production Web App
-
-- **Trigger:** After CI workflow completes successfully on `main` branch
-- **Conditions:**
-  - CI must pass
-  - Changes detected in:
-    - `apps/web/**`
-    - `packages/**`
-    - `pnpm-lock.yaml`
-    - `.github/workflows/deploy-web.yml`
-- **Workflow:** `.github/workflows/deploy-web.yml`
-- **Environment:** `production`
-- **URL:** https://chat.aperion.cc
-
-**Note:** Deployments only run if CI passes. If CI fails, deployments are skipped to prevent deploying broken code.
-
-### Manual Deployments
-
-All production workflows support manual triggering via `workflow_dispatch`.
-
-#### From GitHub UI
-
-1. Go to **Actions** tab
-2. Select workflow (Deploy API Worker / Deploy Web App)
-3. Click **Run workflow**
-4. Select `main` branch
-5. Click **Run workflow**
-
-#### From Local Machine
-
-**API Worker:**
-
-```bash
-cd apps/api-worker
-npx wrangler deploy
-```
-
-**Web App:**
-
-```bash
-# Build locally
-cd apps/web
-pnpm build
-
-# Deploy via wrangler pages
-npx wrangler pages deploy dist --project-name aperion-chat-private
-```
-
-## Workflow Features
-
-### CI-Gated Deployments
-
-Production deployments only run after CI passes:
+- Worker config/routes/bindings: `apps/api-worker/wrangler.toml`
+- Pages config/bindings: `wrangler.toml`
+- Deploy workflows: `.github/workflows/deploy-api.yml`, `.github/workflows/deploy-web.yml`
 
 - **CI Workflow** runs first on every push to `main`
 - **Deploy Workflows** trigger only after CI completes successfully
@@ -312,9 +94,11 @@ VITE_AUTH_TOKEN=<your-token>
 
 ### Cloudflare Pages (Environment Variables)
 
-| Variable            | Value                    | Environment                                         |
-| ------------------- | ------------------------ | --------------------------------------------------- |
-| `VITE_API_BASE_URL` | `https://api.aperion.cc` | Production (current; Path B will change this later) |
+| Variable            | Value  | Environment            |
+| ------------------- | ------ | ---------------------- |
+| `VITE_API_BASE_URL` | `/api` | Production (preferred) |
+
+You may also omit/unset `VITE_API_BASE_URL` in production to use the production default (`/api`).
 
 ## Deployment Commands
 

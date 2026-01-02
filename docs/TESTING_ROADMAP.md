@@ -1,5 +1,20 @@
 # Testing Roadmap (Coverage-Driven)
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This roadmap is a historical snapshot and is not maintained as current truth.
+
+For current testing/verification gates, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/PROOF_REPORT.md`
+
 This roadmap is intentionally coverage-driven and philosophy-aligned: we only test proven behavior, we keep failures noisy/actionable, and we treat each test as a “reason receipt” for why a behavior is trusted.
 
 ## Current Baseline (2025-12-17)

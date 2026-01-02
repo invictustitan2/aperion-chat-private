@@ -1,5 +1,20 @@
 # Aperion UI Refactor Roadmap (Tailored)
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This roadmap is a historical snapshot and is not maintained as current truth.
+
+For current UI behavior/contracts, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/E2E_SELECTOR_CONTRACT.md`
+
 ## Context and Goals
 
 This roadmap reflects an audit of the aperion-chat-private repository's existing UI code. Rather than imposing a generic enterprise kit, it aligns recommendations to the current implementation: a Tailwind-driven chat application with custom glassmorphism classes (`.glass` and `.glass-dark`), message streaming, rich actions, and episodic/semantic memory features. The aim is to achieve **ship speed, consistency and delight** for a single‑user, memory‑backed system without layering unnecessary tooling.

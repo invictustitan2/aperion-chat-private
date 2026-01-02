@@ -1,98 +1,87 @@
 # Authentication Setup Guide
 
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Auth model overview and local setup notes
+
 This guide covers the authentication model for Aperion Chat.
 
-Path B note (same-origin API): the repo supports mounting the browser API under the same origin as the UI (`https://chat.aperion.cc/api/*`) to eliminate CORS. Implementation exists in the repo, but production should still be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, production browser builds should keep calling `https://api.aperion.cc` (configured via `VITE_API_BASE_URL`). See `docs/path-b/SAME_ORIGIN_PLAN.md` and `docs/adr/0001-same-origin-api.md`.
+Path B note (same-origin API): production browser traffic is same-origin under `https://chat.aperion.cc/api/*` (no CORS). `https://api.aperion.cc` remains supported for tooling/back-compat.
 
-## Architecture Overview
+## Architecture Overview (implemented)
 
-Aperion Chat uses **Cloudflare Zero Trust Access** as the production authentication boundary:
+Production authentication is Cloudflare Access.
 
-- **Frontend (Web App)**: protected by Access; browser carries an Access session.
-- **Backend (API Worker)**: verifies Access identity via `CF-Access-Jwt-Assertion` (or `CF_Authorization` cookie) using JWKS.
-- **Web UI**: does not bake any bearer token into the client build.
+- The browser client always sends requests with `credentials: "include"` (cookies), and does not attach bearer tokens by default.
+  - Evidence: `apps/web/src/lib/api.ts`.
+- The API Worker authenticates requests using a strict, ordered set of mechanisms:
+  1.  **Service token headers**: `CF-Access-Client-Id` + `CF-Access-Client-Secret` (if configured in Worker env).
+  2.  **Access JWT assertion**: `CF-Access-Jwt-Assertion` (or `X-CF-Access-Jwt-Assertion`), or `CF_Authorization` cookie.
+  3.  **Legacy bearer token** (dev/test only): `Authorization: Bearer <token>`. For WebSocket-only callers, a `?token=` query parameter is also supported.
+  - Evidence: `apps/api-worker/src/lib/authContext.ts`.
 
-### Security Model
+## Legacy token auth (API-only dev/test)
 
-- **Single-user system**: Access policy limits who can reach the app/API
-- **Rotation**: Access keys rotate automatically; service tokens can be rotated when needed
-- **CORS protection**: Environment-aware origin restrictions (only relevant while browser traffic is cross-origin)
-- **HTTPS only**: Production endpoints enforce TLS
+Legacy bearer-token auth exists for API-only development and tests when the Worker is in `token` or `hybrid` mode.
 
-## Optional: Legacy Token Auth (API-only)
+Important: the web UI does not rely on a client-baked token. The repo’s verification scripts explicitly treat `VITE_AUTH_TOKEN` as a configuration error.
 
-Legacy bearer-token auth still exists for local API-only development and test scenarios (auth modes `token` / `hybrid`). The web UI does not use this.
+Evidence pointers:
+
+- `apps/api-worker/src/lib/authContext.ts` (legacy bearer token and WS query token)
+- `scripts/verify-auth-setup.sh` (fails if `VITE_AUTH_TOKEN` is present)
 
 ### Generate a New Token (Legacy)
 
 ```bash
-node scripts/generate-api-token.ts
+npx tsx scripts/generate-api-token.ts
 ```
 
-This generates a 256-bit secure random token and provides setup instructions.
+This generates a 256-bit secure random token and prints setup instructions.
 
-**Example output:**
-
-```
-🔐 Aperion Chat - API Token Generator
-
-✅ Generated new API token (256-bit):
-
-   Xy9kL3mN4pQ5rS6tU7vW8xY9zA0bC1dE2fG3hI4jK5lM6nO7pQ8rS9tU0vW1xY2z
-
-📋 Setup Instructions:
-...
-```
-
-### Token Security Best Practices
-
-1. **Never commit tokens** to version control
-2. **Decide whether to share tokens across environments** (optional)
-   - This repo’s current GitHub workflows use a single `API_TOKEN` secret for Production and Preview deploys.
-   - You can split tokens (e.g., separate `API_TOKEN_PREVIEW`) if you also update workflows + Worker secrets accordingly.
-3. **Rotate tokens periodically** (every 90 days recommended)
-4. **Store securely** in secret management systems
-5. **Limit token exposure** - only set where needed
-
-## Where Auth Lives (And Why You Might Not Know It)
-
-In the “Cloudflare-first + GitHub Actions” setup, production authentication is primarily managed by Cloudflare Access policies.
-
-If you enable optional deploy-time smoke tests through Access, the service token exists only in:
-
-- **GitHub Actions Secrets**: `CF_ACCESS_SERVICE_TOKEN_ID` + `CF_ACCESS_SERVICE_TOKEN_SECRET`
-- **Cloudflare Worker Secrets**: `CF_ACCESS_SERVICE_TOKEN_ID` + `CF_ACCESS_SERVICE_TOKEN_SECRET` (for header matching)
-
-Important operational detail:
-
-- **GitHub Actions secrets are not readable after being set** (they can be used by workflows, but not retrieved).
-- **Cloudflare Worker secrets are not retrievable** (you can list that a secret exists, but cannot fetch its value).
-
-If you do not have the service token stored anywhere else, the correct remedy is **rotation** (create a new service token and update secrets).
+Evidence pointer: `scripts/generate-api-token.ts`.
 
 ## Environment Configuration
 
 ### 1. Local Development
 
-**File: `.env`** (create from `.env.example`)
+There are two supported local auth shapes, depending on what you are trying to test.
+
+**A) Default local dev (token mode):**
+
+- If Access env vars are not set, the Worker defaults to `token` mode.
+- In token mode, the Worker requires `API_TOKEN` (Worker env) and expects the client to send `Authorization: Bearer <token>`.
+
+Evidence pointer: `apps/api-worker/src/lib/authContext.ts`.
+
+**B) Access-mode local dev (optional):**
+
+- If `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` are set (and/or `APERION_AUTH_MODE=access`), the Worker will authenticate via Access JWT assertions.
+- In Access mode, missing Access assertions fail closed.
+
+Evidence pointers:
+
+- `apps/api-worker/src/lib/authContext.ts` (mode selection and failure behavior)
+- `apps/api-worker/wrangler.toml` (required vars comment list)
+
+The repo’s `.env` is used by some scripts (not by Wrangler) and can be created from `.env.example`.
 
 ```bash
-# Copy template
 cp .env.example .env
-
-# For API-only local dev (legacy token mode)
-VITE_API_BASE_URL=http://127.0.0.1:8787
-VITE_AUTH_TOKEN=<your-generated-token>
 ```
 
-**Restart dev servers** after changing `.env`:
+For running servers manually:
 
 ```bash
-# Terminal 1: API Worker
-pnpm --filter @aperion/api-worker dev
+# Terminal 1: Worker
+pnpm -C apps/api-worker dev:api
 
-# Terminal 2: Web App
-pnpm --filter @aperion/web dev
+# Terminal 2: Web
+pnpm -C apps/web dev
 ```
 
 ### 2. GitHub Secrets (CI/CD)
@@ -105,7 +94,9 @@ Optional: set `CF_ACCESS_SERVICE_TOKEN_ID` and `CF_ACCESS_SERVICE_TOKEN_SECRET` 
 
 ### 3. Cloudflare Worker (Backend)
 
-In production, the Worker verifies Cloudflare Access identity via JWKS.
+In production, the Worker verifies Cloudflare Access identity via JWKS (`/cdn-cgi/access/certs`).
+
+Evidence pointer: `apps/api-worker/src/lib/authContext.ts` (JWKS fetch + verification).
 
 Optional: for legacy token mode (API-only dev/test), set `API_TOKEN`.
 
@@ -119,60 +110,30 @@ wrangler secret list --name aperion-api-worker
 
 The web UI is Access-session-only. It must not bake bearer tokens into the build.
 
-Configure only:
+Production browser builds should use the same-origin base:
 
-- **Variable name:** `VITE_API_BASE_URL`
-- **Value (current cross-origin):** `https://api.aperion.cc`
-- **Environment:** Production
+- Prefer: set `VITE_API_BASE_URL=/api`, or
+- Omit/unset `VITE_API_BASE_URL` to use the production default `/api`.
 
-After Path B rollout (do not apply early):
-
-- Prefer relative base: set `VITE_API_BASE_URL=/api`, or
-- Unset `VITE_API_BASE_URL` to use the production default `/api`.
-
-Do not switch production to `/api` (or unset `VITE_API_BASE_URL`) until `chat.aperion.cc/api/*` is actually routed to the Worker and validated.
+Evidence pointer: `apps/web/src/lib/apiBaseUrl.ts`.
 
 **Redeploy** after adding variables for changes to take effect.
 
 ## CORS Configuration
 
-The Worker implements **environment-aware CORS** for security.
+The Worker implements a strict CORS allow-list.
 
-Note: this section is primarily relevant while the browser uses the cross-origin API (`api.aperion.cc`). Path B is intended to remove browser CORS requirements by using same-origin `/api/*`.
+Note: in the current production contract (Path B), browser traffic is same-origin and CORS should not normally be part of the failure mode.
 
 ### Allowed Origins
 
-| Environment    | Allowed Origins                                  |
-| -------------- | ------------------------------------------------ |
-| **Local**      | `http://localhost:5173`, `http://127.0.0.1:5173` |
-| **Production** | `https://chat.aperion.cc`                        |
+Allowed origins are currently hard-coded to:
 
-Notes:
+- `http://localhost:5173`
+- `http://127.0.0.1:5173`
+- `https://chat.aperion.cc`
 
-- The current Worker CORS implementation is a strict allow-list and does **not** automatically allow `*.pages.dev` preview origins.
-- Preview deployments can still be useful for build/test verification, but browser-based preview traffic may fail CORS unless you explicitly allow preview origins.
-
-### How It Works
-
-The Worker dynamically checks the `Origin` header and only allows requests from approved domains:
-
-```typescript
-function getCorsHeaders(request: IRequest): Record<string, string> {
-  const origin = request.headers.get("Origin") || "";
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://chat.aperion.cc",
-  ];
-
-  const isAllowed = allowedOrigins.includes(origin);
-
-  return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[2],
-    // ... other headers
-  };
-}
-```
+Evidence pointer: `apps/api-worker/src/middleware/cors.ts`.
 
 ## Verification
 
@@ -199,7 +160,7 @@ This checks:
 
 ```bash
 # Start the Worker
-pnpm --filter @aperion/api-worker dev
+pnpm -C apps/api-worker dev:api
 
 # In another terminal, test without auth (should fail)
 curl http://127.0.0.1:8787/v1/identity
@@ -207,59 +168,8 @@ curl http://127.0.0.1:8787/v1/identity
 
 # Test with auth (should succeed)
 curl -H "Authorization: Bearer <your-token>" http://127.0.0.1:8787/v1/identity
-# Expected: [] (empty array of identity records)
+# Expected: 200 OK
 ```
-
-#### 2. Production
-
-```bash
-# Without an Access session, unauthenticated requests typically redirect to Access login.
-curl -i https://api.aperion.cc/v1/identity
-
-# With a valid Access session cookie (browser) or a service token (automation), requests should succeed.
-# (Bearer Authorization applies only in token/hybrid modes; production is expected to use Access.)
-```
-
-#### 3. Web App UI
-
-1. Open the web app (local or production)
-2. Navigate to **Settings → Authentication Debug**
-3. Click **"Run auth self-test"**
-4. Verify all checks pass:
-   - ✓ API URL is set
-   - ✓ Access session is active
-   - ✓ Authenticated request succeeds
-
-## Token Rotation
-
-When rotating tokens (recommended every 90 days):
-
-### Step-by-Step Process
-
-If you use a Cloudflare Access service token (optional, for automation/smoke tests):
-
-1. Create a new service token in Cloudflare Zero Trust.
-2. Update GitHub Secrets:
-   - `CF_ACCESS_SERVICE_TOKEN_ID`
-   - `CF_ACCESS_SERVICE_TOKEN_SECRET`
-
-3. Update Worker secrets:
-   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_ID`
-   - `wrangler secret put CF_ACCESS_SERVICE_TOKEN_SECRET`
-
-4. Verify using the repo script:
-
-   ```bash
-   ./scripts/verify-auth-setup.sh
-   ```
-
-### Zero-Downtime Rotation (Advanced)
-
-For production systems, implement a grace period:
-
-1. Modify Worker to accept **both** old and new tokens temporarily
-2. Update all clients to use new token
-3. Remove old token from Worker after verification
 
 ## Troubleshooting
 

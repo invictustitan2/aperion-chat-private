@@ -1,5 +1,13 @@
 # Playwright E2E Selector Contract (Strict-Mode Safe)
 
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** How E2E tests select elements (strict-mode safe)
+
 This document defines **how we write selectors in Playwright E2E tests** for Aperion Chat.
 
 Goal: keep E2E tests **strict-mode safe**, readable, and resilient to UI refactors.
@@ -67,6 +75,8 @@ For composite widgets, use dedicated testids. The UI owns the “testing contrac
 
 ## Standard testids
 
+The following testids are implemented in the UI and used by Playwright specs.
+
 ### Conversation rows
 
 Component: `apps/web/src/components/ConversationItem.tsx`
@@ -90,6 +100,26 @@ If you need rename/delete coverage in E2E:
   - `conversation-item-rename`
   - `conversation-item-delete`
 - Update only the tests that need them.
+
+### Conversations drawer (mobile / small screens)
+
+Component: `apps/web/src/pages/Chat.tsx`
+
+Contract:
+
+- Drawer toggle: `data-testid="conversations-drawer-toggle"`
+- Drawer container: `data-testid="conversations-drawer"`
+- New conversation button: `data-testid="new-conversation"`
+
+Recommended test pattern:
+
+```ts
+await page.getByTestId("conversations-drawer-toggle").click();
+const drawer = page.getByTestId("conversations-drawer");
+await expect(drawer).toBeVisible();
+
+await drawer.getByTestId("new-conversation").click();
+```
 
 ### Message bubbles
 
@@ -172,17 +202,12 @@ Notes:
 - Prefer computed style or stable layout assertions.
 - Avoid Tailwind class chaining and DOM-structure assumptions.
 
-## Recent incident (example)
+## Example strict-mode failure modes
 
-Two failures we fixed:
+Common failure patterns this contract is designed to prevent:
 
-1. Glassmorphism assertion failed because it searched for a descendant `.backdrop-blur-sm` that didn’t exist under `message-bubble-content`.
-
-- Fix: assert computed `backdrop-filter` on `message-bubble-content`.
-
-2. Drawer selection failed due to strict mode: `getByRole('button')` matched 3 buttons in a conversation row.
-
-- Fix: click `conversation-item-open` inside `conversation-item`.
+1. Visual effect assertions that depend on Tailwind class placement or descendant selectors.
+2. Composite widgets where a generic role/text selector matches multiple interactive elements.
 
 ## Practical debugging tips
 

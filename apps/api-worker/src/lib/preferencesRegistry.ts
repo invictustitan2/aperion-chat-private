@@ -1,4 +1,4 @@
-export type KnownPreferenceKey = "ai.tone";
+export type KnownPreferenceKey = "ai.tone" | "theme";
 
 export type PreferenceDefault = {
   key: KnownPreferenceKey;
@@ -7,10 +7,11 @@ export type PreferenceDefault = {
 
 const DEFAULTS: Record<KnownPreferenceKey, unknown> = {
   "ai.tone": "default",
+  theme: "dark",
 };
 
 export function isKnownPreferenceKey(key: string): key is KnownPreferenceKey {
-  return key === "ai.tone";
+  return key === "ai.tone" || key === "theme";
 }
 
 export function getDefaultPreference(
@@ -32,6 +33,19 @@ export function validatePreferenceValue(
         return {
           ok: false,
           error: "ai.tone must be one of: default, concise, detailed",
+        };
+      }
+      return { ok: true, value };
+    }
+
+    case "theme": {
+      if (typeof value !== "string") {
+        return { ok: false, error: "theme must be a string" };
+      }
+      if (value !== "dark" && value !== "light" && value !== "system") {
+        return {
+          ok: false,
+          error: "theme must be one of: dark, light, system",
         };
       }
       return { ok: true, value };

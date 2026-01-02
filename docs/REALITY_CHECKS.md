@@ -1,8 +1,22 @@
 # Reality Checks (Receipts-First)
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator
+> \
+> **Canonical for:** Historical receipts snapshot only (do not treat as current runbook)
+
 Generated at: `2025-12-27T08:26:49Z`
 
-Note: this is a receipts-only snapshot; it does not reflect the planned Path B same-origin API mount (`/api/*` on `chat.aperion.cc`).
+Note: this is a receipts-only snapshot from 2025-12-27. It may contradict current project state (Path B same-origin `/api` is now the production browser contract).
+
+For current operator commands and acceptance checks, use:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/ACCESS_PWA_BYPASS.md`
 
 Non-negotiables for this document:
 

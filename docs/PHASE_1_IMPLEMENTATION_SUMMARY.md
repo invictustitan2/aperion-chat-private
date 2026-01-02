@@ -1,5 +1,20 @@
 # Phase 1 Implementation Summary
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical implementation snapshot only
+
+This document is a historical snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+
 ## ✅ Completed Tasks
 
 ### 1. Tailwind Theme Tokens

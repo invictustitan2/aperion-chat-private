@@ -1,5 +1,21 @@
 # Aperion Chat - Phase 3 Roadmap
 
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This roadmap is a historical snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/API_REFERENCE.md`
+
 > **Theme**: Deep Intelligence & Premium Experience  
 > **Focus**: UI Polish, Memory Architecture, Schema Evolution, and New Capabilities
 

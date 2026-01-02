@@ -124,7 +124,7 @@ if [ -f .env ]; then
             fi
         fi
     else
-        print_status "warn" "Local worker not running. Start with: pnpm --filter @aperion/api-worker dev"
+        print_status "warn" "Local worker not running. Start with: pnpm -C apps/api-worker dev:api"
     fi
 else
     print_status "warn" "Cannot test local API (no .env file)"
@@ -189,9 +189,10 @@ else
     echo "Please fix the errors above before proceeding."
     echo ""
     echo "Quick fixes:"
-    echo "  1. Generate token: node scripts/generate-api-token.ts"
-    echo "  2. Copy .env.example to .env and add the token"
-    echo "  3. Set Worker secret: wrangler secret put API_TOKEN"
-    echo "  4. Start local worker: pnpm --filter @aperion/api-worker dev"
+    echo "  1. Copy .env.example to .env (do NOT add VITE_AUTH_TOKEN)"
+    echo "  2. For legacy token mode testing: generate a token via node scripts/generate-api-token.ts"
+    echo "  3. Ensure the Worker has API_TOKEN configured (deployed: wrangler secret put API_TOKEN; local: apps/api-worker .dev vars)"
+    echo "  4. (Optional) Set AUTH_TOKEN in .env for local curl verification"
+    echo "  5. Start local worker: pnpm -C apps/api-worker dev:api"
     exit 1
 fi

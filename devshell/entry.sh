@@ -48,6 +48,7 @@ Commands:
   secrets:doctor     Diagnose secret overrides (safe)
   access:debug       Debug Access service-token redirects (defaults api.aperion.cc; supports --surface/--base-url)
   access:probe       Probe API surface with/without service token headers (supports --surface/--base-url)
+  pwa:probe          Probe chat public assets for Access redirect/CORS break (network-gated)
   ws:probe           HTTP probe /v1/ws with/without service token (supports --surface/--base-url)
   ws:proof           Browser-engine WS proof (Playwright headed; supports --surface/--base-url)
   vscode:logs:start  Start VS Code log capture into receipts/
@@ -176,6 +177,10 @@ devshell_dispatch() {
 
     access:probe)
       "${repo_root}/devshell/commands/access_probe.sh" "$repo_root" "$@"
+      ;;
+
+    pwa:probe)
+      "${repo_root}/devshell/commands/pwa_probe.sh" "$repo_root" "$@"
       ;;
 
     ws:probe)

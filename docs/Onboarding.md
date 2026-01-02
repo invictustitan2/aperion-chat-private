@@ -1,56 +1,67 @@
 # Onboarding & Setup
 
-Path B note (same-origin API): the repo supports a same-origin browser API surface at `https://chat.aperion.cc/api/*` to eliminate CORS. Implementation exists in the repo, but production should be treated as cross-origin until the rollout steps in `docs/path-b/PHASE_3_MIGRATION.md` are executed and verified. Until then, browser builds should keep calling `https://api.aperion.cc` via `VITE_API_BASE_URL`.
+> **Status:** Full
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+
+Path B note (production browser contract): the web app defaults to same-origin `/api` in production builds, and the Worker is routed at `chat.aperion.cc/api/*`. The `api.aperion.cc` custom domain remains for tooling/back-compat.
+
+Evidence pointers:
+
+- `apps/web/src/lib/apiBaseUrl.ts` (prod default `/api`, dev default local worker)
+- `apps/api-worker/wrangler.toml` (routes include `chat.aperion.cc/api/*` and `api.aperion.cc`)
 
 ## Prerequisites
 
-- Node.js 18+
-- pnpm 9+
-- Cloudflare Account (for production deployment)
-- Python 3+ (for some scripts)
+- Node.js >= 20 (repo root `package.json` engines)
+- pnpm 9.x (repo root `package.json`)
+- For devshell + repo checks on Linux: run `./scripts/bootstrap-dev.sh` (installs `curl`, `jq`, `rg`, `shellcheck`, `shfmt`, `bats`)
 
-## 1. Quick Start (Local Development)
+## Local development (recommended)
+
+Run the repo’s “full verification” cycle. This applies local D1 migrations, starts the Worker on `127.0.0.1:8787`, then runs `pnpm verify`.
 
 ```bash
-# 1. Clone the repository
-git clone git@github.com:invictustitan2/aperion-chat-private.git
-cd aperion-chat-private
-
-# 2. Install dependencies
 pnpm install
-
-# 3. Setup environment variables
-cp apps/api-worker/.dev.vars.example apps/api-worker/.dev.vars
-# Fill in required keys (or ask a team member for a seed)
-
-# 4. Bootstrap Local Databases & Migrations
-pnpm db:migrate:local
-
-# 5. Start Development Servers (Frontend + Worker)
-pnpm dev
-# Frontend: http://localhost:5173
-# API: http://localhost:8787
+./scripts/verify-full.sh
 ```
 
-## 2. Environment Configuration
+Evidence pointer: `scripts/verify-full.sh`.
 
-See [Environment Matrix](./environment-matrix.md) for a detailed breakdown of variables across `development`, `preview`, and `production`.
+## Local development (manual: run web + worker)
 
-## 3. Deployment
+Terminal 1 (API Worker):
 
-See [Deploy to Cloudflare](./deploy-cloudflare.md) for production deployment instructions.
+```bash
+pnpm -C apps/api-worker dev:api
+```
 
-## 4. Authentication
+Terminal 2 (Web app):
 
-Production auth is Cloudflare Access (browser carries an Access session; the Worker verifies identity via JWKS).
+```bash
+pnpm -C apps/web dev
+```
 
-Legacy bearer-token auth exists for API-only dev/test scenarios (token/hybrid modes), but the shipped web UI is Access-session-only.
+Notes:
 
-See [Authentication Setup](./authentication-setup.md) for the current setup.
+- If `VITE_API_BASE_URL` is unset in dev, the web client defaults to `http://127.0.0.1:8787`.
+- If you need local DB migrations explicitly: `pnpm -C apps/api-worker db:migrate:local` (or see `scripts/verify-full.sh`).
 
-## 5. Development Workflow
+## Devshell (operator workflows)
 
-- **Branching**: Use `feature/` branches.
-- **Commits**: Follow Conventional Commits (e.g., `feat(api): ...`).
-- **Formatting**: Setup VS Code with Prettier (see [Dev Tools](./dev-tools.md)).
-- **Testing**: Run `pnpm test` before pushing.
+The canonical entrypoint is `./dev`.
+
+```bash
+./dev help
+./dev verify:ci
+```
+
+Evidence pointer: `devshell/entry.sh`.
+
+## Next reading
+
+- Auth: [docs/authentication-setup.md](./authentication-setup.md)
+- Auth debugging: [docs/auth-debugging.md](./auth-debugging.md)
+- Deploy/runbooks: [docs/DEPLOY_PROD_RUN.md](./DEPLOY_PROD_RUN.md) and [docs/Runbooks.md](./Runbooks.md)

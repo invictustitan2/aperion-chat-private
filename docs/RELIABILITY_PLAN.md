@@ -1,6 +1,20 @@
 # 🛡️ Aperion Product Reliability & Testing Plan
 
-This document outlines the single source of truth for achieving product reliability and functionality end-to-end for the **Aperion Chat** project.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This document is a historical snapshot and is not maintained as current truth.
+
+For current verification gates and operator-grade probes, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/PROOF_REPORT.md`
+- `docs/devshell.md`
 
 ## 🎯 Objectives
 

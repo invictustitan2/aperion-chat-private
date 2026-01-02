@@ -1,6 +1,22 @@
-# Aperion Chat — Consolidated Phase 5 Roadmap (Single Source of Truth)
+# Aperion Chat — Consolidated Phase 5 Roadmap (Legacy snapshot)
 
-> **Purpose**: Consolidate existing roadmaps into one authoritative plan, showing what is **Implemented**, **Partial**, **Not Started**, and **Deferred/External** across the project.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Dev
+> \
+> **Canonical for:** Historical planning snapshot only
+
+This document is a consolidated planning snapshot and is not maintained as current truth.
+
+For current reality, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
+- `docs/API_REFERENCE.md`
+
+> **Purpose**: Consolidate existing roadmaps into one plan snapshot, showing what was believed to be **Implemented**, **Partial**, **Not Started**, and **Deferred/External** across the project.
 >
 > **Source docs merged**:
 >

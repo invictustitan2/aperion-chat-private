@@ -2,13 +2,13 @@
 
 ## Status
 
-Accepted; implementation landed in repo (Phase 4). Production rollout/validation is still pending.
+Accepted; implemented and treated as the current production browser contract.
 
 ## Context
 
-Today production browser builds typically call the API on a separate origin (`https://api.aperion.cc`) via the build-time variable `VITE_API_BASE_URL`.
+Previously, production browser builds called the API cross-origin (`https://api.aperion.cc`) via the build-time variable `VITE_API_BASE_URL`, which created ongoing CORS/Access failure modes.
 
-The repo now also supports a same-origin base (`/api`) for the browser, but this must not be assumed live until Cloudflare routing is deployed/validated.
+The production browser contract is now same-origin under `/api`.
 
 Evidence:
 
@@ -18,7 +18,7 @@ Evidence:
 - Web REST calls and WebSocket URL construction consume that resolved base:
   - `apps/web/src/lib/api.ts`
   - `apps/web/src/lib/websocket.ts`
-- Production docs describe `VITE_API_BASE_URL=https://api.aperion.cc`:
+- Production docs describe the same-origin base (`/api`) for browser builds:
   - `docs/environment-matrix.md`
 
 This creates an ongoing class of failure modes and operational complexity for browser traffic:

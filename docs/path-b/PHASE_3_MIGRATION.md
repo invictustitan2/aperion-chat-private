@@ -1,6 +1,19 @@
 # Path B — Phase 3 Migration & Rollback Plan: Same-Origin `/api` Mount
 
-Status: Rollout plan. Phase 4 implementation has landed in repo; production behavior changes occur only when you deploy/configure Cloudflare as described below.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator
+> \
+> **Canonical for:** Historical rollout plan + rollback reference
+
+This plan is a historical snapshot and is not maintained as current truth.
+
+For current production posture and deploy/validate commands, prefer:
+
+- `docs/PROJECT_STATE.md`
+- `docs/DEPLOY_PROD_RUN.md`
 
 This plan depends on Phase 2 design decisions in `docs/path-b/PHASE_2_DESIGN.md`.
 

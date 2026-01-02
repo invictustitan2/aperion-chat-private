@@ -1,0 +1,25 @@
+# Example Wrangler local dev variables for apps/api-worker
+#
+# Wrangler will read a local .dev.vars file (not committed) when running `wrangler dev`.
+# Copy this file to `.dev.vars` and fill values you actually intend to use.
+#
+# IMPORTANT:
+# - Do not commit `.dev.vars`.
+# - The web UI does not use client-baked tokens.
+#
+# -----------------------------------------------------------------------------
+# Option A: legacy token mode (API-only dev/test)
+# -----------------------------------------------------------------------------
+# APERION_AUTH_MODE=token
+# API_TOKEN=your-secure-token-here
+#
+# -----------------------------------------------------------------------------
+# Option B: Access mode (matches production shape)
+# -----------------------------------------------------------------------------
+# APERION_AUTH_MODE=access
+# CF_ACCESS_TEAM_DOMAIN=yourteam.cloudflareaccess.com   # or just the team slug
+# CF_ACCESS_AUD=your-access-aud                         # comma-separated allowed
+#
+# Optional: allow service-token auth (for probes/automation)
+# CF_ACCESS_SERVICE_TOKEN_ID=...
+# CF_ACCESS_SERVICE_TOKEN_SECRET=...

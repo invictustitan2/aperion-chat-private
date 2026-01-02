@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getWebSocketClient,
   initializeWebSocket,
@@ -7,8 +7,70 @@ import {
 import { getDevAuthToken, shouldAppendWebSocketToken } from "../lib/authMode";
 import { getApiBaseUrl } from "../lib/apiBaseUrl";
 
-const API_BASE_URL = getApiBaseUrl();
-const AUTH_TOKEN = shouldAppendWebSocketToken() ? getDevAuthToken() : undefined;
+async function shouldConnectWebSocket(
+  apiBaseUrl: string,
+  warnedRef: { current: boolean },
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const identityUrl = `${base}/v1/identity`;
+
+  let resp: Response;
+  try {
+    resp = await fetch(identityUrl, {
+      method: "GET",
+      credentials: "include",
+      redirect: "manual",
+      signal,
+    });
+  } catch {
+    if (!warnedRef.current) {
+      console.info(
+        "[WS] Skipping connect: Identity check failed (network error).",
+      );
+      warnedRef.current = true;
+    }
+    return false;
+  }
+
+  if (resp.status === 200) {
+    return true;
+  }
+
+  const redirected =
+    resp.type === "opaqueredirect" ||
+    resp.redirected ||
+    (resp.status >= 300 && resp.status < 400) ||
+    resp.status === 0;
+
+  if (redirected) {
+    if (!warnedRef.current) {
+      console.info(
+        "[WS] Skipping connect: Access session missing (identity endpoint redirected). Complete Access login and reload.",
+      );
+      warnedRef.current = true;
+    }
+    return false;
+  }
+
+  if (resp.status === 401 || resp.status === 403) {
+    if (!warnedRef.current) {
+      console.info(
+        `[WS] Skipping connect: Not authenticated (identity ${resp.status}). Complete Access login and reload.`,
+      );
+      warnedRef.current = true;
+    }
+    return false;
+  }
+
+  if (!warnedRef.current) {
+    console.info(
+      `[WS] Skipping connect: Identity check failed (status ${resp.status}).`,
+    );
+    warnedRef.current = true;
+  }
+  return false;
+}
 
 export interface UseWebSocketReturn {
   isConnected: boolean;
@@ -21,9 +83,15 @@ export interface UseWebSocketReturn {
 export function useWebSocket(): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const warnedSkipRef = useRef(false);
 
   useEffect(() => {
-    const client = initializeWebSocket(API_BASE_URL, AUTH_TOKEN, {
+    const apiBaseUrl = getApiBaseUrl();
+    const authToken = shouldAppendWebSocketToken()
+      ? getDevAuthToken()
+      : undefined;
+
+    const client = initializeWebSocket(apiBaseUrl, authToken, {
       onConnect: () => {
         setIsConnected(true);
       },
@@ -61,11 +129,20 @@ export function useWebSocket(): UseWebSocketReturn {
       },
     });
 
-    // Auto-connect
-    client.connect();
+    // Auto-connect (only if identity endpoint is reachable without Access redirect).
+    const abort = new AbortController();
+    void (async () => {
+      const ok = await shouldConnectWebSocket(
+        apiBaseUrl,
+        warnedSkipRef,
+        abort.signal,
+      );
+      if (ok) client.connect();
+    })();
 
     // Cleanup on unmount
     return () => {
+      abort.abort();
       client.disconnect();
     };
   }, []);
@@ -75,7 +152,11 @@ export function useWebSocket(): UseWebSocketReturn {
   }, []);
 
   const connect = useCallback(() => {
-    getWebSocketClient()?.connect();
+    const apiBaseUrl = getApiBaseUrl();
+    void (async () => {
+      const ok = await shouldConnectWebSocket(apiBaseUrl, warnedSkipRef);
+      if (ok) getWebSocketClient()?.connect();
+    })();
   }, []);
 
   const disconnect = useCallback(() => {

@@ -1,37 +1,87 @@
 # Architecture
 
-## Overview
+> **Status:** Full (canonical)
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** High-level system map (implemented components only)
 
-Aperion Chat Private is a single-user, memory-backed chat system designed for privacy and longevity.
+This document describes the architecture that is directly supported by code/config in this repository.
 
-## Components
+Evidence anchors:
 
-### Apps
+- Worker entrypoints: `apps/api-worker/src/index.ts`
+- Worker HTTP routes: `apps/api-worker/src/app.ts`
+- Cloudflare bindings/routes: `apps/api-worker/wrangler.toml`
+- Web API base default: `apps/web/src/lib/apiBaseUrl.ts`
 
-- **Web UI (`apps/web`)**: The interface for the user. Mobile-first design (Glassmorphism).
-- **API Worker (`apps/api-worker`)**: The backend logic running on Cloudflare Workers.
-  - **Clean Architecture**: Organized into `Controllers` (HTTP handling), `Services` (Business Logic), and `Middleware` (Auth, Logging).
-  - **Integrations**:
-    - **Workers AI**: On-edge inference (Llama, Whisper, Embeddings).
-    - **Durable Objects**: `ChatState` for WebSocket real-time state.
-    - **R2**: `aperion-media` bucket for storing voice/image assets.
-    - **Queues**: `aperion-memory-queue` for async memory processing.
-    - **D1**: `aperion-memory` for structured data (Episodic, Identity).
-    - **Vectorize**: `aperion-vectors` for semantic search.
+## Surfaces
 
-### Packages
+- **Web app (Cloudflare Pages):** `https://chat.aperion.cc`
+- **API Worker (Cloudflare Workers):**
+  - Custom domain: `https://api.aperion.cc`
+  - Same-origin Path B mount (browser contract): `https://chat.aperion.cc/api/*`
 
-- **Memory Core (`packages/memory-core`)**: The heart of the system. Manages episodic, semantic, and identity memory types.
-- **Policy (`packages/policy`)**: The brain's superego. Defines strictly enforcing security gates (`MemoryWriteGate`) for all memory operations.
-- **Shared (`packages/shared`)**: Common types, utilities, and z-schema definitions.
+Evidence: `apps/api-worker/wrangler.toml` routes + `apps/web/src/lib/apiBaseUrl.ts`.
 
-### Tools
+## Major components
 
-- **CLI (`tools/cli`)**: Local operations for data management (seed, migrate, export).
+### Web (`apps/web`)
 
-## Invariants
+- Browser client computes an API base URL as:
+  - If `VITE_API_BASE_URL` is set, it uses that (absolute URL or relative path like `/api`).
+  - Otherwise, it defaults to `/api` in production builds and `http://127.0.0.1:8787` in dev.
 
-1.  **Memory Immutability**: Once an episodic memory is finalized, it cannot be altered.
-2.  **Policy Enforcement**: All memory writes pass through the `Policy` layer and generate `Receipts`.
-3.  **Type Safety**: Strict Zod schemas validate all API inputs.
-4.  **Observability**: Every request is traced (`traceId`) and logged with structured context.
+Evidence: `apps/web/src/lib/apiBaseUrl.ts`.
+
+### API Worker (`apps/api-worker`)
+
+The Worker has three runtime entrypoints:
+
+- `fetch`: HTTP API (routes in `apps/api-worker/src/app.ts`).
+- `queue`: processes memory batches via `processMemoryBatch`.
+- `scheduled`: housekeeping tasks (logs cleanup + rate limit cleanup).
+
+Evidence: `apps/api-worker/src/index.ts`.
+
+The HTTP layer uses an itty-router pipeline with:
+
+- `withContext` (trace id, logger, metrics, timing)
+- `withAuth` (Access/service-token/legacy-token auth)
+- `finally` hook for response headers (CORS + trace headers) and metrics recording
+
+Evidence: `apps/api-worker/src/middleware/context.ts`, `apps/api-worker/src/middleware/auth.ts`, `apps/api-worker/src/app.ts`.
+
+### Real-time (WebSocket)
+
+- `GET /v1/ws` is authenticated and forwarded to the Durable Object `ChatState`.
+- The Durable Object re-verifies auth and fails closed for WS upgrades.
+
+Evidence: `apps/api-worker/src/app.ts` (`/v1/ws`) + `apps/api-worker/src/do/ChatState.ts`.
+
+## Data stores & bindings (as implemented)
+
+Bindings are defined in `apps/api-worker/wrangler.toml` and used by various endpoints.
+
+- **D1 (`MEMORY_DB`)**: primary persistence for memory tables, receipts, logs.
+  - Evidence: `apps/api-worker/src/services/EpisodicService.ts` (writes receipts + episodic), `apps/api-worker/src/controllers/ReceiptsController.ts`.
+- **Durable Objects (`CHAT_STATE`)**: WebSocket session fanout.
+  - Evidence: `apps/api-worker/src/do/ChatState.ts`.
+- **Queues (`MEMORY_QUEUE`)**: optional async writes for episodic/semantic flows.
+  - Evidence: `apps/api-worker/src/services/EpisodicService.ts`, `apps/api-worker/src/services/SemanticService.ts`.
+- **R2 (`MEDIA_BUCKET`)**: media upload/download endpoints; returns `503` if missing.
+  - Evidence: `apps/api-worker/src/controllers/MediaController.ts`.
+- **Workers AI (`AI`)**: used for embeddings/summarization when configured.
+  - Evidence: `apps/api-worker/src/services/SemanticService.ts`.
+- **Vectorize (`MEMORY_VECTORS`)**: optional vector indexing; in test or when missing, the vector store becomes a no-op.
+  - Evidence: `apps/api-worker/src/lib/vectorStore.ts`.
+
+## Packages
+
+- `packages/memory-core`: shared memory record types used by both web/worker.
+- `packages/policy`: policy gates that emit receipts for memory writes.
+- `packages/shared`: shared helpers (e.g., hashing).
+
+Evidence: Worker imports (`apps/api-worker/src/services/*`) and package exports (`packages/policy/src/index.ts`).

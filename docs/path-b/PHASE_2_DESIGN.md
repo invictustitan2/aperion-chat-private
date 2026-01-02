@@ -1,6 +1,16 @@
 # Path B — Phase 2 Design: Same-Origin `/api` Mount on `chat.aperion.cc`
 
-Status: Design complete; Phase 4 implementation has landed in repo. Production rollout/validation remains pending.
+> **Status:** Legacy
+> \
+> **Last reviewed:** 2026-01-02
+> \
+> **Audience:** Operator + Dev
+> \
+> **Canonical for:** Archaeology / design intent (not current operating procedure)
+
+This design doc is a historical snapshot and is not maintained as current truth.
+
+Current reality: Path B is treated as the production browser contract. For current deploy/validate commands, use `docs/DEPLOY_PROD_RUN.md` and `docs/PROJECT_STATE.md`.
 
 This design is based on Phase 1 inventory in `docs/path-b/SAME_ORIGIN_PLAN.md` and ADR 0001 (`docs/adr/0001-same-origin-api.md`).
 
@@ -42,7 +52,7 @@ Decision: Add an additional Worker route mapping `chat.aperion.cc/api/*` to the 
 Rationale:
 
 - Minimal moving parts: no Pages Functions proxy layer required.
-- Keeps the Worker as the single source of truth for API routing and WebSocket upgrades.
+- Keeps routing behavior centralized in the Worker (with deployment/config enforced by drift traps).
 
 Operational notes:
 
