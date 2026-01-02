@@ -162,8 +162,10 @@ devshell_secrets_check() {
 devshell_access_test() {
   need_cmd curl
 
-  aperion_secrets_load
-  aperion_secrets_validate
+  # Contract: this command prints HTTP status only on stdout.
+  # Keep secrets validation output suppressed (but preserve exit status).
+  aperion_secrets_load >/dev/null 2>&1 || return 1
+  aperion_secrets_validate >/dev/null 2>&1 || return 1
 
   local status url
 
@@ -182,7 +184,7 @@ devshell_access_test() {
   status=''
   for url in "${candidates[@]}"; do
     status="$(
-      cat <<EOF | curl -sS -o /dev/null -w '%{http_code}' -K -
+      cat <<EOF | curl -sS --connect-timeout 5 --max-time 15 -o /dev/null -w '%{http_code}' -K -
 url = "${url}"
 header = "CF-Access-Client-Id: ${CF_ACCESS_SERVICE_TOKEN_ID}"
 header = "CF-Access-Client-Secret: ${CF_ACCESS_SERVICE_TOKEN_SECRET}"

@@ -7,6 +7,9 @@ setup() {
 }
 
 @test "access test is skipped by default (no network)" {
+  # This suite is intended to be hermetic by default.
+  # Ensure callers (like deploy:prod) don't leak RUN_NETWORK_TESTS into this assertion.
+  unset RUN_NETWORK_TESTS
   [ "${RUN_NETWORK_TESTS:-0}" != "1" ]
 }
 
