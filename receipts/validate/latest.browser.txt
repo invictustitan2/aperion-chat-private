@@ -1,4 +1,4 @@
-VALIDATE.UTC: 2026-01-02T16:32:58Z
+VALIDATE.UTC: 2026-01-03T04:58:06Z
 SURFACE: browser
 STEP.1: cf:worker:smoke
 STEP.2: access:probe

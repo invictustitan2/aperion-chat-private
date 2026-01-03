@@ -1,0 +1,10 @@
+VALIDATE.VERSION: 2
+SURFACE: api
+STEP.1: cf:worker:smoke
+STEP.2: access:probe
+STEP.3: ws:probe
+STEP.4: ws:proof --mode headless
+WS.PROBE.URL: https://api.aperion.cc/v1/ws
+WS.PROOF.URL: wss://api.aperion.cc/v1/ws
+WS.PROOF.MODE: headless
+SKIP: Set RUN_NETWORK_TESTS=1 to enable network validation.

@@ -2,12 +2,12 @@ BASE_URL: https://chat.aperion.cc/api
 URL: https://chat.aperion.cc/api/v1/ws
 with_service_token.http_status: 426
 with_service_token.content-type: text/plain;charset=UTF-8
-with_service_token.cf-ray: 9b7ba7687c5435b5-ORD
+with_service_token.cf-ray: 9b7feaebfb64607e-ORD
 with_service_token.server: cloudflare
 with_service_token.location: 
 without_service_token.http_status: 302
 without_service_token.content-type: 
-without_service_token.cf-ray: 9b7ba76ae890cd3a-LHR
+without_service_token.cf-ray: 9b7feaed785c7fb0-ORD
 without_service_token.server: cloudflare
 without_service_token.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/chat.aperion.cc
 curl: (28) Operation timed out after 10002 milliseconds with 0 bytes received

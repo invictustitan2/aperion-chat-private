@@ -1,0 +1,47 @@
+BASE_URL: https://api.aperion.cc
+with_service_token.ROOT.http_status: 404
+with_service_token.ROOT.content-type: application/json; charset=utf-8
+with_service_token.ROOT.cf-ray: 9b7fea9c4caa232e-ORD
+with_service_token.ROOT.server: cloudflare
+with_service_token.ROOT.location: 
+without_service_token.ROOT.http_status: 302
+without_service_token.ROOT.content-type: 
+without_service_token.ROOT.cf-ray: 9b7fea9d0e7e003d-ORD
+without_service_token.ROOT.server: cloudflare
+without_service_token.ROOT.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
+diag.ROOT: NOT_ROUTED_API_ENDPOINT
+with_service_token.V1_IDENTITY.http_status: 200
+with_service_token.V1_IDENTITY.content-type: application/json; charset=utf-8
+with_service_token.V1_IDENTITY.cf-ray: 9b7fea9e3bce251b-ORD
+with_service_token.V1_IDENTITY.server: cloudflare
+with_service_token.V1_IDENTITY.location: 
+without_service_token.V1_IDENTITY.http_status: 302
+without_service_token.V1_IDENTITY.content-type: 
+without_service_token.V1_IDENTITY.cf-ray: 9b7fea9eee6a78af-ORD
+without_service_token.V1_IDENTITY.server: cloudflare
+without_service_token.V1_IDENTITY.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
+diag.V1_IDENTITY: UNKNOWN
+with_service_token.V1_CONVERSATIONS.http_status: 200
+with_service_token.V1_CONVERSATIONS.content-type: application/json; charset=utf-8
+with_service_token.V1_CONVERSATIONS.cf-ray: 9b7feaa05d5772cb-ORD
+with_service_token.V1_CONVERSATIONS.server: cloudflare
+with_service_token.V1_CONVERSATIONS.location: 
+without_service_token.V1_CONVERSATIONS.http_status: 302
+without_service_token.V1_CONVERSATIONS.content-type: 
+without_service_token.V1_CONVERSATIONS.cf-ray: 9b7feaa10d458728-ORD
+without_service_token.V1_CONVERSATIONS.server: cloudflare
+without_service_token.V1_CONVERSATIONS.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
+diag.V1_CONVERSATIONS: UNKNOWN
+with_service_token.V1_SEMANTIC_SEARCH.http_status: 200
+with_service_token.V1_SEMANTIC_SEARCH.content-type: application/json; charset=utf-8
+with_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b7feaa23c39f84a-ORD
+with_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+with_service_token.V1_SEMANTIC_SEARCH.location: 
+without_service_token.V1_SEMANTIC_SEARCH.http_status: 302
+without_service_token.V1_SEMANTIC_SEARCH.content-type: 
+without_service_token.V1_SEMANTIC_SEARCH.cf-ray: 9b7feaa41fd84f3f-ORD
+without_service_token.V1_SEMANTIC_SEARCH.server: cloudflare
+without_service_token.V1_SEMANTIC_SEARCH.location: aperiondev.cloudflareaccess.com/cdn-cgi/access/login/api.aperion.cc
+diag.V1_SEMANTIC_SEARCH: UNKNOWN
+RECEIPT: receipts/access-probe.api.20260103-045737Z.txt
+RECEIPT_LATEST: receipts/access-probe.api.latest.txt
