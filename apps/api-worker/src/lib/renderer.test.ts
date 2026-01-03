@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { Env } from "../types";
 
 vi.mock("@cloudflare/puppeteer", () => {
   return {
@@ -22,7 +23,7 @@ describe("renderChatToPdf", () => {
   it("throws if BROWSER binding is missing", async () => {
     const { renderChatToPdf } = await import("./renderer");
     await expect(
-      renderChatToPdf("<p>x</p>", {} as unknown as { BROWSER?: unknown }),
+      renderChatToPdf("<p>x</p>", {} as unknown as Env),
     ).rejects.toThrow(/BROWSER binding is not configured/);
   });
 
@@ -30,7 +31,7 @@ describe("renderChatToPdf", () => {
     const { renderChatToPdf } = await import("./renderer");
     const pdf = await renderChatToPdf("<p>hello</p>", {
       BROWSER: {},
-    } as unknown as { BROWSER: unknown });
+    } as unknown as Env);
     expect(pdf).toBeInstanceOf(Uint8Array);
     expect(Array.from(pdf)).toEqual([1, 2, 3]);
   });

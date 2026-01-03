@@ -1,6 +1,18 @@
 // Global Vitest setup: enforce deterministic tests by blocking outbound network.
 // Allowed: localhost / 127.0.0.1 (including relative URLs resolved against localhost).
 
+// Silence app-level logs during tests (prevents noisy stdout and "warn" JSON logs).
+(
+  globalThis as unknown as { __APERION_LOG_LEVEL__?: string }
+).__APERION_LOG_LEVEL = "silent";
+
+if (typeof process !== "undefined") {
+  (process as unknown as { env?: Record<string, string> }).env = {
+    ...(process as unknown as { env?: Record<string, string> }).env,
+    APERION_LOG_LEVEL: "silent",
+  };
+}
+
 const allowedHosts = new Set(["127.0.0.1", "localhost"]);
 
 const originalFetch = globalThis.fetch;

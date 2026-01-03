@@ -57,6 +57,8 @@ describe("WebSocketClient", () => {
     FakeWebSocket.instances = [];
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0.5);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => {});
     globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   });
 

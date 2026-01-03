@@ -76,8 +76,32 @@ describe("Layout", () => {
     });
   });
 
-  it.skip("toggles mobile menu", async () => {
-    // TODO: Implement mobile menu toggle test. Requires adding test-ids to Layout component.
-    // See Phase 5 Roadmap.
+  it("toggles mobile menu", async () => {
+    vi.mocked(api.preferences.get).mockResolvedValue({
+      value: "dark",
+      key: "theme",
+      updatedAt: Date.now(),
+    });
+
+    render(
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>,
+    );
+
+    // Closed by default
+    expect(screen.queryByTestId("mobile-menu-drawer")).not.toBeInTheDocument();
+
+    // Open
+    screen.getByTestId("mobile-menu-open").click();
+    expect(await screen.findByTestId("mobile-menu-drawer")).toBeInTheDocument();
+
+    // Close via backdrop
+    screen.getByTestId("mobile-menu-backdrop").click();
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("mobile-menu-drawer"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

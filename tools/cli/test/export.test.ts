@@ -44,6 +44,7 @@ describe("exportData", () => {
     process.env.VITE_API_BASE_URL = "http://example.test";
 
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const fetchMock = vi.fn(async (url: string) => {
       if (String(url).includes("/v1/episodic")) {
@@ -77,6 +78,7 @@ describe("exportData", () => {
   it("handles fetch throw without crashing", async () => {
     process.env.AUTH_TOKEN = "t";
 
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
     const errSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);

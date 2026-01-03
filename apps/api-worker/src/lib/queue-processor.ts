@@ -4,6 +4,7 @@ import { Env } from "../types";
 import { generateChatCompletion, generateEmbedding } from "./ai";
 import { ConversationsService } from "../services/ConversationsService";
 import { getVectorStore } from "./vectorStore";
+import { Logger } from "./logger";
 
 // Define the shape of messages sent to the queue
 export type MemoryQueueMessage =
@@ -32,6 +33,7 @@ export async function processMemoryBatch(
   env: Env,
 ): Promise<void> {
   for (const message of messages) {
+    const logger = new Logger(message.id, "api-worker");
     try {
       const { type } = message.body;
 
@@ -45,13 +47,15 @@ export async function processMemoryBatch(
         await processEmbed(message.body, env);
       } else {
         const bodyWithExtras = message.body as unknown as { type: string };
-        console.warn(`Unknown message type: ${bodyWithExtras.type}`);
+        logger.warn("Unknown message type", { type: bodyWithExtras.type });
       }
 
       // Ack message if successful
       message.ack();
     } catch (e) {
-      console.error(`Failed to process message ${message.id}:`, e);
+      logger.error("Failed to process message", {
+        error: e instanceof Error ? e.message : String(e),
+      });
       const body = message.body as { jobId: string };
       if (body.jobId) {
         await env.MEMORY_DB.prepare(
@@ -59,7 +63,12 @@ export async function processMemoryBatch(
         )
           .bind(String(e), Date.now(), body.jobId)
           .run()
-          .catch(console.error);
+          .catch((err) => {
+            logger.error("Failed to mark job failed", {
+              jobId: body.jobId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
         // For jobs, we mark as failed and don't retry locally to avoid loops. User can retry via API.
         message.ack();
       } else {
@@ -98,18 +107,21 @@ async function processEpisodic(record: EpisodicRecord, env: Env) {
 }
 
 async function processSemantic(record: SemanticRecord, env: Env) {
+  const logger = new Logger(record.id, "api-worker");
   // 1. Generate Embedding if missing
   if ((!record.embedding || record.embedding.length === 0) && env.AI) {
     try {
       const start = performance.now();
       record.embedding = await generateEmbedding(env.AI, record.content);
-      console.log(
-        `Generated embedding for semantic record ${record.id} in ${(
-          performance.now() - start
-        ).toFixed(2)}ms`,
-      );
+      logger.debug("Generated embedding", {
+        component: "queue-processor",
+        recordType: "semantic",
+        durationMs: Number((performance.now() - start).toFixed(2)),
+      });
     } catch (e) {
-      console.error("Failed to generate embedding in queue processor", e);
+      logger.error("Failed to generate embedding in queue processor", {
+        error: e instanceof Error ? e.message : String(e),
+      });
       throw e; // Retry the message
     }
   }
@@ -184,6 +196,7 @@ async function processSummarize(
 
 async function processEmbed(job: { jobId: string; content: string }, env: Env) {
   const { jobId, content } = job;
+  const logger = new Logger(jobId, "api-worker");
 
   // 1. Mark Processing
   await env.MEMORY_DB.prepare(
@@ -195,11 +208,11 @@ async function processEmbed(job: { jobId: string; content: string }, env: Env) {
   // 2. Generate
   const start = performance.now();
   const embedding = await generateEmbedding(env.AI, content);
-  console.log(
-    `Generated embedding for job ${jobId} in ${(
-      performance.now() - start
-    ).toFixed(2)}ms`,
-  );
+  logger.debug("Generated embedding", {
+    component: "queue-processor",
+    recordType: "job.embed",
+    durationMs: Number((performance.now() - start).toFixed(2)),
+  });
 
   // 3. Complete
   await env.MEMORY_DB.prepare(

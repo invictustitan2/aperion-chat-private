@@ -9,6 +9,7 @@ vi.mock("fs/promises");
 // Mock console
 const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
 vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit ${code}`);
 });

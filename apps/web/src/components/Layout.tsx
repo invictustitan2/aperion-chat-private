@@ -205,6 +205,7 @@ export function Layout() {
                 : "text-gray-400 hover:text-gray-200",
             )}
             aria-label="More"
+            data-testid="mobile-menu-open"
           >
             <Menu className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium">More</span>
@@ -223,6 +224,7 @@ export function Layout() {
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
               className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              data-testid="mobile-menu-backdrop"
             />
             {/* Drawer */}
             <motion.aside
@@ -239,6 +241,7 @@ export function Layout() {
                 }
               }}
               className="md:hidden fixed top-0 bottom-0 left-0 w-[80%] max-w-sm glass-dark border-r border-white/5 flex flex-col z-50 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+              data-testid="mobile-menu-drawer"
             >
               <SidebarContent />
             </motion.aside>

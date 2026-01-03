@@ -66,6 +66,7 @@ describe("Memory Page", () => {
 
   it("renders the header and default tab (Identity)", async () => {
     vi.mocked(api.identity.list).mockResolvedValue([]);
+    vi.mocked(api.episodic.list).mockResolvedValue([]);
     renderWithClient(<Memory />);
 
     expect(screen.getByText("Memory Store")).toBeInTheDocument();

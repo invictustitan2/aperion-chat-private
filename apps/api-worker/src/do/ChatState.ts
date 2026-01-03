@@ -5,6 +5,7 @@ import {
   getAuthFingerprintFromAuthContext,
 } from "../lib/authContext";
 import { createPolicyCloseWebSocketUpgradeResponse } from "../lib/wsDeny";
+import { Logger } from "../lib/logger";
 
 interface WebSocketMessage {
   type: "ping" | "message" | "typing";
@@ -33,6 +34,7 @@ export class ChatState extends DurableObject {
       this.env.APERION_AUTH_LOG_OUTCOMES || "deny"
     ).toLowerCase();
     const traceId = request.headers.get("cf-ray") || undefined;
+    const logger = new Logger(traceId ?? "ws", "api-worker");
     const path = (() => {
       try {
         return new URL(request.url).pathname;
@@ -45,22 +47,16 @@ export class ChatState extends DurableObject {
     // Re-verify Access/Service/Legacy auth here and fail closed.
     const auth = await getAuthContext(request, this.env);
     if (!auth.authenticated) {
-      console.log(
-        JSON.stringify({
-          level: "info",
-          message: "WS upgrade outcome",
-          source: "api-worker",
-          component: "do.ChatState",
-          event: "ws.upgrade",
-          outcome: "deny",
-          traceId,
-          path,
-          status: auth.status,
-          mode: auth.mode,
-          reason: auth.reason,
-          closeCode: 1008,
-        }),
-      );
+      logger.info("WS upgrade outcome", {
+        component: "do.ChatState",
+        event: "ws.upgrade",
+        outcome: "deny",
+        path,
+        status: auth.status,
+        mode: auth.mode,
+        reason: auth.reason,
+        closeCode: 1008,
+      });
 
       return createPolicyCloseWebSocketUpgradeResponse({
         closeCode: 1008,
@@ -69,22 +65,16 @@ export class ChatState extends DurableObject {
     }
 
     if (logOutcomes === "all") {
-      console.log(
-        JSON.stringify({
-          level: "debug",
-          message: "WS upgrade outcome",
-          source: "api-worker",
-          component: "do.ChatState",
-          event: "ws.upgrade",
-          outcome: "accept",
-          traceId,
-          path,
-          mode: auth.mode,
-          authMethod: auth.method,
-          principalType: auth.principalType,
-          authFingerprint: getAuthFingerprintFromAuthContext(auth),
-        }),
-      );
+      logger.debug("WS upgrade outcome", {
+        component: "do.ChatState",
+        event: "ws.upgrade",
+        outcome: "accept",
+        path,
+        mode: auth.mode,
+        authMethod: auth.method,
+        principalType: auth.principalType,
+        authFingerprint: getAuthFingerprintFromAuthContext(auth),
+      });
     }
 
     const { 0: client, 1: server } = new WebSocketPair();
@@ -107,6 +97,8 @@ export class ChatState extends DurableObject {
   }
 
   private handleSession(webSocket: WebSocket, userId: string) {
+    const logger = new Logger("ws", "api-worker");
+
     // Accept the connection
     webSocket.accept();
     this.sessions.add(webSocket);
@@ -149,7 +141,9 @@ export class ChatState extends DurableObject {
       // Minimal close-code logging (prod-safe).
       try {
         const e = evt as CloseEvent;
-        console.info("[WS] Closed", {
+        logger.debug("WS closed", {
+          component: "do.ChatState",
+          event: "ws.close",
           code: e.code,
           reason: e.reason,
           wasClean: e.wasClean,

@@ -14,13 +14,38 @@ setup() {
 }
 
 @test "access test returns a status code when enabled" {
-  if [ "${RUN_NETWORK_TESTS:-0}" != "1" ]; then
-    skip "Set RUN_NETWORK_TESTS=1 to enable network tests"
-  fi
+  # Keep this test hermetic (no real network):
+  # - force RUN_NETWORK_TESTS=1
+  # - provide a temporary secrets file
+  # - stub curl to return 200
+  export RUN_NETWORK_TESTS=1
 
-  if ! "${DEV_SHELL}" secrets check >/dev/null 2>&1; then
-    skip "Secrets missing/invalid; configure ~/.config/aperion/cf_access.env or set APERION_SECRETS_FILE"
-  fi
+  local tmp_root
+  tmp_root="${BATS_TEST_TMPDIR:-${BATS_TMPDIR:-/tmp}}"
+
+  local fakebin
+  fakebin="${tmp_root}/fakebin"
+  mkdir -p "${fakebin}"
+
+  cat >"${fakebin}/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Hermetic stub for devshell access test.
+# The devshell uses curl with -w '%{http_code}' and expects stdout to be just the status code.
+printf '%s' '200'
+EOF
+  chmod +x "${fakebin}/curl"
+  export PATH="${fakebin}:${PATH}"
+
+  local secrets
+  secrets="${tmp_root}/cf_access.env"
+  cat >"${secrets}" <<'EOF'
+export CF_ACCESS_SERVICE_TOKEN_ID="aaaaaaaaaaaa"
+export CF_ACCESS_SERVICE_TOKEN_SECRET="bbbbbbbbbbbb"
+EOF
+  chmod 600 "${secrets}"
+  export APERION_SECRETS_FILE="${secrets}"
 
   run "${DEV_SHELL}" access test
 
