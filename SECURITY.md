@@ -58,3 +58,8 @@ Evidence:
 
 - Devshell command: `devshell/commands/deps_audit.sh`
 - Enforced overrides (patched floor): `package.json` → `pnpm.overrides`
+
+Hard truth:
+
+- Some vulnerability scanners (including GitHub’s dependency graph) may continue to report advisories when _upstream_ packages still declare vulnerable transitive ranges.
+- In those cases, this repo’s security posture is enforced by the lockfile + `pnpm.overrides` (and is verified by `pnpm audit` / `./dev deps:audit`).
