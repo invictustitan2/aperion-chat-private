@@ -73,3 +73,7 @@ fi
 pnpm verify
 pnpm guard:prod-secrets
 pnpm guard:config-drift
+
+# Dependency vulnerability gate.
+# This is intentionally strict: any known advisory fails the gate.
+pnpm deps:audit

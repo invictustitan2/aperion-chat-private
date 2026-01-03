@@ -26,6 +26,7 @@ Commands:
   help               Show this help
   verify             Run the existing Private verification gate (no behavior change)
   verify:ci          Run the CI-grade verification gate (strict)
+  deps:audit         Run pnpm audit with receipts (strict when enabled)
   test:unit          Run unit tests (Vitest) with receipts
   test:coverage      Run coverage (Vitest) with receipts
   test:all           Run unit tests + local E2E (receipts)
@@ -95,6 +96,10 @@ devshell_dispatch() {
 
     verify:ci)
       "${repo_root}/devshell/commands/verify_ci.sh" "$repo_root" "$@"
+      ;;
+
+    deps:audit)
+      "${repo_root}/devshell/commands/deps_audit.sh" "$repo_root" "$@"
       ;;
 
     test:unit)

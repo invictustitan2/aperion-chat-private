@@ -40,3 +40,21 @@ Evidence:
 
 - Auth middleware tests: `apps/api-worker/test/auth.test.ts`
 - Integration smoke: `apps/api-worker/test/index.test.ts`
+
+## Dependency hygiene (hard gate)
+
+Principles:
+
+- A green build must also be a _safe_ build: known vulnerable dependencies are treated as a release blocker.
+- We prefer upstream upgrades, but we also use pnpm overrides to enforce patched transitive versions when upstream has not yet released.
+- Evidence matters: audits should produce receipts so we can prove what we shipped.
+
+How to run:
+
+- Local (writes receipts): `RUN_NETWORK_TESTS=1 ./dev deps:audit`
+- CI-grade gate: `./dev verify:ci` (includes `pnpm deps:audit`)
+
+Evidence:
+
+- Devshell command: `devshell/commands/deps_audit.sh`
+- Enforced overrides (patched floor): `package.json` → `pnpm.overrides`

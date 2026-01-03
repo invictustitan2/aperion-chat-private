@@ -66,6 +66,10 @@ case "$cmd" in
     echo "pnpm verify (stub)"
     exit 0
     ;;
+  deps:audit)
+    echo "pnpm deps:audit (stub)"
+    exit 0
+    ;;
   guard:prod-secrets)
     echo "pnpm guard:prod-secrets (stub)"
     exit 0

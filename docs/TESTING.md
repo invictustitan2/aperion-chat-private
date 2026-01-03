@@ -13,6 +13,12 @@
 - Prefer running tests through `./dev` to get receipts and consistent safety rails.
 - Networked tests are opt-in (`RUN_NETWORK_TESTS=1`).
 - Production E2E is read-only and requires an authenticated Playwright `storageState` file (never commit it).
+- The CI-grade verification gate includes a dependency vulnerability audit; treat known advisories as release blockers.
+
+Dependency audit:
+
+- Local receipts: `RUN_NETWORK_TESTS=1 ./dev deps:audit`
+- CI gate: `./dev verify:ci` (runs `pnpm deps:audit`)
 
 ## Testing + coverage philosophy (detailed)
 
